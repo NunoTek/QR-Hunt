@@ -1,0 +1,16 @@
+node_modules
+dist
+build
+.git
+.gitignore
+*.md
+.env
+.env.*
+data
+*.sqlite
+*.sqlite3
+coverage
+.vite
+test-data
+*.test.ts
+*.test.tsx

@@ -1,0 +1,11 @@
+{$DOMAIN:localhost} {
+	# Reverse proxy all requests to the app
+	reverse_proxy qr-hunt:3000 {
+		# Forward original host header
+		header_up Host {host}
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+	}
+}
