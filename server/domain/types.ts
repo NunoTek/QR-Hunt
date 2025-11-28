@@ -17,6 +17,7 @@ export interface GameSettings {
   basePoints: number;
   timeBonusEnabled: boolean;
   timeBonusMultiplier: number;
+  randomMode: boolean;
 }
 
 export interface Team {

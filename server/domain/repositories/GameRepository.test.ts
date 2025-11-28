@@ -31,6 +31,7 @@ describe("GameRepository", () => {
         basePoints: 100,
         timeBonusEnabled: true,
         timeBonusMultiplier: 1.5,
+        randomMode: false,
       });
     });
 

@@ -27,6 +27,7 @@ export const createGameSchema = z.object({
       basePoints: z.number().int().positive().optional(),
       timeBonusEnabled: z.boolean().optional(),
       timeBonusMultiplier: z.number().positive().optional(),
+      randomMode: z.boolean().optional(),
     })
     .optional(),
 });
@@ -47,6 +48,7 @@ export const updateGameSchema = z.object({
       basePoints: z.number().int().positive().optional(),
       timeBonusEnabled: z.boolean().optional(),
       timeBonusMultiplier: z.number().positive().optional(),
+      randomMode: z.boolean().optional(),
     })
     .optional(),
 });

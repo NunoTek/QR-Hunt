@@ -58,6 +58,7 @@ interface Game {
   settings: {
     rankingMode: string;
     basePoints: number;
+    randomMode?: boolean;
   };
 }
 
@@ -216,6 +217,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
         if (!response.ok) {
           const data = await response.json();
           return json({ error: data.error || "Failed to create edge" });
+        }
+        break;
+      }
+
+      case "updateRandomMode": {
+        const randomMode = formData.get("randomMode") === "on";
+        const response = await fetch(`${baseUrl}/api/v1/admin/games/${gameId}`, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({ settings: { randomMode } }),
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          return json({ error: data.error || "Failed to update random mode" });
         }
         break;
       }
@@ -499,6 +514,9 @@ function AdminGameDetailContent() {
           break;
         case "updateTeam":
           toast.success("Team updated");
+          break;
+        case "updateRandomMode":
+          toast.success("Random mode updated");
           break;
       }
     }
@@ -786,7 +804,7 @@ function AdminGameDetailContent() {
 
               <div className="flex gap-2 pt-2">
                 <button type="submit" className={btnPrimary} disabled={isSubmitting}>{editingNode ? "Update Node" : "Add Node"}</button>
-                {editingNode && <button type="button" className={btnSecondary} onClick={() => setEditingNode(null)}>Cancel</button>}
+                <button type="button" className={btnSecondary} onClick={() => setEditingNode(null)}>{editingNode ? "Cancel" : "Clear"}</button>
               </div>
             </Form>
           </div>
@@ -833,6 +851,15 @@ function AdminGameDetailContent() {
 
           <div className="bg-elevated rounded-xl border p-5 shadow-sm">
             <h3 className="text-lg font-semibold text-primary mb-4">{editingEdge ? "Edit Edge" : "Add Edge"}</h3>
+
+            {data.game.settings.randomMode && (
+              <div className="p-3 bg-[var(--color-info)]/10 border border-[var(--color-info)]/30 rounded-lg mb-4">
+                <p className="text-sm text-[var(--color-info)]">
+                  <strong>Random Mode is enabled</strong> for this game. Edges are not used in random mode - each team gets a random next clue from unvisited nodes.
+                </p>
+              </div>
+            )}
+
             <Form method="post" onSubmit={() => setEditingEdge(null)} className="space-y-4">
               <input type="hidden" name="_action" value={editingEdge ? "updateEdge" : "createEdge"} />
               {editingEdge && <input type="hidden" name="edgeId" value={editingEdge.id} />}
@@ -855,7 +882,7 @@ function AdminGameDetailContent() {
 
               <div className="flex gap-2 pt-2">
                 <button type="submit" className={btnPrimary} disabled={isSubmitting}>{editingEdge ? "Update Edge" : "Add Edge"}</button>
-                {editingEdge && <button type="button" className={btnSecondary} onClick={() => setEditingEdge(null)}>Cancel</button>}
+                <button type="button" className={btnSecondary} onClick={() => setEditingEdge(null)}>{editingEdge ? "Cancel" : "Clear"}</button>
               </div>
             </Form>
           </div>
@@ -1214,6 +1241,39 @@ function AdminGameDetailContent() {
                 Complete the setup checklist above before activating the game.
               </p>
             )}
+          </div>
+
+          {/* Random Mode Setting */}
+          <div className="bg-elevated rounded-xl border p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-primary mb-2">Clue Order Mode</h3>
+            <p className="text-secondary text-sm mb-4">Control how teams receive their next clue after scanning a QR code.</p>
+
+            <Form method="post" className="space-y-4">
+              <input type="hidden" name="_action" value="updateRandomMode" />
+
+              <div className="flex items-start gap-4 p-4 rounded-lg border border-border bg-secondary">
+                <input
+                  type="checkbox"
+                  name="randomMode"
+                  id="randomMode"
+                  defaultChecked={data.game.settings.randomMode || false}
+                  className="mt-1 rounded bg-secondary border-border"
+                />
+                <div>
+                  <label htmlFor="randomMode" className="font-medium text-primary cursor-pointer">
+                    Random Mode
+                  </label>
+                  <p className="text-sm text-muted mt-1">
+                    When enabled, each team receives a random next clue from unvisited nodes instead of following predefined edges.
+                    This creates a unique path for each team.
+                  </p>
+                </div>
+              </div>
+
+              <button type="submit" className={btnPrimary} disabled={isSubmitting}>
+                {isSubmitting ? "Saving..." : "Save Setting"}
+              </button>
+            </Form>
           </div>
 
           {/* Game Logo */}

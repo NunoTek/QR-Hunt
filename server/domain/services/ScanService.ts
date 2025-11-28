@@ -210,6 +210,9 @@ export class ScanService {
     const team = teamRepository.findById(teamId);
     if (!team) return null;
 
+    const game = gameRepository.findById(team.gameId);
+    if (!game) return null;
+
     const scans = scanRepository.findByTeamId(teamId);
     const totalPoints = scanRepository.getTotalPointsByTeam(teamId);
     const nodesFound = scans.length;
@@ -224,6 +227,9 @@ export class ScanService {
     const scannedNodeIds = new Set(scans.map((s) => s.nodeId));
     const allNodesScanned = allNodes.every((n) => scannedNodeIds.has(n.id));
 
+    // Check if random mode is enabled
+    const isRandomMode = game.settings.randomMode ?? false;
+
     if (scans.length > 0) {
       const lastScan = scans[scans.length - 1];
       currentNode = nodeRepository.findById(lastScan.nodeId);
@@ -235,14 +241,22 @@ export class ScanService {
         // Show remaining nodes to find
         nextNodes = allNodes.filter((n) => !scannedNodeIds.has(n.id));
 
-        // Get next clue from edges (first unscanned node connected via edge)
-        if (currentNode) {
-          const connectedNodes = this.getNextNodes(currentNode.id);
-          nextClue = connectedNodes.find((n) => !scannedNodeIds.has(n.id)) || null;
+        if (isRandomMode) {
+          // Random mode: pick a random unscanned node as next clue
+          if (nextNodes.length > 0) {
+            const randomIndex = Math.floor(Math.random() * nextNodes.length);
+            nextClue = nextNodes[randomIndex];
+          }
+        } else {
+          // Standard mode: get next clue from edges (first unscanned node connected via edge)
+          if (currentNode) {
+            const connectedNodes = this.getNextNodes(currentNode.id);
+            nextClue = connectedNodes.find((n) => !scannedNodeIds.has(n.id)) || null;
 
-          // If no connected unscanned nodes, pick first remaining node
-          if (!nextClue && nextNodes.length > 0) {
-            nextClue = nextNodes[0];
+            // If no connected unscanned nodes, pick first remaining node
+            if (!nextClue && nextNodes.length > 0) {
+              nextClue = nextNodes[0];
+            }
           }
         }
       }
@@ -250,6 +264,14 @@ export class ScanService {
       // Team hasn't scanned yet, show start node as the clue to find
       nextClue = nodeRepository.findById(team.startNodeId);
       nextNodes = allNodes.filter((n) => n.id !== team.startNodeId);
+    } else if (isRandomMode) {
+      // Random mode with no start node: pick a random start node
+      const startNodes = allNodes.filter((n) => n.isStart);
+      if (startNodes.length > 0) {
+        const randomIndex = Math.floor(Math.random() * startNodes.length);
+        nextClue = startNodes[randomIndex];
+        nextNodes = allNodes.filter((n) => n.id !== nextClue!.id);
+      }
     }
 
     return {
