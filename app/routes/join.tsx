@@ -53,9 +53,11 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const headers = new Headers();
+    const isProduction = process.env.NODE_ENV === "production";
+    const secureFlag = isProduction ? "; Secure" : "";
     headers.append(
       "Set-Cookie",
-      `team_token=${data.token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${48 * 60 * 60}`
+      `team_token=${data.token}; Path=/; HttpOnly; SameSite=Lax${secureFlag}; Max-Age=${48 * 60 * 60}`
     );
 
     return redirect(`/play/${gameSlug}`, { headers });
