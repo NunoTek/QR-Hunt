@@ -34,8 +34,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
     if (adminCode === expectedCode) {
       const headers = new Headers();
-      const isProduction = process.env.NODE_ENV === "production";
-      const secureFlag = isProduction ? "; Secure" : "";
+      const isSecure = new URL(request.url).protocol === "https:";
+      const secureFlag = isSecure ? "; Secure" : "";
       headers.append(
         "Set-Cookie",
         `admin_code=${adminCode}; Path=/; HttpOnly; SameSite=Lax${secureFlag}; Max-Age=${7 * 24 * 60 * 60}`

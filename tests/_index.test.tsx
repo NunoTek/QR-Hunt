@@ -1,24 +1,31 @@
 import { describe, it, expect } from "vitest";
 import { meta } from "../app/routes/_index";
 
+interface MetaTag {
+  title?: string;
+  name?: string;
+  content?: string;
+  [key: string]: unknown;
+}
+
 describe("Index Page", () => {
   describe("Meta Tags", () => {
     it("should have proper title", () => {
       const result = meta({ data: null, params: {}, matches: [], location: { pathname: "/", search: "", hash: "", state: null, key: "" } });
-      
+
       expect(result).toBeDefined();
-      const titleTag = result?.find((tag: any) => "title" in tag);
+      const titleTag = result?.find((tag: MetaTag) => "title" in tag);
       expect(titleTag).toBeDefined();
-      expect((titleTag as any)?.title).toBe("QR Hunt - QR Code Scavenger Hunt Platform");
+      expect((titleTag as MetaTag)?.title).toBe("QR Hunt - QR Code Scavenger Hunt Platform");
     });
 
     it("should have proper description", () => {
       const result = meta({ data: null, params: {}, matches: [], location: { pathname: "/", search: "", hash: "", state: null, key: "" } });
-      
-      const descTag = result?.find((tag: any) => tag.name === "description");
+
+      const descTag = result?.find((tag: MetaTag) => tag.name === "description");
       expect(descTag).toBeDefined();
-      expect((descTag as any)?.content).toContain("QR code scavenger hunts");
-      expect((descTag as any)?.content).toContain("team building");
+      expect((descTag as MetaTag)?.content).toContain("QR code scavenger hunts");
+      expect((descTag as MetaTag)?.content).toContain("team building");
     });
   });
 

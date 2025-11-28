@@ -113,7 +113,7 @@ describe("GameRepository", () => {
 
   describe("findByStatus", () => {
     it("should return only games with matching status", () => {
-      const game1 = gameRepository.create({ name: "Draft", publicSlug: "draft" });
+      gameRepository.create({ name: "Draft", publicSlug: "draft" });
       const game2 = gameRepository.create({ name: "Active", publicSlug: "active" });
 
       gameRepository.update(game2.id, { status: "active" });

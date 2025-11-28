@@ -96,6 +96,7 @@ export interface TeamProgress {
   team: Team;
   scans: Scan[];
   currentNode: Node | null;
+  nextClue: Node | null;
   nextNodes: Node[];
   totalPoints: number;
   nodesFound: number;

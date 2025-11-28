@@ -257,6 +257,7 @@ interface ChatMessage {
 - **Activation requirements**: Requires at least 1 node, 1 start node, and 1 end node
 - **Custom branding**: Upload game logo for QR codes and UI
 - **Configurable scoring**: Points-based, node count, or time-based ranking
+- **Score reset**: Changing game status to "draft" automatically resets all team scores/scans
 
 ### Node System
 - **Flexible content types**: Text, images, videos, audio, and links
@@ -530,12 +531,21 @@ Teams must find and scan ALL QR codes to win. Start and end nodes define valid e
 
 ### Play Phase (Teams)
 1. Team joins with game slug + team code (auto-submits when complete)
-2. Receives session token and sees starting clue
-3. First scan must be a start node
-4. After starting, can scan ANY node in any order
-5. Progress shows X/Y QR codes found
-6. When all nodes found, must scan an end node to finish
-7. Can chat with admin for hints
+2. Receives session token and sees **next clue** (the clue to find the first QR code)
+3. Points display is fixed at top-right corner, always visible while scrolling
+4. First scan must be a start node
+5. After scanning, the **next clue** updates to show the clue for the next QR code (via edges)
+6. Can scan nodes in any order after starting
+7. Progress shows X/Y QR codes found
+8. When all nodes found, must scan an end node to finish
+9. Can chat with admin for hints
+
+### Clue System
+The game uses a `nextClue` field to guide players:
+- **Before first scan**: Shows the starting node's content (clue to find the first QR)
+- **After each scan**: Shows the next node's content via edge connections
+- **Fallback**: If no connected unscanned nodes exist, shows the first remaining node
+- The clue content (text, image, video, etc.) tells players WHERE to find the next QR code
 
 ### Leaderboard
 - Shows real-time rankings via Server-Sent Events

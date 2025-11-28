@@ -114,7 +114,7 @@ export default function Index() {
                 </svg>
               </div>
               <h3 className="text-base sm:text-lg lg:text-xl font-bold text-primary mb-2">3. Hunt & Scan</h3>
-              <p className="text-secondary text-sm sm:text-base">Teams explore, solve clues, and scan QR codes to earn points. Each scan reveals the next challenge.</p>
+              <p className="text-secondary text-sm sm:text-base">Teams follow clues to find QR codes. Each scan reveals the next clue, guiding them to the next location.</p>
             </div>
 
             {/* Feature 4 */}
@@ -170,11 +170,11 @@ export default function Index() {
               </h2>
               <ul className="space-y-3 sm:space-y-4">
                 {[
+                  "Clue-based navigation guides teams to each QR code",
                   "Real-time leaderboards with live updates",
                   "Built-in chat between teams and organizers",
                   "QR code generator with custom logos",
-                  "Media support (images, videos, audio)",
-                  "Progress tracking with scan history",
+                  "Media clues (images, videos, audio)",
                   "Works on any device - no app needed",
                   "Self-hosted - your data stays private",
                 ].map((feature, i) => (
@@ -201,7 +201,7 @@ export default function Index() {
 
                   {/* Mockup Clue */}
                   <div className="bg-secondary rounded-xl p-3 sm:p-4 mb-3 sm:mb-4 border-l-4 border-[var(--color-primary)]">
-                    <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] rounded-full flex items-center justify-center text-white font-bold text-lg mb-2 sm:mb-3">?</div>
+                    <p className="text-xs text-[var(--color-primary)] font-semibold mb-1">Next Clue</p>
                     <p className="font-bold text-primary text-sm mb-1">The Hidden Garden</p>
                     <p className="text-tertiary text-xs">Find where roses bloom in shade...</p>
                   </div>

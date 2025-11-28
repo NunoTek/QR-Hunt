@@ -322,6 +322,32 @@ input, button, textarea, select {
   font: inherit;
 }
 
+/* Select dropdown styling */
+select {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+select option {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* Dark mode select styling */
+[data-theme="dark"] select,
+[data-theme="dark"] select option {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) select,
+  :root:not([data-theme="light"]) select option {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+}
+
 a {
   color: var(--color-primary);
   text-decoration: none;

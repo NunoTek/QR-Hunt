@@ -156,6 +156,14 @@ export class ScanRepository {
   }
 
   // Optimized method to get full leaderboard data in a single query
+  deleteByGameId(gameId: string): number {
+    const db = getDatabase();
+    const result = db
+      .prepare("DELETE FROM scans WHERE game_id = ?")
+      .run(gameId);
+    return result.changes;
+  }
+
   getLeaderboardData(gameId: string): Array<{
     teamId: string;
     nodesFound: number;

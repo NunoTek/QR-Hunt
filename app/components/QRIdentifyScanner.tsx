@@ -9,6 +9,7 @@ interface QRIdentifyScannerProps {
     url: string;
     isStart: boolean;
     isEnd: boolean;
+    adminComment: string | null;
   }>;
   onClose: () => void;
 }
@@ -264,6 +265,11 @@ export function QRIdentifyScanner({ nodes, onClose }: QRIdentifyScannerProps) {
                     </span>
                   )}
                 </div>
+                {identifiedNode.adminComment && (
+                  <p className="text-sm text-secondary mt-3 italic bg-warning/10 px-3 py-2 rounded-lg">
+                    📝 {identifiedNode.adminComment}
+                  </p>
+                )}
                 <p className="text-xs text-muted mt-3 break-all">{identifiedNode.url}</p>
               </div>
               <div className="flex gap-2">
