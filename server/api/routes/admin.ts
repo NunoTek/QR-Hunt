@@ -96,17 +96,25 @@ export async function adminRoutes(fastify: FastifyInstance) {
       }
 
       try {
+        const existingGame = gameRepository.findById(request.params.id);
+        if (!existingGame) {
+          return reply.status(404).send({ error: "Game not found" });
+        }
+
         const updateData: Parameters<typeof gameService.updateGame>[1] = {};
         if (parseResult.data.name) updateData.name = parseResult.data.name;
         if (parseResult.data.publicSlug) updateData.publicSlug = parseResult.data.publicSlug;
         if (parseResult.data.status) updateData.status = parseResult.data.status;
         if (parseResult.data.logoUrl !== undefined) updateData.logoUrl = parseResult.data.logoUrl;
         if (parseResult.data.settings) {
+          // Merge with existing settings instead of replacing
           updateData.settings = {
-            rankingMode: parseResult.data.settings.rankingMode || "points",
-            basePoints: parseResult.data.settings.basePoints || 100,
-            timeBonusEnabled: parseResult.data.settings.timeBonusEnabled ?? true,
-            timeBonusMultiplier: parseResult.data.settings.timeBonusMultiplier || 1.5,
+            ...existingGame.settings,
+            rankingMode: parseResult.data.settings.rankingMode ?? existingGame.settings.rankingMode,
+            basePoints: parseResult.data.settings.basePoints ?? existingGame.settings.basePoints,
+            timeBonusEnabled: parseResult.data.settings.timeBonusEnabled ?? existingGame.settings.timeBonusEnabled,
+            timeBonusMultiplier: parseResult.data.settings.timeBonusMultiplier ?? existingGame.settings.timeBonusMultiplier,
+            randomMode: parseResult.data.settings.randomMode ?? existingGame.settings.randomMode ?? false,
           };
         }
 
