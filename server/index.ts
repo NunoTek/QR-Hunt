@@ -101,6 +101,7 @@ async function start() {
   try {
     await fastify.listen({ port, host });
     console.log(`🚀 QR Hunt API server running at http://${host}:${port}`);
+    console.log(`🔐 Admin code: ${process.env.ADMIN_CODE || "admin123"}`);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
