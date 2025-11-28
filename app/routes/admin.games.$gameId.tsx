@@ -3,6 +3,7 @@ import { json, redirect } from "@remix-run/node";
 import { Form, Link, useActionData, useLoaderData, useNavigation, useRevalidator } from "@remix-run/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Chat } from "~/components/Chat";
+import { ClueDisplay } from "~/components/ClueDisplay";
 import { QRCodeGenerator } from "~/components/QRCodeGenerator";
 import { QRIdentifyScanner } from "~/components/QRIdentifyScanner";
 import { ToastProvider, useToast } from "~/components/Toast";
@@ -1234,6 +1235,70 @@ function AdminGameDetailContent() {
             </Form>
           </div>
 
+          {/* Export / Import */}
+          <div className="mt-4 bg-elevated rounded-xl border p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-primary mb-2">Export / Import</h3>
+            <p className="text-secondary text-sm mb-4">Export your game data to a JSON file, or import from a previous export to overwrite settings, nodes, edges, and teams.</p>
+
+            <div className="flex flex-wrap gap-3">
+              <a
+                href={`${data.baseUrl}/api/v1/admin/games/${data.game.id}/export`}
+                className={btnPrimary}
+                download={`${data.game.publicSlug}-export.json`}
+              >
+                <svg className="w-4 h-4 mr-2 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Export Game
+              </a>
+              <label className={`${btnSecondary} cursor-pointer`}>
+                <svg className="w-4 h-4 mr-2 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                Import & Overwrite
+                <input
+                  type="file"
+                  accept=".json"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      const text = await file.text();
+                      const importData = JSON.parse(text);
+                      if (!confirm(`This will overwrite all nodes, edges, and teams with data from "${importData.game?.name || 'unknown'}". Continue?`)) {
+                        e.target.value = "";
+                        return;
+                      }
+                      const response = await fetch(`${data.baseUrl}/api/v1/admin/games/import`, {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                          "x-admin-code": data.adminCode,
+                        },
+                        body: JSON.stringify({ data: importData, overwrite: true }),
+                      });
+                      const result = await response.json();
+                      if (response.ok) {
+                        alert("Import successful! Page will refresh.");
+                        window.location.reload();
+                      } else {
+                        alert(`Import failed: ${result.error}`);
+                      }
+                    } catch (err) {
+                      alert(`Failed to read file: ${err instanceof Error ? err.message : "Unknown error"}`);
+                    }
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+          </div>
+
           {/* Danger Zone */}
           <div className="mt-4 bg-elevated rounded-xl border border-[var(--color-error)]/50 p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-[var(--color-error)] mb-2">Danger Zone</h3>
@@ -1295,69 +1360,32 @@ function AdminGameDetailContent() {
 
             <div className="p-6">
               {/* Player View Simulation */}
-              <div className="bg-secondary rounded-xl p-4 border">
-                <div className="text-center mb-4">
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[var(--color-success)]/15 text-[var(--color-success)] mb-3">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <h4 className="text-xl font-bold text-primary">{previewNode.title}</h4>
-                  <div className="flex items-center justify-center gap-2 mt-1">
-                    <p className="text-sm text-[var(--color-success)]">+{previewNode.points} points!</p>
-                    {previewNode.isStart && <NodeBadge type="start" />}
-                    {previewNode.isEnd && <NodeBadge type="end" />}
-                  </div>
+              <div className="mb-4">
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <span className="text-sm text-[var(--color-success)] font-medium">+{previewNode.points} points</span>
+                  {previewNode.isStart && <NodeBadge type="start" />}
+                  {previewNode.isEnd && <NodeBadge type="end" />}
                 </div>
-
-                <div className="bg-tertiary rounded-lg p-4 mb-4">
-                  {previewNode.contentType === "image" && previewNode.mediaUrl ? (
-                    <img src={previewNode.mediaUrl} alt={previewNode.title} className="w-full rounded-lg" />
-                  ) : previewNode.contentType === "video" && previewNode.mediaUrl ? (
-                    <div className="aspect-video bg-black rounded-lg flex items-center justify-center">
-                      <svg width="48" height="48" viewBox="0 0 24 24" fill="white" className="opacity-80">
-                        <polygon points="5 3 19 12 5 21 5 3" />
-                      </svg>
-                    </div>
-                  ) : previewNode.contentType === "audio" && previewNode.mediaUrl ? (
-                    <div className="flex items-center justify-center gap-3 py-4">
-                      <div className="w-12 h-12 rounded-full bg-[var(--color-primary)]/15 flex items-center justify-center">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2">
-                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
-                        </svg>
-                      </div>
-                      <span className="text-sm text-secondary">Audio content</span>
-                    </div>
-                  ) : previewNode.contentType === "link" && previewNode.mediaUrl ? (
-                    <a href={previewNode.mediaUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[var(--color-primary)] hover:underline">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                        <polyline points="15 3 21 3 21 9" />
-                        <line x1="10" y1="14" x2="21" y2="3" />
-                      </svg>
-                      {previewNode.mediaUrl}
-                    </a>
-                  ) : (
-                    <p className="text-secondary text-sm whitespace-pre-wrap">{previewNode.content || "No content set for this node."}</p>
-                  )}
-                </div>
-
-                {previewNode.passwordRequired && (
-                  <div className="bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/30 rounded-lg p-3 mb-4">
-                    <p className="text-sm text-[var(--color-warning)] flex items-center gap-2">
-                      <span>🔒</span>
-                      Password required to unlock this clue
-                    </p>
-                  </div>
-                )}
+                <ClueDisplay
+                  node={previewNode}
+                  headerText="Clue Content"
+                />
               </div>
+
+              {previewNode.passwordRequired && (
+                <div className="bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/30 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-[var(--color-warning)] flex items-center gap-2">
+                    <span>🔒</span>
+                    Password required to unlock this clue
+                  </p>
+                </div>
+              )}
 
               {/* Admin Note */}
               {previewNode.adminComment && (
-                <div className="mt-4 p-3 bg-[var(--color-info)]/10 border border-[var(--color-info)]/30 rounded-lg">
+                <div className="p-3 bg-[var(--color-info)]/10 border border-[var(--color-info)]/30 rounded-lg">
                   <p className="text-xs text-[var(--color-info)] font-medium mb-1">Admin Note:</p>
-                  <p className="text-sm text-secondary italic">📝 {previewNode.adminComment}</p>
+                  <p className="text-sm text-secondary italic">{previewNode.adminComment}</p>
                 </div>
               )}
             </div>

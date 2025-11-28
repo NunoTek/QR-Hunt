@@ -5,12 +5,18 @@ import fastifyFormBody from "@fastify/formbody";
 import fastifyRateLimit from "@fastify/rate-limit";
 import fastifyStatic from "@fastify/static";
 import { createRequestHandler } from "@remix-run/node";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { initializeDatabase } from "./db/database.js";
 import { registerApiRoutes } from "./api/index.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Read version from package.json
+const packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, "../package.json"), "utf-8"));
+const APP_VERSION = packageJson.version;
+
 const isProduction = process.env.NODE_ENV === "production";
 const trustProxy = process.env.TRUST_PROXY === "true";
 
@@ -140,7 +146,8 @@ async function start() {
 
   try {
     await fastify.listen({ port, host });
-    console.log(`🚀 QR Hunt API server running at http://${host}:${port}`);
+    console.log(`🎯 QR Hunt v${APP_VERSION}`);
+    console.log(`🚀 Server running at http://${host}:${port}`);
     console.log(`🔐 Admin code: ${process.env.ADMIN_CODE || "admin123"}`);
   } catch (err) {
     fastify.log.error(err);

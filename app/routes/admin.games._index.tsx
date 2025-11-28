@@ -1,6 +1,7 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Link, useLoaderData, useNavigate } from "@remix-run/react";
+import { useState } from "react";
 import { getApiUrl } from "~/lib/api";
 
 interface Game {
@@ -13,6 +14,8 @@ interface Game {
 
 interface LoaderData {
   games: Game[];
+  baseUrl: string;
+  adminCode: string;
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -28,18 +31,66 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
 
     if (!response.ok) {
-      return json<LoaderData>({ games: [] });
+      return json<LoaderData>({ games: [], baseUrl, adminCode });
     }
 
     const data = await response.json();
-    return json<LoaderData>({ games: data.games });
+    return json<LoaderData>({ games: data.games, baseUrl, adminCode });
   } catch {
-    return json<LoaderData>({ games: [] });
+    return json<LoaderData>({ games: [], baseUrl, adminCode });
   }
 }
 
 export default function AdminGames() {
   const data = useLoaderData<typeof loader>();
+  const navigate = useNavigate();
+  const [isImporting, setIsImporting] = useState(false);
+
+  const handleImport = async (file: File) => {
+    setIsImporting(true);
+    try {
+      const text = await file.text();
+      const importData = JSON.parse(text);
+
+      const gameName = importData.game?.name || "unknown";
+      const gameSlug = importData.game?.publicSlug || "";
+
+      // Check if game with this slug already exists
+      const existingGame = data.games.find(g => g.publicSlug === gameSlug);
+
+      if (existingGame) {
+        if (!confirm(`A game with slug "${gameSlug}" already exists. Do you want to overwrite it?`)) {
+          setIsImporting(false);
+          return;
+        }
+      } else {
+        if (!confirm(`Import game "${gameName}" with slug "${gameSlug}"?`)) {
+          setIsImporting(false);
+          return;
+        }
+      }
+
+      const response = await fetch(`${data.baseUrl}/api/v1/admin/games/import`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-code": data.adminCode,
+        },
+        body: JSON.stringify({ data: importData, overwrite: !!existingGame }),
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        alert(`${result.message}`);
+        navigate(`/admin/games/${result.game.id}`);
+      } else {
+        alert(`Import failed: ${result.error}`);
+      }
+    } catch (err) {
+      alert(`Failed to read file: ${err instanceof Error ? err.message : "Unknown error"}`);
+    }
+    setIsImporting(false);
+  };
 
   const StatusBadge = ({ status }: { status: string }) => (
     <span
@@ -60,16 +111,39 @@ export default function AdminGames() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-primary text-center sm:text-left">Games</h1>
-        <Link
-          to="/admin/games/new"
-          className="btn btn-primary"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Create Game
-        </Link>
+        <div className="flex gap-2">
+          <label className={`btn btn-secondary cursor-pointer ${isImporting ? "opacity-50 pointer-events-none" : ""}`}>
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            {isImporting ? "Importing..." : "Import Game"}
+            <input
+              type="file"
+              accept=".json"
+              className="hidden"
+              disabled={isImporting}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  handleImport(file);
+                }
+                e.target.value = "";
+              }}
+            />
+          </label>
+          <Link
+            to="/admin/games/new"
+            className="btn btn-primary"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Create Game
+          </Link>
+        </div>
       </div>
 
       {data.games.length === 0 ? (

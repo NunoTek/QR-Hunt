@@ -222,6 +222,13 @@ function getMigrations(): Migration[] {
         CREATE INDEX idx_feedback_created_at ON feedback(created_at);
       `,
     },
+    {
+      name: "005_add_admin_comment_to_nodes",
+      sql: `
+        -- Add admin_comment column to nodes table
+        ALTER TABLE nodes ADD COLUMN admin_comment TEXT;
+      `,
+    },
   ];
 }
 
