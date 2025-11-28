@@ -3,6 +3,7 @@ import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useNavigation, useSearchParams } from "@remix-run/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Spinner } from "~/components/Loading";
+import { Version } from "~/components/Version";
 import { getApiUrl } from "~/lib/api";
 
 export const meta: MetaFunction = () => {
@@ -315,6 +316,7 @@ export default function JoinGame() {
           </a>
         </div>
       </div>
+      <Version />
     </div>
   );
 }

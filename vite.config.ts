@@ -2,6 +2,7 @@ import { vitePlugin as remix } from "@remix-run/dev";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import basicSsl from "@vitejs/plugin-basic-ssl";
+import packageJson from "./package.json";
 
 declare module "@remix-run/node" {
   interface Future {
@@ -44,5 +45,8 @@ export default defineConfig({
   },
   build: {
     target: "ES2022",
+  },
+  define: {
+    __APP_VERSION__: JSON.stringify(packageJson.version),
   },
 });
