@@ -1,6 +1,8 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, Link, useActionData, useLoaderData, useNavigation, useRevalidator } from "@remix-run/react";
+import JSZip from "jszip";
+import QRCode from "qrcode";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Chat } from "~/components/Chat";
 import { ClueDisplay } from "~/components/ClueDisplay";
@@ -425,9 +427,101 @@ function AdminGameDetailContent() {
   const [feedbackList, setFeedbackList] = useState<Feedback[]>([]);
   const [feedbackStats, setFeedbackStats] = useState<{ averageRating: number | null; count: number }>({ averageRating: null, count: 0 });
   const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [downloadingQRCodes, setDownloadingQRCodes] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0 });
   const deleteTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const lastActionDataRef = useRef<typeof actionData | null>(null);
   const feedbackLoadedRef = useRef(false);
+
+  // Function to generate QR code as PNG data URL with optional logo
+  const generateQRCodePNG = useCallback(async (url: string, logoUrl?: string | null): Promise<string> => {
+    const size = 512; // High resolution
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Failed to get canvas context");
+
+    // Generate QR code to canvas
+    await QRCode.toCanvas(canvas, url, {
+      width: size,
+      margin: 2,
+      color: { dark: "#000000", light: "#ffffff" },
+      errorCorrectionLevel: "H", // High for logo support
+    });
+
+    // Add logo if specified
+    if (logoUrl) {
+      await new Promise<void>((resolve, reject) => {
+        const logo = new Image();
+        logo.crossOrigin = "anonymous";
+        logo.onload = () => {
+          const logoSize = size * 0.2; // 20% of QR code size
+          const logoX = (size - logoSize) / 2;
+          const logoY = (size - logoSize) / 2;
+
+          // Draw white background for logo
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(logoX - 4, logoY - 4, logoSize + 8, logoSize + 8);
+
+          // Draw logo
+          ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+          resolve();
+        };
+        logo.onerror = () => reject(new Error("Failed to load logo"));
+        logo.src = logoUrl;
+      });
+    }
+
+    return canvas.toDataURL("image/png");
+  }, []);
+
+  // Function to download all QR codes as a ZIP file
+  const downloadAllQRCodes = useCallback(async () => {
+    if (data.qrCodes.length === 0) {
+      toast.error("No QR codes to download");
+      return;
+    }
+
+    setDownloadingQRCodes(true);
+    setDownloadProgress({ current: 0, total: data.qrCodes.length });
+
+    try {
+      const zip = new JSZip();
+      const logoUrl = data.game.logoUrl;
+
+      for (let i = 0; i < data.qrCodes.length; i++) {
+        const qr = data.qrCodes[i];
+        setDownloadProgress({ current: i + 1, total: data.qrCodes.length });
+
+        try {
+          const pngDataUrl = await generateQRCodePNG(qr.url, logoUrl);
+          // Convert data URL to blob
+          const base64Data = pngDataUrl.split(",")[1];
+          const fileName = `qr-${qr.title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")}.png`;
+          zip.file(fileName, base64Data, { base64: true });
+        } catch (err) {
+          console.error(`Failed to generate QR for ${qr.title}:`, err);
+        }
+      }
+
+      // Generate and download ZIP
+      const blob = await zip.generateAsync({ type: "blob" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `${data.game.publicSlug}-qr-codes.zip`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+
+      toast.success(`Downloaded ${data.qrCodes.length} QR codes`);
+    } catch (err) {
+      console.error("Failed to create ZIP:", err);
+      toast.error("Failed to download QR codes");
+    } finally {
+      setDownloadingQRCodes(false);
+      setDownloadProgress({ current: 0, total: 0 });
+    }
+  }, [data.qrCodes, data.game.logoUrl, data.game.publicSlug, generateQRCodePNG, toast]);
 
   // Load feedback when switching to feedback tab
   useEffect(() => {
@@ -995,16 +1089,42 @@ function AdminGameDetailContent() {
               <h3 className="text-lg font-semibold text-primary">QR Codes</h3>
               <p className="text-secondary text-sm mt-1">Generate, customize, and download QR codes for each node.</p>
             </div>
-            <button
-              onClick={() => setShowQRIdentifyScanner(true)}
-              className={`${btnSecondary} inline-flex items-center gap-2`}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                <circle cx="12" cy="13" r="4" />
-              </svg>
-              Scan to Identify
-            </button>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={downloadAllQRCodes}
+                disabled={downloadingQRCodes || data.qrCodes.length === 0}
+                className={`${btnPrimary} inline-flex items-center gap-2`}
+              >
+                {downloadingQRCodes ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    {downloadProgress.current}/{downloadProgress.total}
+                  </>
+                ) : (
+                  <>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Download All (ZIP)
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => setShowQRIdentifyScanner(true)}
+                className={`${btnSecondary} inline-flex items-center gap-2`}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+                Scan to Identify
+              </button>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">

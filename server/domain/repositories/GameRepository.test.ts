@@ -164,6 +164,7 @@ describe("GameRepository", () => {
         basePoints: 200,
         timeBonusEnabled: false,
         timeBonusMultiplier: 2.0,
+        randomMode: false,
       };
 
       const updated = gameRepository.update(game.id, { settings: newSettings });
