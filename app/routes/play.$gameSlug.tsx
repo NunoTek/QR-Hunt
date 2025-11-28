@@ -168,8 +168,15 @@ function PlayGameContent() {
   const [isAutoScanning, setIsAutoScanning] = useState(false);
   const [showSharePanel, setShowSharePanel] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackRating, setFeedbackRating] = useState(0);
+  const [feedbackComment, setFeedbackComment] = useState("");
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [existingFeedback, setExistingFeedback] = useState<{ rating: number; comment: string | null } | null>(null);
   const toast = useToast();
   const soundPlayedRef = useRef(false);
+  const feedbackLoadedRef = useRef(false);
 
   // Generate share link
   const shareLink = `${data.baseUrl}/join?game=${data.gameSlug}`;
@@ -199,6 +206,65 @@ function PlayGameContent() {
     } else {
       // Fallback: copy link
       copyToClipboard(shareLink, "link");
+    }
+  };
+
+  // Load existing feedback on mount
+  useEffect(() => {
+    if (!feedbackLoadedRef.current && data.token) {
+      feedbackLoadedRef.current = true;
+      fetch("/api/v1/feedback", {
+        headers: { Authorization: `Bearer ${data.token}` },
+      })
+        .then((res) => res.json())
+        .then((result) => {
+          if (result.feedback) {
+            setExistingFeedback(result.feedback);
+            setFeedbackRating(result.feedback.rating);
+            setFeedbackComment(result.feedback.comment || "");
+            setFeedbackSubmitted(true);
+          }
+        })
+        .catch(() => {
+          // Ignore errors loading feedback
+        });
+    }
+  }, [data.token]);
+
+  // Submit feedback
+  const submitFeedback = async () => {
+    if (feedbackRating === 0) {
+      toast.error("Please select a rating");
+      return;
+    }
+
+    setIsSubmittingFeedback(true);
+    try {
+      const response = await fetch("/api/v1/feedback", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${data.token}`,
+        },
+        body: JSON.stringify({
+          rating: feedbackRating,
+          comment: feedbackComment || undefined,
+        }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setFeedbackSubmitted(true);
+        setExistingFeedback({ rating: feedbackRating, comment: feedbackComment || null });
+        toast.success(existingFeedback ? "Feedback updated!" : "Thank you for your feedback!");
+        setShowFeedback(false);
+      } else {
+        toast.error(result.error || "Failed to submit feedback");
+      }
+    } catch {
+      toast.error("Failed to submit feedback");
+    } finally {
+      setIsSubmittingFeedback(false);
     }
   };
 
@@ -308,6 +374,77 @@ function PlayGameContent() {
           View Leaderboard
         </Link>
 
+        <button
+          type="button"
+          onClick={() => setShowFeedback(true)}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 text-secondary border hover:border-strong rounded-lg transition-colors mt-4"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>
+          {feedbackSubmitted ? "Update Feedback" : "Leave Feedback"}
+        </button>
+
+        {/* Feedback Modal */}
+        {showFeedback && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-elevated rounded-lg shadow-xl max-w-md w-full p-6 animate-fade-in">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-primary">Rate Your Experience</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowFeedback(false)}
+                  className="text-muted hover:text-primary transition-colors"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="flex justify-center gap-2 mb-4">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setFeedbackRating(star)}
+                    className="text-4xl transition-transform hover:scale-110"
+                  >
+                    {star <= feedbackRating ? "⭐" : "☆"}
+                  </button>
+                ))}
+              </div>
+
+              <textarea
+                value={feedbackComment}
+                onChange={(e) => setFeedbackComment(e.target.value)}
+                placeholder="Share your thoughts (optional)"
+                className="w-full p-3 border rounded-lg bg-secondary text-primary resize-none h-24 mb-4"
+                maxLength={1000}
+              />
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowFeedback(false)}
+                  className="flex-1 px-4 py-2 border rounded-lg text-secondary hover:border-strong transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={submitFeedback}
+                  disabled={isSubmittingFeedback || feedbackRating === 0}
+                  className="flex-1 px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:opacity-90 transition-colors disabled:opacity-50"
+                >
+                  {isSubmittingFeedback ? "Submitting..." : feedbackSubmitted ? "Update" : "Submit"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <style>{`
           @keyframes confetti-fall {
             0% { transform: translateY(0) rotate(0deg); opacity: 1; }
@@ -351,6 +488,77 @@ function PlayGameContent() {
           </svg>
           View Leaderboard
         </Link>
+
+        <button
+          type="button"
+          onClick={() => setShowFeedback(true)}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2 text-secondary border hover:border-strong rounded-lg transition-colors mt-4"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>
+          {feedbackSubmitted ? "Update Feedback" : "Leave Feedback"}
+        </button>
+
+        {/* Feedback Modal */}
+        {showFeedback && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-elevated rounded-lg shadow-xl max-w-md w-full p-6 animate-fade-in">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-primary">Rate Your Experience</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowFeedback(false)}
+                  className="text-muted hover:text-primary transition-colors"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="flex justify-center gap-2 mb-4">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setFeedbackRating(star)}
+                    className="text-4xl transition-transform hover:scale-110"
+                  >
+                    {star <= feedbackRating ? "⭐" : "☆"}
+                  </button>
+                ))}
+              </div>
+
+              <textarea
+                value={feedbackComment}
+                onChange={(e) => setFeedbackComment(e.target.value)}
+                placeholder="Share your thoughts (optional)"
+                className="w-full p-3 border rounded-lg bg-secondary text-primary resize-none h-24 mb-4"
+                maxLength={1000}
+              />
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowFeedback(false)}
+                  className="flex-1 px-4 py-2 border rounded-lg text-secondary hover:border-strong transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={submitFeedback}
+                  disabled={isSubmittingFeedback || feedbackRating === 0}
+                  className="flex-1 px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:opacity-90 transition-colors disabled:opacity-50"
+                >
+                  {isSubmittingFeedback ? "Submitting..." : feedbackSubmitted ? "Update" : "Submit"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -651,6 +859,78 @@ function PlayGameContent() {
           </div>
         )}
       </div>
+
+      {/* Feedback Button - Fixed at bottom left */}
+      <button
+        type="button"
+        onClick={() => setShowFeedback(true)}
+        className="fixed bottom-4 left-4 z-40 inline-flex items-center justify-center gap-2 px-4 py-2 bg-elevated text-secondary border hover:border-strong rounded-lg transition-colors shadow-lg"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+        </svg>
+        {feedbackSubmitted ? "Update Feedback" : "Feedback"}
+      </button>
+
+      {/* Feedback Modal */}
+      {showFeedback && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-elevated rounded-lg shadow-xl max-w-md w-full p-6 animate-fade-in">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-primary">Rate Your Experience</h3>
+              <button
+                type="button"
+                onClick={() => setShowFeedback(false)}
+                className="text-muted hover:text-primary transition-colors"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex justify-center gap-2 mb-4">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onClick={() => setFeedbackRating(star)}
+                  className="text-4xl transition-transform hover:scale-110"
+                >
+                  {star <= feedbackRating ? "⭐" : "☆"}
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              value={feedbackComment}
+              onChange={(e) => setFeedbackComment(e.target.value)}
+              placeholder="Share your thoughts (optional)"
+              className="w-full p-3 border rounded-lg bg-secondary text-primary resize-none h-24 mb-4"
+              maxLength={1000}
+            />
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowFeedback(false)}
+                className="flex-1 px-4 py-2 border rounded-lg text-secondary hover:border-strong transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={submitFeedback}
+                disabled={isSubmittingFeedback || feedbackRating === 0}
+                className="flex-1 px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:opacity-90 transition-colors disabled:opacity-50"
+              >
+                {isSubmittingFeedback ? "Submitting..." : feedbackSubmitted ? "Update" : "Submit"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Chat Component */}
       <Chat

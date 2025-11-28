@@ -114,3 +114,13 @@ export interface ChatMessage {
   message: string;
   createdAt: string;
 }
+
+export interface Feedback {
+  id: string;
+  gameId: string;
+  teamId: string;
+  teamName: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+}

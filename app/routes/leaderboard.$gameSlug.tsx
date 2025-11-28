@@ -35,6 +35,20 @@ interface LeaderboardData {
   updatedAt: string;
 }
 
+interface FeedbackEntry {
+  id: string;
+  teamName: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+}
+
+interface FeedbackData {
+  feedback: FeedbackEntry[];
+  averageRating: number | null;
+  count: number;
+}
+
 interface LoaderData {
   game: {
     id: string;
@@ -73,8 +87,30 @@ export default function Leaderboard() {
   const [isConnected, setIsConnected] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastScan, setLastScan] = useState<{ teamName: string; points: number } | null>(null);
+  const [feedbackData, setFeedbackData] = useState<FeedbackData | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const feedbackLoadedRef = useRef(false);
   const toast = useToast();
+
+  // Load feedback when game is completed
+  useEffect(() => {
+    if (!feedbackLoadedRef.current && data.game.status === "completed") {
+      feedbackLoadedRef.current = true;
+      fetch(`/api/v1/feedback/game/${data.game.slug}`)
+        .then((res) => res.json())
+        .then((result) => {
+          setFeedbackData(result);
+          // Auto-show feedback section if there's any feedback
+          if (result.count > 0) {
+            setShowFeedback(true);
+          }
+        })
+        .catch(() => {
+          // Ignore errors
+        });
+    }
+  }, [data.game.slug, data.game.status]);
 
   const connectSSE = useCallback(() => {
     if (data.game.status !== "active") return;
@@ -282,6 +318,62 @@ export default function Leaderboard() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Feedback Section - Only show for completed games */}
+        {data.game.status === "completed" && feedbackData && feedbackData.count > 0 && (
+          <div className="mt-8">
+            <button
+              type="button"
+              onClick={() => setShowFeedback(!showFeedback)}
+              className="w-full flex items-center justify-between p-4 bg-elevated rounded-lg border hover:border-strong transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">⭐</span>
+                <div className="text-left">
+                  <span className="font-semibold text-primary">Team Feedback</span>
+                  <div className="flex items-center gap-2 text-sm text-muted">
+                    <span>{feedbackData.averageRating?.toFixed(1) || "N/A"} average</span>
+                    <span>•</span>
+                    <span>{feedbackData.count} {feedbackData.count === 1 ? "review" : "reviews"}</span>
+                  </div>
+                </div>
+              </div>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className={`text-muted transition-transform ${showFeedback ? "rotate-180" : ""}`}
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+
+            {showFeedback && (
+              <div className="mt-4 space-y-3">
+                {feedbackData.feedback.map((fb) => (
+                  <div key={fb.id} className="p-4 bg-elevated rounded-lg border">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-semibold text-primary">{fb.teamName}</span>
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <span key={star} className="text-sm">
+                            {star <= fb.rating ? "⭐" : "☆"}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    {fb.comment && (
+                      <p className="text-secondary text-sm">{fb.comment}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

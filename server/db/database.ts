@@ -202,6 +202,26 @@ function getMigrations(): Migration[] {
         CREATE INDEX idx_chat_messages_created_at ON chat_messages(created_at);
       `,
     },
+    {
+      name: "004_add_feedback",
+      sql: `
+        -- Feedback table
+        CREATE TABLE feedback (
+          id TEXT PRIMARY KEY,
+          game_id TEXT NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+          team_id TEXT NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+          team_name TEXT NOT NULL,
+          rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+          comment TEXT,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(game_id, team_id)
+        );
+
+        CREATE INDEX idx_feedback_game_id ON feedback(game_id);
+        CREATE INDEX idx_feedback_team_id ON feedback(team_id);
+        CREATE INDEX idx_feedback_created_at ON feedback(created_at);
+      `,
+    },
   ];
 }
 

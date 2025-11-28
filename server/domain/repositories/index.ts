@@ -5,3 +5,4 @@ export { edgeRepository, EdgeRepository } from "./EdgeRepository.js";
 export { scanRepository, ScanRepository } from "./ScanRepository.js";
 export { sessionRepository, SessionRepository } from "./SessionRepository.js";
 export { chatRepository, ChatRepository } from "./ChatRepository.js";
+export { feedbackRepository, FeedbackRepository } from "./FeedbackRepository.js";

@@ -1,7 +1,7 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, Link, Outlet, useActionData, useLoaderData, useLocation, useNavigation } from "@remix-run/react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useToast } from "~/components/Toast";
 import { Version } from "~/components/Version";
 
@@ -60,12 +60,16 @@ function AdminLogin() {
   const actionData = useActionData<{ error?: string }>();
   const isSubmitting = navigation.state === "submitting";
   const toast = useToast();
+  const lastActionDataRef = useRef<typeof actionData | null>(null);
 
   useEffect(() => {
+    if (!actionData || actionData === lastActionDataRef.current) return;
+    lastActionDataRef.current = actionData;
+
     if (actionData?.error) {
       toast.error(actionData.error);
     }
-  }, [actionData?.error, toast]);
+  }, [actionData, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-bg-primary via-bg-secondary to-bg-primary">
