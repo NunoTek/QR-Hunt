@@ -81,7 +81,7 @@ export function Skeleton({ className = "", width, height }: SkeletonProps) {
 
 export function CardSkeleton() {
   return (
-    <div className="p-5 sm:p-6 bg-elevated rounded-lg border border-border shadow-sm">
+    <div className="p-5 sm:p-6 bg-elevated rounded-lg border shadow-sm">
       <Skeleton height="1.5rem" width="60%" className="mb-4" />
       <Skeleton height="1rem" width="100%" className="mb-2" />
       <Skeleton height="1rem" width="80%" className="mb-2" />

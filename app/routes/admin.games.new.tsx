@@ -77,7 +77,7 @@ export default function NewGame() {
       </div>
 
       {/* Form Card */}
-      <div className="bg-elevated rounded-xl border border-border p-6 max-w-xl shadow-sm">
+      <div className="bg-elevated rounded-xl border p-6 shadow-sm">
         {actionData?.error && (
           <div className="flex items-center gap-3 bg-[var(--color-error)]/10 border border-[var(--color-error)]/30 text-[var(--color-error)] px-4 py-3 rounded-xl mb-6">
             <span className="text-lg">⚠</span>
@@ -95,7 +95,7 @@ export default function NewGame() {
               type="text"
               id="name"
               name="name"
-              className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
+              className="w-full px-4 py-3 bg-secondary border rounded-xl text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
               placeholder="e.g., Summer Festival Hunt"
               required
             />
@@ -113,7 +113,7 @@ export default function NewGame() {
               type="text"
               id="publicSlug"
               name="publicSlug"
-              className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
+              className="w-full px-4 py-3 bg-secondary border rounded-xl text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
               placeholder="e.g., summer-2024"
               pattern="[a-z0-9\-]+"
               required
@@ -134,7 +134,7 @@ export default function NewGame() {
             <select
               id="rankingMode"
               name="rankingMode"
-              className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-primary focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
+              className="w-full px-4 py-3 bg-secondary border rounded-xl text-primary focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
             >
               <option value="points">By Points (fastest teams get more points)</option>
               <option value="nodes">By Nodes Found (most clues wins)</option>
@@ -151,7 +151,7 @@ export default function NewGame() {
               type="url"
               id="logoUrl"
               name="logoUrl"
-              className="w-full px-4 py-3 bg-secondary border border-border rounded-xl text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
+              className="w-full px-4 py-3 bg-secondary border rounded-xl text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
               placeholder="https://example.com/logo.png"
             />
             <p className="mt-2 text-xs text-muted">
@@ -170,7 +170,7 @@ export default function NewGame() {
             </button>
             <Link
               to="/admin/games"
-              className="flex-1 sm:flex-none px-6 py-3 text-center text-secondary border border-border hover:border-strong rounded-xl transition-colors"
+              className="flex-1 sm:flex-none px-6 py-3 text-center text-secondary border hover:border-strong rounded-xl transition-colors"
             >
               Cancel
             </Link>

@@ -80,22 +80,22 @@ export default function AdminDashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
-        <div className="bg-elevated rounded-xl p-5 border border-border shadow-sm">
+        <div className="bg-elevated rounded-xl p-5 border shadow-sm">
           <p className="text-muted text-sm mb-1">Total Games</p>
           <p className="text-3xl sm:text-4xl font-bold text-primary">{data.stats.totalGames}</p>
         </div>
-        <div className="bg-elevated rounded-xl p-5 border border-border shadow-sm">
+        <div className="bg-elevated rounded-xl p-5 border shadow-sm">
           <p className="text-muted text-sm mb-1">Active Games</p>
           <p className="text-3xl sm:text-4xl font-bold text-[var(--color-success)]">{data.stats.activeGames}</p>
         </div>
-        <div className="bg-elevated rounded-xl p-5 border border-border shadow-sm">
+        <div className="bg-elevated rounded-xl p-5 border shadow-sm">
           <p className="text-muted text-sm mb-1">Completed</p>
           <p className="text-3xl sm:text-4xl font-bold text-primary">{data.stats.completedGames}</p>
         </div>
       </div>
 
       {/* Recent Games Table */}
-      <div className="bg-elevated rounded-xl border border-border overflow-hidden shadow-sm">
+      <div className="bg-elevated rounded-xl border overflow-hidden shadow-sm">
         <div className="p-4 sm:p-6 border-b border-border">
           <h2 className="text-lg sm:text-xl font-semibold text-primary">Recent Games</h2>
         </div>

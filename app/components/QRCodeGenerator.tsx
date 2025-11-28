@@ -184,7 +184,7 @@ export function QRCodeGenerator({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 p-4 sm:p-6">
           <div className="flex flex-col items-center text-center">
             <h4 className="m-0 mb-3 sm:mb-4 text-sm sm:text-base font-medium text-primary">{title}</h4>
-            <canvas ref={canvasRef} width={size} height={size} className="border border-border rounded bg-white max-w-full h-auto" />
+            <canvas ref={canvasRef} width={size} height={size} className="border rounded bg-white max-w-full h-auto" />
             <p className="mt-3 text-xs text-muted break-all max-w-full">{url}</p>
           </div>
 
@@ -196,13 +196,13 @@ export function QRCodeGenerator({
                   type="color"
                   value={foregroundColor}
                   onChange={(e) => setForegroundColor(e.target.value)}
-                  className="w-10 h-10 p-0.5 border border-border rounded cursor-pointer"
+                  className="w-10 h-10 p-0.5 border rounded cursor-pointer"
                 />
                 <input
                   type="text"
                   value={foregroundColor}
                   onChange={(e) => setForegroundColor(e.target.value)}
-                  className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent min-h-[2.75rem] sm:min-h-[3rem]"
+                  className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base bg-[var(--bg-secondary)] text-[var(--text-primary)] border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent min-h-[2.75rem] sm:min-h-[3rem]"
                 />
               </div>
             </div>
@@ -214,13 +214,13 @@ export function QRCodeGenerator({
                   type="color"
                   value={backgroundColor}
                   onChange={(e) => setBackgroundColor(e.target.value)}
-                  className="w-10 h-10 p-0.5 border border-border rounded cursor-pointer"
+                  className="w-10 h-10 p-0.5 border rounded cursor-pointer"
                 />
                 <input
                   type="text"
                   value={backgroundColor}
                   onChange={(e) => setBackgroundColor(e.target.value)}
-                  className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent min-h-[2.75rem] sm:min-h-[3rem]"
+                  className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base bg-[var(--bg-secondary)] text-[var(--text-primary)] border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent min-h-[2.75rem] sm:min-h-[3rem]"
                 />
               </div>
             </div>
@@ -231,7 +231,7 @@ export function QRCodeGenerator({
                 type="url"
                 value={logoUrl}
                 onChange={(e) => setLogoUrl(e.target.value)}
-                className="px-3 sm:px-4 py-2 text-sm sm:text-base bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent min-h-[2.75rem] sm:min-h-[3rem]"
+                className="px-3 sm:px-4 py-2 text-sm sm:text-base bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent min-h-[2.75rem] sm:min-h-[3rem]"
                 placeholder="https://example.com/logo.png"
               />
             </div>
@@ -255,7 +255,7 @@ export function QRCodeGenerator({
               <select
                 value={errorCorrectionLevel}
                 onChange={(e) => setErrorCorrectionLevel(e.target.value as "L" | "M" | "Q" | "H")}
-                className="px-3 sm:px-4 py-2 text-sm sm:text-base bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent cursor-pointer min-h-[2.75rem] sm:min-h-[3rem]"
+                className="px-3 sm:px-4 py-2 text-sm sm:text-base bg-[var(--bg-secondary)] text-[var(--text-primary)] border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent cursor-pointer min-h-[2.75rem] sm:min-h-[3rem]"
               >
                 <option value="L">Low (7%)</option>
                 <option value="M">Medium (15%)</option>
@@ -270,13 +270,13 @@ export function QRCodeGenerator({
           <button onClick={() => downloadQRCode("png")} className="flex-1 min-w-[110px] sm:min-w-[120px] inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors min-h-[2.75rem] sm:min-h-[3rem]">
             Download PNG
           </button>
-          <button onClick={() => downloadQRCode("svg")} className="flex-1 min-w-[110px] sm:min-w-[120px] inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium text-primary bg-tertiary rounded-lg hover:bg-tertiary/80 transition-colors border border-border min-h-[2.75rem] sm:min-h-[3rem]">
+          <button onClick={() => downloadQRCode("svg")} className="flex-1 min-w-[110px] sm:min-w-[120px] inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium text-primary bg-tertiary rounded-lg hover:bg-tertiary/80 transition-colors border min-h-[2.75rem] sm:min-h-[3rem]">
             Download SVG
           </button>
-          <button onClick={printQRCode} className="flex-1 min-w-[110px] sm:min-w-[120px] inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium text-primary bg-tertiary rounded-lg hover:bg-tertiary/80 transition-colors border border-border min-h-[2.75rem] sm:min-h-[3rem]">
+          <button onClick={printQRCode} className="flex-1 min-w-[110px] sm:min-w-[120px] inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium text-primary bg-tertiary rounded-lg hover:bg-tertiary/80 transition-colors border min-h-[2.75rem] sm:min-h-[3rem]">
             Print
           </button>
-          <button onClick={copyUrl} className="flex-1 min-w-[110px] sm:min-w-[120px] inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium text-primary bg-tertiary rounded-lg hover:bg-tertiary/80 transition-colors border border-border min-h-[2.75rem] sm:min-h-[3rem]">
+          <button onClick={copyUrl} className="flex-1 min-w-[110px] sm:min-w-[120px] inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium text-primary bg-tertiary rounded-lg hover:bg-tertiary/80 transition-colors border min-h-[2.75rem] sm:min-h-[3rem]">
             Copy URL
           </button>
         </div>

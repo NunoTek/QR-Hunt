@@ -73,7 +73,7 @@ export default function AdminGames() {
       </div>
 
       {data.games.length === 0 ? (
-        <div className="bg-elevated rounded-xl border border-border p-8 text-center shadow-sm">
+        <div className="bg-elevated rounded-xl border p-8 text-center shadow-sm">
           <p className="text-muted mb-4">No games yet.</p>
           <Link
             to="/admin/games/new"
@@ -85,7 +85,7 @@ export default function AdminGames() {
       ) : (
         <>
           {/* Desktop Table View */}
-          <div className="hidden md:block bg-elevated rounded-xl border border-border overflow-hidden shadow-sm">
+          <div className="hidden md:block bg-elevated rounded-xl border overflow-hidden shadow-sm">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
@@ -118,7 +118,7 @@ export default function AdminGames() {
                         <Link
                           to={`/leaderboard/${game.publicSlug}`}
                           target="_blank"
-                          className="px-3 py-1.5 text-sm text-secondary hover:text-primary border border-border hover:border-strong rounded-lg transition-colors"
+                          className="px-3 py-1.5 text-sm text-secondary hover:text-primary border hover:border-strong rounded-lg transition-colors"
                         >
                           Leaderboard
                         </Link>
@@ -133,7 +133,7 @@ export default function AdminGames() {
           {/* Mobile Card View */}
           <div className="md:hidden space-y-4">
             {data.games.map((game) => (
-              <div key={game.id} className="bg-elevated rounded-xl border border-border p-4 shadow-sm">
+              <div key={game.id} className="bg-elevated rounded-xl border p-4 shadow-sm">
                 <div className="flex justify-between items-start mb-3">
                   <h3 className="text-lg font-semibold text-primary">{game.name}</h3>
                   <StatusBadge status={game.status} />
@@ -152,7 +152,7 @@ export default function AdminGames() {
                   <Link
                     to={`/leaderboard/${game.publicSlug}`}
                     target="_blank"
-                    className="flex-1 text-center px-4 py-2 text-secondary border border-border hover:border-strong rounded-lg transition-colors"
+                    className="flex-1 text-center px-4 py-2 text-secondary border hover:border-strong rounded-lg transition-colors"
                   >
                     Leaderboard
                   </Link>

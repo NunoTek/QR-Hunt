@@ -348,7 +348,7 @@ const NodeBadge = ({ type }: { type: "start" | "end" }) => (
 
 const inputClasses = "w-full px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent text-sm";
 const btnPrimary = "px-4 py-2 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white font-medium rounded-lg hover:opacity-90 transition-all text-sm disabled:opacity-50 shadow-sm";
-const btnSecondary = "px-4 py-2 text-secondary border border-border hover:border-strong rounded-lg transition-colors text-sm disabled:opacity-50";
+const btnSecondary = "px-4 py-2 text-secondary border hover:border-strong rounded-lg transition-colors text-sm disabled:opacity-50";
 const btnDanger = "px-4 py-2 bg-[var(--color-error)]/15 text-[var(--color-error)] border border-[var(--color-error)]/30 hover:bg-[var(--color-error)]/25 rounded-lg transition-colors text-sm disabled:opacity-50";
 const btnSmall = "px-2 py-1 text-xs rounded";
 
@@ -448,7 +448,7 @@ function AdminGameDetailContent() {
               <img
                 src={data.game.logoUrl}
                 alt={`${data.game.name} logo`}
-                className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover border border-border"
+                className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover"
               />
             )}
             <div>
@@ -535,7 +535,7 @@ function AdminGameDetailContent() {
       {activeTab === "nodes" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Nodes Table */}
-          <div className="lg:col-span-2 bg-elevated rounded-xl border border-border overflow-hidden shadow-sm">
+          <div className="lg:col-span-2 bg-elevated rounded-xl border overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -575,7 +575,7 @@ function AdminGameDetailContent() {
           </div>
 
           {/* Add/Edit Node Form */}
-          <div className="bg-elevated rounded-xl border border-border p-5 shadow-sm">
+          <div className="bg-elevated rounded-xl border p-5 shadow-sm">
             <h3 className="text-lg font-semibold text-primary mb-4">{editingNode ? "Edit Node" : "Add Node"}</h3>
             <Form method="post" onSubmit={() => setEditingNode(null)} className="space-y-4">
               <input type="hidden" name="_action" value={editingNode ? "updateNode" : "createNode"} />
@@ -645,7 +645,7 @@ function AdminGameDetailContent() {
       {/* Edges Tab */}
       {activeTab === "edges" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-elevated rounded-xl border border-border overflow-hidden shadow-sm">
+          <div className="lg:col-span-2 bg-elevated rounded-xl border overflow-hidden shadow-sm">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
@@ -680,7 +680,7 @@ function AdminGameDetailContent() {
             </table>
           </div>
 
-          <div className="bg-elevated rounded-xl border border-border p-5 shadow-sm">
+          <div className="bg-elevated rounded-xl border p-5 shadow-sm">
             <h3 className="text-lg font-semibold text-primary mb-4">{editingEdge ? "Edit Edge" : "Add Edge"}</h3>
             <Form method="post" onSubmit={() => setEditingEdge(null)} className="space-y-4">
               <input type="hidden" name="_action" value={editingEdge ? "updateEdge" : "createEdge"} />
@@ -714,7 +714,7 @@ function AdminGameDetailContent() {
       {/* Teams Tab */}
       {activeTab === "teams" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-elevated rounded-xl border border-border overflow-hidden shadow-sm">
+          <div className="lg:col-span-2 bg-elevated rounded-xl border overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -758,7 +758,7 @@ function AdminGameDetailContent() {
             </div>
           </div>
 
-          <div className="bg-elevated rounded-xl border border-border p-5 shadow-sm">
+          <div className="bg-elevated rounded-xl border p-5 shadow-sm">
             <h3 className="text-lg font-semibold text-primary mb-4">{editingTeam ? "Edit Team" : "Add Team"}</h3>
             <Form method="post" onSubmit={() => { setEditingTeam(null); setTeamLogoUrl(""); }} className="space-y-4">
               <input type="hidden" name="_action" value={editingTeam ? "updateTeam" : "createTeam"} />
@@ -811,7 +811,7 @@ function AdminGameDetailContent() {
 
       {/* QR Codes Tab */}
       {activeTab === "qrcodes" && (
-        <div className="bg-elevated rounded-xl border border-border overflow-hidden shadow-sm">
+        <div className="bg-elevated rounded-xl border overflow-hidden shadow-sm">
           <div className="p-4 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <h3 className="text-lg font-semibold text-primary">QR Codes</h3>
@@ -874,12 +874,12 @@ function AdminGameDetailContent() {
 
       {/* Settings Tab */}
       {activeTab === "settings" && (
-        <div className="bg-elevated rounded-xl border border-border p-6 max-w-xl shadow-sm">
+        <div className="bg-elevated rounded-xl border p-6 shadow-sm">
           <h3 className="text-lg font-semibold text-primary mb-2">Game Logo</h3>
           <p className="text-secondary text-sm mb-4">Set a logo for your game. This will be used as the default logo for QR codes.</p>
 
           {data.game.logoUrl && (
-            <img src={data.game.logoUrl} alt="Game Logo" className="max-w-[150px] max-h-[150px] rounded-lg border border-border mb-4" />
+            <img src={data.game.logoUrl} alt="Game Logo" className="max-w-[150px] max-h-[150px] rounded-lg border mb-4" />
           )}
 
           <Form method="post" className="space-y-4">

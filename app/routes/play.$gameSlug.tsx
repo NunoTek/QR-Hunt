@@ -270,7 +270,7 @@ function PlayGameContent() {
         <p className="text-xl text-center text-secondary mb-4">Congratulations, {data.teamName}!</p>
         <p className="mt-4 text-muted">You finished first!</p>
 
-        <div className="p-6 bg-elevated rounded-lg border border-border shadow-sm mt-6 max-w-[300px] w-full">
+        <div className="p-6 bg-elevated rounded-lg border shadow-sm mt-6 max-w-[300px] w-full">
           <div className="flex items-center justify-center gap-8">
             <div className="flex flex-col items-center">
               <span className="text-3xl font-extrabold text-[var(--color-primary)]">{data.nodesFound}/{data.totalNodes}</span>
@@ -314,7 +314,7 @@ function PlayGameContent() {
         <h1 className="text-4xl sm:text-5xl font-extrabold text-center mb-2 text-[var(--color-primary)]">Game Complete</h1>
         <p className="text-xl text-center text-secondary">Well played, {data.teamName}!</p>
 
-        <div className="p-6 bg-elevated rounded-lg border border-border shadow-sm mt-6 max-w-[300px] w-full">
+        <div className="p-6 bg-elevated rounded-lg border shadow-sm mt-6 max-w-[300px] w-full">
           <div className="flex items-center justify-center gap-8">
             <div className="flex flex-col items-center">
               <span className="text-3xl font-extrabold text-[var(--color-primary)]">{data.nodesFound}/{data.totalNodes}</span>
@@ -407,7 +407,7 @@ function PlayGameContent() {
           </div>
         ) : data.startingClue ? (
           <div className="mb-6">
-            <div className="p-6 bg-elevated rounded-lg border border-border shadow-sm">
+            <div className="p-6 bg-elevated rounded-lg border shadow-sm">
               <div className="flex items-center gap-4 mb-5">
                 <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[var(--color-success)] to-emerald-700 text-white flex-shrink-0">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -438,7 +438,7 @@ function PlayGameContent() {
             </div>
           </div>
         ) : (
-          <div className="p-8 bg-elevated rounded-lg border border-border shadow-sm text-center mb-6">
+          <div className="p-8 bg-elevated rounded-lg border shadow-sm text-center mb-6">
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white mb-4">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polygon points="5 3 19 12 5 21 5 3" />
@@ -453,7 +453,7 @@ function PlayGameContent() {
         )}
 
         {/* Progress Card */}
-        <div className="p-6 bg-gradient-to-br from-bg-secondary to-bg-elevated rounded-lg border border-border shadow-sm">
+        <div className="p-6 bg-gradient-to-br from-bg-secondary to-bg-elevated rounded-lg border shadow-sm">
           <div className="flex items-center gap-2 text-secondary mb-4">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
@@ -478,7 +478,7 @@ function PlayGameContent() {
 
         {/* Scan History */}
         {data.scannedNodes.length > 0 && (
-          <div className="p-6 bg-elevated rounded-lg border border-border shadow-sm mt-6">
+          <div className="p-6 bg-elevated rounded-lg border shadow-sm mt-6">
             <div className="flex items-center gap-2 text-secondary mb-4 font-semibold">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
@@ -506,7 +506,7 @@ function PlayGameContent() {
 
         {/* Links */}
         <div className="flex justify-center gap-4 mt-6">
-          <Link to={`/leaderboard/${data.gameSlug}`} className="inline-flex items-center gap-2 px-4 py-2 text-secondary border border-border hover:border-strong rounded-lg transition-colors">
+          <Link to={`/leaderboard/${data.gameSlug}`} className="inline-flex items-center gap-2 px-4 py-2 text-secondary border hover:border-strong rounded-lg transition-colors">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M8 6L21 6" />
               <path d="M8 12L21 12" />
@@ -519,7 +519,7 @@ function PlayGameContent() {
           </Link>
           <button
             type="button"
-            className="inline-flex items-center gap-2 px-4 py-2 text-secondary border border-border hover:border-strong rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 text-secondary border hover:border-strong rounded-lg transition-colors"
             onClick={() => setShowSharePanel(!showSharePanel)}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -534,7 +534,7 @@ function PlayGameContent() {
 
         {/* Share Panel */}
         {showSharePanel && (
-          <div className="p-6 bg-elevated rounded-lg border border-border shadow-sm mt-4 animate-fade-in">
+          <div className="p-6 bg-elevated rounded-lg border shadow-sm mt-4 animate-fade-in">
             <div className="flex items-center gap-2 font-semibold text-primary mb-1">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -549,7 +549,7 @@ function PlayGameContent() {
             <div className="flex flex-col gap-3 mb-4">
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-muted uppercase tracking-wide">Game ID</label>
-                <div className="flex items-center gap-2 p-3 bg-secondary border border-border rounded-lg">
+                <div className="flex items-center gap-2 p-3 bg-secondary border rounded-lg">
                   <span className="flex-1 text-sm text-primary break-all">{data.gameSlug}</span>
                   <button
                     type="button"
@@ -572,7 +572,7 @@ function PlayGameContent() {
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-muted uppercase tracking-wide">Team Code</label>
-                <div className="flex items-center gap-2 p-3 bg-secondary border border-border rounded-lg">
+                <div className="flex items-center gap-2 p-3 bg-secondary border rounded-lg">
                   <span className="flex-1 font-mono text-xl font-bold tracking-wider text-primary">{data.teamCode}</span>
                   <button
                     type="button"
@@ -611,7 +611,7 @@ function PlayGameContent() {
               </button>
               <button
                 type="button"
-                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 text-secondary border border-border hover:border-strong rounded-lg transition-colors"
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 text-secondary border hover:border-strong rounded-lg transition-colors"
                 onClick={() => copyToClipboard(shareLink, "link")}
               >
                 {copiedField === "link" ? (

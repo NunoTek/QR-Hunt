@@ -309,7 +309,7 @@ export function QRScanner({ gameSlug, token, autoStart = false }: QRScannerProps
   // Password entry form
   if (scanResult?.passwordRequired && currentNodeKey) {
     return (
-      <div className="p-5 sm:p-6 bg-elevated rounded-lg border border-border shadow-sm animate-slide-up">
+      <div className="p-5 sm:p-6 bg-elevated rounded-lg border shadow-sm animate-slide-up">
         <div className="flex items-center gap-3 mb-4 sm:mb-5">
           <div className="flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-full flex-shrink-0 bg-warning/10 text-warning-dark">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="sm:w-6 sm:h-6">
@@ -330,7 +330,7 @@ export function QRScanner({ gameSlug, token, autoStart = false }: QRScannerProps
               type="text"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 text-sm sm:text-base bg-secondary text-primary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent min-h-[3rem] sm:min-h-[3.5rem]"
+              className="w-full px-4 py-3 text-sm sm:text-base bg-secondary text-primary border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent min-h-[3rem] sm:min-h-[3.5rem]"
               placeholder="Enter password"
               autoFocus
               disabled={isProcessing}
@@ -371,7 +371,7 @@ export function QRScanner({ gameSlug, token, autoStart = false }: QRScannerProps
   // Scan result
   if (scanResult && !scanResult.passwordRequired) {
     return (
-      <div className="p-5 sm:p-6 bg-elevated rounded-lg border border-border shadow-sm animate-pop-in">
+      <div className="p-5 sm:p-6 bg-elevated rounded-lg border shadow-sm animate-pop-in">
         <div className="text-center">
           <div className={`inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full mb-4 ${scanResult.success ? "bg-success/10 text-success" : "bg-error/10 text-error"}`}>
             {scanResult.success ? (
@@ -536,7 +536,7 @@ export function QRScanner({ gameSlug, token, autoStart = false }: QRScannerProps
             <input
               type="text"
               name="nodeKey"
-              className="flex-1 px-4 py-2 text-sm sm:text-base bg-secondary text-primary border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed min-h-[2.75rem] sm:min-h-[3rem]"
+              className="flex-1 px-4 py-2 text-sm sm:text-base bg-secondary text-primary border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed min-h-[2.75rem] sm:min-h-[3rem]"
               placeholder="Enter QR code"
               disabled={isProcessing}
             />
