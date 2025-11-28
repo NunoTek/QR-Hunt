@@ -7,5 +7,7 @@ export function getApiUrl(): string {
     return "";
   }
   // Server-side: connect directly to API server
-  return process.env.API_URL || "http://localhost:3002";
+  // Use API_URL env var, or fall back to localhost with the current PORT
+  const port = process.env.PORT || "3002";
+  return process.env.API_URL || `http://localhost:${port}`;
 }

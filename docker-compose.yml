@@ -49,6 +49,7 @@ services:
       - ADMIN_CODE=${ADMIN_CODE:-admin123}
       - COOKIE_SECRET=${COOKIE_SECRET:-change-this-in-production}
       - TRUST_PROXY=true
+      - API_URL=http://localhost:${PORT:-3000}
     volumes:
       - qr-hunt-data:/app/data
     restart: unless-stopped
