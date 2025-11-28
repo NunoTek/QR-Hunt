@@ -7,8 +7,8 @@ import {
   ScrollRestoration,
   useNavigation,
 } from "@remix-run/react";
-import { ToastProvider } from "~/components/Toast";
 import { ThemeToggle } from "~/components/ThemeToggle";
+import { ToastProvider } from "~/components/Toast";
 import "./styles/global.css";
 
 // Spinner import removed - was unused
@@ -17,7 +17,6 @@ export const meta: MetaFunction = () => {
   return [
     { title: "QR Hunt - Scavenger Hunt Platform" },
     { name: "description", content: "Self-hostable QR code scavenger hunt platform" },
-    { name: "viewport", content: "width=device-width, initial-scale=1" },
     { name: "theme-color", content: "#6366f1" },
   ];
 };
@@ -62,6 +61,7 @@ export default function App() {
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
         <Meta />
         <Links />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
@@ -122,6 +122,7 @@ export function ErrorBoundary() {
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
         <Meta />
         <Links />
       </head>

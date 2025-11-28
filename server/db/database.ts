@@ -76,6 +76,7 @@ function getMigrations(): Migration[] {
           public_slug TEXT NOT NULL UNIQUE,
           status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'active', 'completed')),
           settings TEXT DEFAULT '{}',
+          logo_url TEXT,
           created_at TEXT DEFAULT CURRENT_TIMESTAMP,
           updated_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
@@ -173,12 +174,11 @@ function getMigrations(): Migration[] {
     },
     {
       name: "002_add_logo_url",
+      // This migration is now a no-op since logo_url was added to the initial schema
+      // Kept for backwards compatibility with databases that already ran this migration
       sql: `
-        -- Add logo_url column to games table
-        ALTER TABLE games ADD COLUMN logo_url TEXT;
-
-        -- Add logo_url column to teams table
-        ALTER TABLE teams ADD COLUMN logo_url TEXT;
+        -- No-op: logo_url columns are now in the initial schema
+        SELECT 1;
       `,
     },
     {

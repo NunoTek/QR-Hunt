@@ -57,8 +57,11 @@ async function start() {
     const build = await import("../build/server/index.js");
     const remixHandler = createRequestHandler(build);
 
-    // Handle all other requests with Remix
-    fastify.all("*", async (request, reply) => {
+    // Handle all other requests with Remix (excluding OPTIONS which is handled by CORS)
+    fastify.route({
+      method: ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD"],
+      url: "*",
+      handler: async (request, reply) => {
       try {
         // Use forwarded headers when behind a proxy
         const protocol = (request.headers["x-forwarded-proto"] as string) || "http";
@@ -88,6 +91,7 @@ async function start() {
         fastify.log.error(error);
         return reply.status(500).send("Internal Server Error");
       }
+      },
     });
   }
 

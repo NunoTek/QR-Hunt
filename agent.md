@@ -43,7 +43,8 @@ QR Hunt is a self-hostable QR code scavenger hunt platform that allows organizer
 │   │   ├── ClueDisplay.tsx # Clue content renderer
 │   │   ├── Loading.tsx     # Loading spinner component
 │   │   ├── QRCodeGenerator.tsx # QR code generator with logo support
-│   │   ├── QRScanner.tsx   # Camera-based QR scanner
+│   │   ├── QRIdentifyScanner.tsx # Admin scanner to identify QR codes
+│   │   ├── QRScanner.tsx   # Camera-based QR scanner for gameplay
 │   │   ├── ThemeToggle.tsx # Dark/light theme switcher
 │   │   └── Toast.tsx       # Toast notification system
 │   ├── lib/                # Client-side utilities
@@ -138,19 +139,18 @@ interface Team {
 }
 
 // Node - A QR code checkpoint with clue content
-// IMPORTANT: The content tells players where to find the NEXT QR code!
 interface Node {
   id: string;
   gameId: string;
   nodeKey: string;           // Unique key for QR URL
-  title: string;             // Display name (shown on leaderboard as "looking for")
-  content: string | null;    // Clue text pointing to NEXT location's QR code
+  title: string;             // Display name
+  content: string | null;    // Clue text or content shown when scanned
   contentType: "text" | "image" | "video" | "audio" | "link";
   mediaUrl: string | null;   // Optional media (image/video/audio URL)
   passwordRequired: boolean; // Requires password to complete scan
   passwordHash: string | null;
-  isStart: boolean;          // Can be assigned as team's starting point
-  isEnd: boolean;            // Scanning this completes the game
+  isStart: boolean;          // Valid starting point (teams must start on a start node)
+  isEnd: boolean;            // Valid ending point (teams must finish on an end node after finding all)
   points: number;            // Points awarded when scanned
   metadata: Record<string, unknown>;
   createdAt: string;
@@ -261,8 +261,8 @@ interface ChatMessage {
 ### Node System
 - **Flexible content types**: Text, images, videos, audio, and links
 - **Password protection**: Optional passwords on nodes for puzzles
-- **Multiple start nodes**: Distribute teams across different starting points
-- **Branching paths**: Create non-linear hunts with edges defining valid transitions
+- **Multiple start/end nodes**: Define valid starting and ending points
+- **Collect-all gameplay**: Teams must find ALL QR codes to win (not just follow a path)
 
 ### Team Management
 - **Auto-generated join codes**: 6-character unique codes per team
@@ -283,18 +283,22 @@ interface ChatMessage {
 - **Built-in generator**: Create QR codes directly in admin panel
 - **Logo embedding**: Custom logo in QR center with error correction
 - **Configurable error correction**: Low, Medium, Quartile, High (30%)
-- **Download options**: PNG export for printing
+- **Export options**: PNG, SVG download and direct print
+- **Copy URL**: One-click URL copy with toast notification
+- **QR Identify Scanner**: Scan any QR to identify which node it belongs to (auto-starts camera)
 
 ### Admin Panel Features
+- **Game logo display**: Shows game logo next to name in header
 - **Undo delete**: 20-second grace period to undo deletions
-- **Game deletion protection**: Two-step confirmation requiring exact name match
+- **Game deletion modal**: Secure deletion dialog requiring exact name match
 - **Visual graph**: Node and edge relationship visualization
 - **Bulk operations**: Multi-team creation, edge management
 
 ### Player Experience
 - **Mobile-first design**: Responsive UI optimized for phones
+- **Auto-submit join code**: Form submits automatically when 6th character entered (with debounce)
 - **Camera QR scanner**: Built-in scanner using device camera
-- **Progress display**: "Your Journey" showing all scanned nodes
+- **Progress display**: Shows X/Y QR codes found with "Your Journey" history
 - **Starting clue**: Immediately visible upon joining
 - **Dark/light theme**: User-selectable theme
 
@@ -494,58 +498,55 @@ ORDER BY created_at DESC, rowid DESC
 
 ## Game Flow
 
-### How Clues Work
-**Important**: Each node's content is a CLUE that tells players where to find the NEXT QR code.
+### How the Game Works
+Teams must find and scan ALL QR codes to win. Start and end nodes define valid entry and exit points.
 
 ```
-Node A (Start)           Node B                    Node C (End)
 ┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐
-│ Title: "Start"  │      │ Title: "Clue 2" │      │ Title: "Finish" │
-│ Content: "Go to │──────│ Content: "Look  │──────│ Content: "You   │
-│ the fountain"   │      │ under the bench"│      │ found it all!"  │
+│ Node A (Start)  │      │ Node B          │      │ Node C          │
+│ isStart: true   │      │ isStart: false  │      │ isStart: false  │
+│ isEnd: false    │      │ isEnd: false    │      │ isEnd: false    │
 │ Points: 100     │      │ Points: 150     │      │ Points: 200     │
 └─────────────────┘      └─────────────────┘      └─────────────────┘
-     ▲                        ▲                        ▲
-     │                        │                        │
-  QR Code A               QR Code B                QR Code C
-  (at start)              (at fountain)            (under bench)
+
+┌─────────────────┐      ┌─────────────────┐
+│ Node D (End)    │      │ Node E (End)    │
+│ isStart: false  │      │ isStart: false  │
+│ isEnd: true     │      │ isEnd: true     │
+│ Points: 250     │      │ Points: 250     │
+└─────────────────┘      └─────────────────┘
 ```
 
-**Flow**:
-1. Team sees Node A's content: "Go to the fountain"
-2. Team finds QR Code B at the fountain and scans it
-3. Team sees Node B's content: "Look under the bench"
-4. Team finds QR Code C under the bench and scans it
-5. Team sees Node C's content: "You found it all!" (game complete)
+**Win Condition**: Scan ALL 5 nodes + last scan must be an end node (D or E)
 
 ### Setup Phase (Admin)
 1. Create a new game (draft status)
-2. Add nodes - each node's **content is the clue to find the NEXT location**
-3. Define edges connecting nodes (from_node → to_node)
-4. Create teams with unique codes
-5. Mark start nodes (where teams begin) and end nodes (game completion)
-6. Activate game when ready
+2. Add nodes with content/clues and point values
+3. Mark start nodes (where teams can begin)
+4. Mark end nodes (where teams can finish after finding all)
+5. Create teams with unique codes
+6. Generate and print QR codes for each node
+7. Activate game when ready
 
 ### Play Phase (Teams)
-1. Team joins with game slug + team code
-2. Receives session token and sees their **starting clue** (start node's content)
-3. Uses the clue to find the first QR code location
-4. Scans QR code with phone camera
-5. Server validates: Is this node reachable from their last position? (via edges)
-6. If valid: Team receives points and sees the **next clue** (scanned node's content)
-7. Repeats until scanning an end node
-8. Can chat with admin for hints
+1. Team joins with game slug + team code (auto-submits when complete)
+2. Receives session token and sees starting clue
+3. First scan must be a start node
+4. After starting, can scan ANY node in any order
+5. Progress shows X/Y QR codes found
+6. When all nodes found, must scan an end node to finish
+7. Can chat with admin for hints
 
 ### Leaderboard
 - Shows real-time rankings via Server-Sent Events
-- **"Current clue"** displays the **next node they're looking for** (the one connected via edge from their last scan)
+- Displays nodes found count (X/Y)
 - When finished, shows "Finished!" badge
 - Ranking modes: points (default), nodes found, or fastest time
 
 ### Completion
-1. First team to scan an end node is marked as winner
+1. First team to find ALL nodes AND scan an end node wins
 2. Leaderboard shows final rankings with winner highlighted
-3. Teams see victory/defeat screen with their stats
+3. Teams see victory/defeat screen with their stats (X/Y nodes, points)
 4. Admin can complete/archive game
 
 ## Adding New Features

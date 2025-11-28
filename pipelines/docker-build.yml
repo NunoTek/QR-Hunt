@@ -1,0 +1,100 @@
+# Docker Build Pipeline - Build and Push to Azure Container Registry
+# Builds the Docker image and pushes it to a configurable Azure Container Registry
+
+trigger:
+  branches:
+    include:
+      - main
+      - master
+  tags:
+    include:
+      - 'v*'
+
+pr: none
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  # Azure Container Registry variables - set these in your pipeline or variable group
+  # ACR_REGISTRY: 'yourregistry.azurecr.io'
+  # ACR_USERNAME: 'your-acr-username'
+  # ACR_PASSWORD: 'your-acr-password' (should be a secret variable)
+
+  # Default values (override in pipeline variables)
+  - name: IMAGE_NAME
+    value: 'qr-hunt'
+  - name: DOCKERFILE_PATH
+    value: '$(Build.SourcesDirectory)/Dockerfile'
+  - name: BUILD_CONTEXT
+    value: '$(Build.SourcesDirectory)'
+
+stages:
+  - stage: Build
+    displayName: 'Build Docker Image'
+    jobs:
+      - job: BuildAndPush
+        displayName: 'Build and Push Docker Image'
+        steps:
+          - script: |
+              docker build \
+                -f $(DOCKERFILE_PATH) \
+                -t $(ACR_REGISTRY)/$(IMAGE_NAME):$(Build.BuildId) \
+                -t $(ACR_REGISTRY)/$(IMAGE_NAME):$(Build.SourceBranchName) \
+                -t $(ACR_REGISTRY)/$(IMAGE_NAME):latest \
+                --build-arg BUILD_ID=$(Build.BuildId) \
+                $(BUILD_CONTEXT)
+            displayName: 'Build Docker image'
+
+          - script: |
+              docker login $(ACR_REGISTRY) -u $(ACR_USERNAME) -p $(ACR_PASSWORD)
+            displayName: 'Login to Azure Container Registry'
+
+          - script: |
+              docker push $(ACR_REGISTRY)/$(IMAGE_NAME):$(Build.BuildId)
+              docker push $(ACR_REGISTRY)/$(IMAGE_NAME):$(Build.SourceBranchName)
+              docker push $(ACR_REGISTRY)/$(IMAGE_NAME):latest
+            displayName: 'Push image to ACR'
+
+          # Tag with semantic version if this is a tag build
+          - script: |
+              docker push $(ACR_REGISTRY)/$(IMAGE_NAME):$(Build.SourceBranchName)
+            displayName: 'Push semantic version tag'
+            condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
+
+          - script: |
+              docker logout $(ACR_REGISTRY)
+            displayName: 'Logout from ACR'
+            condition: always()
+
+  - stage: Scan
+    displayName: 'Security Scan'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - job: SecurityScan
+        displayName: 'Container Security Scan'
+        steps:
+          - script: |
+              docker login $(ACR_REGISTRY) -u $(ACR_USERNAME) -p $(ACR_PASSWORD)
+            displayName: 'Login to Azure Container Registry'
+
+          - script: |
+              docker pull $(ACR_REGISTRY)/$(IMAGE_NAME):$(Build.BuildId)
+            displayName: 'Pull built image'
+
+          # Optional: Add container scanning tool like Trivy
+          - script: |
+              docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+                aquasec/trivy:latest image \
+                --exit-code 0 \
+                --severity HIGH,CRITICAL \
+                --no-progress \
+                $(ACR_REGISTRY)/$(IMAGE_NAME):$(Build.BuildId)
+            displayName: 'Scan image with Trivy'
+            continueOnError: true
+
+          - script: |
+              docker logout $(ACR_REGISTRY)
+            displayName: 'Logout from ACR'
+            condition: always()

@@ -19,10 +19,16 @@ describe("Scan API", () => {
     process.env.DATA_DIR = "./tests/test-data-scan-api";
     await initializeDatabase();
 
-    // Create test game
+    // Create test game with time bonus disabled for predictable point values
     const game = gameRepository.create({
       name: "Scan Test Game",
       publicSlug: "scan-test-game",
+      settings: {
+        rankingMode: "points",
+        basePoints: 100,
+        timeBonusEnabled: false,
+        timeBonusMultiplier: 1.5,
+      },
     });
     gameId = game.id;
     gameRepository.update(gameId, { status: "active" });
@@ -105,7 +111,7 @@ describe("Scan API", () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.message).toContain("not a starting QR code");
+      expect(result.message).toContain("start");
     });
 
     it("should allow valid path progression", () => {
@@ -119,15 +125,15 @@ describe("Scan API", () => {
       expect(result2.pointsAwarded).toBe(150);
     });
 
-    it("should reject scanning unreachable node", () => {
+    it("should allow scanning any node after starting (collect-all mode)", () => {
       // Scan start
       scanService.recordScan({ teamId, nodeKey: startNodeKey });
 
-      // Try to skip to end (should fail - end is not directly reachable from start)
+      // In collect-all mode, any node can be scanned after starting
       const result = scanService.recordScan({ teamId, nodeKey: endNodeKey });
 
-      expect(result.success).toBe(false);
-      expect(result.message).toContain("not reachable");
+      expect(result.success).toBe(true);
+      expect(result.pointsAwarded).toBe(250);
     });
 
     it("should reject scanning already scanned node", () => {
@@ -136,7 +142,7 @@ describe("Scan API", () => {
       const result = scanService.recordScan({ teamId, nodeKey: startNodeKey });
 
       expect(result.success).toBe(false);
-      expect(result.message).toContain("not reachable");
+      expect(result.message).toContain("already scanned");
     });
 
     it("should reject invalid node key", () => {
@@ -261,12 +267,13 @@ describe("Scan API", () => {
       expect(progress!.currentNode!.title).toBe("Middle Clue");
     });
 
-    it("should show available next nodes", () => {
+    it("should show remaining nodes to find", () => {
       scanService.recordScan({ teamId, nodeKey: startNodeKey });
 
       const progress = scanService.getTeamProgress(teamId);
 
-      expect(progress!.nextNodes.length).toBe(1);
+      // In collect-all mode, nextNodes shows remaining nodes (3: middle, password, end)
+      expect(progress!.nextNodes.length).toBe(3);
     });
 
     it("should mark finished after end node", () => {

@@ -94,14 +94,14 @@ function AdminLogin() {
 
           <button
             type="submit"
-            className="w-full px-6 py-3 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white font-semibold rounded-xl hover:opacity-90 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed min-h-[3rem]"
+            className="mt-4 w-full px-6 py-3 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white font-semibold rounded-xl hover:opacity-90 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed min-h-[3rem]"
             disabled={isSubmitting}
           >
             {isSubmitting ? "Signing in..." : "Sign In"}
           </button>
         </Form>
 
-        <div className="text-center mt-5 sm:mt-6">
+        <div className="mt-8 text-center mt-5 sm:mt-6">
           <Link to="/" className="text-tertiary hover:text-[var(--color-primary)] text-sm transition-colors">
             ← Back to home
           </Link>

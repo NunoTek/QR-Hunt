@@ -74,16 +74,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const adminCodeMatch = cookieHeader.match(/admin_code=([^;]+)/);
   const adminCode = adminCodeMatch ? adminCodeMatch[1] : "";
 
-  const baseUrl = getApiUrl();
+  const apiBaseUrl = getApiUrl();
   const headers = { "x-admin-code": adminCode };
+
+  // Get the public-facing URL from the request for QR codes
+  const requestUrl = new URL(request.url);
+  const appBaseUrl = `${requestUrl.protocol}//${requestUrl.host}`;
 
   try {
     const [gameRes, nodesRes, edgesRes, teamsRes, qrRes] = await Promise.all([
-      fetch(`${baseUrl}/api/v1/admin/games/${gameId}`, { headers }),
-      fetch(`${baseUrl}/api/v1/admin/games/${gameId}/nodes`, { headers }),
-      fetch(`${baseUrl}/api/v1/admin/games/${gameId}/edges`, { headers }),
-      fetch(`${baseUrl}/api/v1/admin/games/${gameId}/teams`, { headers }),
-      fetch(`${baseUrl}/api/v1/admin/games/${gameId}/qrcodes?baseUrl=${encodeURIComponent(baseUrl)}`, { headers }),
+      fetch(`${apiBaseUrl}/api/v1/admin/games/${gameId}`, { headers }),
+      fetch(`${apiBaseUrl}/api/v1/admin/games/${gameId}/nodes`, { headers }),
+      fetch(`${apiBaseUrl}/api/v1/admin/games/${gameId}/edges`, { headers }),
+      fetch(`${apiBaseUrl}/api/v1/admin/games/${gameId}/teams`, { headers }),
+      fetch(`${apiBaseUrl}/api/v1/admin/games/${gameId}/qrcodes?baseUrl=${encodeURIComponent(appBaseUrl)}`, { headers }),
     ]);
 
     if (!gameRes.ok) {
@@ -97,9 +101,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       teamsRes.json(),
       qrRes.json(),
     ]);
-
-    const requestUrl = new URL(request.url);
-    const appBaseUrl = `${requestUrl.protocol}//${requestUrl.host}`;
 
     return json<LoaderData>({
       game: gameData.game,
