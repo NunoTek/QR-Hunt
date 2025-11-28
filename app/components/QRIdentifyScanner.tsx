@@ -34,7 +34,12 @@ export function QRIdentifyScanner({ nodes, onClose }: QRIdentifyScannerProps) {
   const animationRef = useRef<number | null>(null);
   const barcodeDetectorRef = useRef<BarcodeDetectorType | null>(null);
   const lastScannedRef = useRef<string | null>(null);
+  const isProcessingRef = useRef(false);
+  const lastScanAttemptRef = useRef<number>(0);
   const toast = useToast();
+
+  // Minimum time between scan attempts (ms)
+  const SCAN_COOLDOWN = 1000;
 
   const stopCamera = useCallback(() => {
     if (animationRef.current) {
@@ -63,16 +68,31 @@ export function QRIdentifyScanner({ nodes, onClose }: QRIdentifyScannerProps) {
   }, []);
 
   const identifyQRCode = useCallback((qrData: string) => {
+    // Prevent duplicate processing using ref (synchronous check)
+    if (isProcessingRef.current) {
+      return false;
+    }
+
+    const now = Date.now();
+    if (now - lastScanAttemptRef.current < SCAN_COOLDOWN) {
+      return false;
+    }
+
     const nodeKey = extractNodeKey(qrData);
     if (nodeKey) {
+      isProcessingRef.current = true;
+      lastScanAttemptRef.current = now;
+
       const matchedNode = nodes.find(n => n.nodeKey === nodeKey);
       if (matchedNode) {
         setIdentifiedNode(matchedNode);
         stopCamera();
         toast.success(`Found: ${matchedNode.title}`);
+        isProcessingRef.current = false;
         return true;
       } else {
         toast.warning("QR code not found in this game");
+        isProcessingRef.current = false;
       }
     }
     return false;
@@ -108,6 +128,12 @@ export function QRIdentifyScanner({ nodes, onClose }: QRIdentifyScannerProps) {
     }
 
     if (barcodeDetectorRef.current) {
+      // Skip detection if already processing
+      if (isProcessingRef.current) {
+        animationRef.current = requestAnimationFrame(scanQRCode);
+        return;
+      }
+
       barcodeDetectorRef.current
         .detect(canvas)
         .then((barcodes) => {

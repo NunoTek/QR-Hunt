@@ -46,8 +46,13 @@ export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false }: QRS
   const animationRef = useRef<number | null>(null);
   const barcodeDetectorRef = useRef<BarcodeDetectorType | null>(null);
   const lastScannedRef = useRef<string | null>(null);
+  const isProcessingRef = useRef(false);
+  const lastScanAttemptRef = useRef<number>(0);
   const toast = useToast();
   const hasAutoStartedRef = useRef(false);
+
+  // Minimum time between scan attempts (ms)
+  const SCAN_COOLDOWN = 2000;
 
   const stopCamera = useCallback(() => {
     if (animationRef.current) {
@@ -76,6 +81,11 @@ export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false }: QRS
   }, []);
 
   const submitScan = useCallback(async (nodeKey: string, pwd?: string) => {
+    // Prevent duplicate submissions using ref (synchronous check)
+    if (isProcessingRef.current) {
+      return;
+    }
+    isProcessingRef.current = true;
     setIsProcessing(true);
     try {
       const response = await fetch("/api/v1/scan", {
@@ -121,6 +131,7 @@ export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false }: QRS
       toast.error(errorResult.message);
     } finally {
       setIsProcessing(false);
+      isProcessingRef.current = false;
     }
   }, [token, toast]);
 
@@ -164,9 +175,20 @@ export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false }: QRS
     }
 
     const processBarcode = (qrData: string) => {
+      // Skip if already processing or within cooldown period
+      if (isProcessingRef.current) {
+        return false;
+      }
+
+      const now = Date.now();
+      if (now - lastScanAttemptRef.current < SCAN_COOLDOWN) {
+        return false;
+      }
+
       const nodeKey = extractNodeKey(qrData);
       if (nodeKey && nodeKey !== lastScannedRef.current) {
         lastScannedRef.current = nodeKey;
+        lastScanAttemptRef.current = now;
         stopCamera();
         submitScan(nodeKey);
         return true;
