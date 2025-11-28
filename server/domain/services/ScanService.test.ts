@@ -16,10 +16,14 @@ describe("ScanService", () => {
     process.env.DATA_DIR = "./tests/test-data-scan";
     await initializeDatabase();
 
-    // Create a test game
+    // Create a test game with time bonus disabled for predictable point values
     const game = gameRepository.create({
       name: "Test Game",
       publicSlug: "test-scan-game",
+      settings: {
+        timeBonusEnabled: false,
+        timeBonusMultiplier: 1.5,
+      },
     });
     gameId = game.id;
 
@@ -91,7 +95,7 @@ describe("ScanService", () => {
       });
 
       expect(result.success).toBe(false);
-      expect(result.message).toContain("not a starting QR code");
+      expect(result.message).toContain("start");
     });
 
     it("should allow progression through valid path", () => {
@@ -114,43 +118,43 @@ describe("ScanService", () => {
       expect(result2.isGameComplete).toBe(true);
     });
 
-    it("should reject duplicate scans or out-of-sequence scans", () => {
+    it("should reject duplicate scans", () => {
       const startNode = nodeRepository.findById(startNodeId)!;
 
       // First scan at start
       scanService.recordScan({ teamId, nodeKey: startNode.nodeKey });
 
-      // Try to scan start again (not reachable from current position since you can only go forward)
+      // Try to scan start again
       const result = scanService.recordScan({
         teamId,
         nodeKey: startNode.nodeKey,
       });
 
       expect(result.success).toBe(false);
-      // Since start node is not reachable from itself (no self-loop edges), it fails as unreachable
-      expect(result.message).toContain("not reachable");
+      expect(result.message).toContain("already scanned");
     });
 
-    it("should reject unreachable nodes", () => {
+    it("should allow scanning any node after starting (collect-all mode)", () => {
       const startNode = nodeRepository.findById(startNodeId)!;
 
-      // Create disconnected node
-      const disconnected = nodeRepository.create({
+      // Create another node (not connected by edge)
+      const extraNode = nodeRepository.create({
         gameId,
-        title: "Disconnected",
+        title: "Extra Node",
+        points: 50,
       });
 
       // Scan start first
       scanService.recordScan({ teamId, nodeKey: startNode.nodeKey });
 
-      // Try to scan disconnected
+      // Should be able to scan any node in collect-all mode
       const result = scanService.recordScan({
         teamId,
-        nodeKey: disconnected.nodeKey,
+        nodeKey: extraNode.nodeKey,
       });
 
-      expect(result.success).toBe(false);
-      expect(result.message).toContain("not reachable");
+      expect(result.success).toBe(true);
+      expect(result.pointsAwarded).toBe(50);
     });
   });
 

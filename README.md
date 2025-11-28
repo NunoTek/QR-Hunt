@@ -13,13 +13,14 @@ A self-hostable QR code scavenger hunt platform. Create interactive treasure hun
 ### Node System
 - **Flexible Content Types**: Text, images, videos, audio, or links
 - **Password Protection**: Optional passwords on nodes for puzzles
-- **Multiple Start Nodes**: Distribute teams across different starting points
-- **Branching Paths**: Create non-linear hunts with custom paths
+- **Multiple Start/End Points**: Define multiple valid starting and ending locations
+- **Collect-All-Clues Gameplay**: Teams must find ALL QR codes, not just follow a path
 
 ### Team Experience
 - **Instant Join**: Teams join with a simple code - no app download needed
+- **Auto-Submit Join Code**: Automatically submits when 6-character code is complete
 - **Built-in QR Scanner**: Camera-based scanning directly in the browser
-- **Progress Tracking**: "Your Journey" shows complete scan history
+- **Progress Tracking**: Shows X/Y QR codes found with complete scan history
 - **Starting Clue**: Teams see their first clue immediately upon joining
 - **Dark/Light Theme**: User-selectable theme preference
 
@@ -35,12 +36,14 @@ A self-hostable QR code scavenger hunt platform. Create interactive treasure hun
 - **Built-in Generator**: Create QR codes directly in admin panel
 - **Logo Embedding**: Custom logo in QR center with error correction
 - **Configurable Error Correction**: Low, Medium, Quartile, High (30%)
-- **PNG Export**: Download QR codes for printing
+- **Multiple Export Options**: Download as PNG or SVG, print directly
+- **QR Identify Scanner**: Scan any QR code to identify which node it belongs to
 
 ### Admin Panel
 - **Visual Game Builder**: Intuitive interface for creating hunts
+- **Game Logo Display**: Shows game logo next to name in admin header
 - **Undo Delete**: 20-second grace period to recover deletions
-- **Game Deletion Protection**: Two-step confirmation for safety
+- **Game Deletion Modal**: Secure deletion with name confirmation dialog
 - **Team Management**: Create, edit, and monitor teams
 - **Real-time Monitoring**: Watch team progress as they play
 
@@ -101,13 +104,14 @@ The app runs on `http://localhost:5173` (Remix) with the API on port `3002`.
 
 ### For Players
 
-1. **Join Game**: Visit the game URL and enter your team code
+1. **Join Game**: Visit the game URL and enter your team code (auto-submits when complete)
 2. **View Starting Clue**: Your first clue appears immediately
 3. **Find Locations**: Use clues to find QR code locations
 4. **Scan QR Codes**: Use the built-in scanner or phone camera
-5. **Get Next Clue**: Each scan reveals the next challenge
-6. **Chat with Admin**: Ask for hints or report issues
-7. **Win!**: First team to reach the end node wins
+5. **Track Progress**: See how many QR codes you've found (X/Y)
+6. **Find All Clues**: Scan every QR code in any order
+7. **Chat with Admin**: Ask for hints or report issues
+8. **Win!**: First team to find ALL QR codes and scan an end node wins
 
 ## API Reference
 
@@ -189,7 +193,8 @@ qr-hunt/
 │   │   ├── Chat.tsx        # Real-time chat widget
 │   │   ├── ClueDisplay.tsx # Clue renderer
 │   │   ├── QRCodeGenerator.tsx # QR generator with logo
-│   │   ├── QRScanner.tsx   # Camera scanner
+│   │   ├── QRIdentifyScanner.tsx # QR scanner for identifying nodes
+│   │   ├── QRScanner.tsx   # Camera scanner for gameplay
 │   │   └── Toast.tsx       # Notifications
 │   └── routes/             # Page routes
 ├── server/                 # Fastify backend

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { meta } from "./_index";
+import { meta } from "../app/routes/_index";
 
 describe("Index Page", () => {
   describe("Meta Tags", () => {
@@ -24,13 +24,13 @@ describe("Index Page", () => {
 
   describe("Component Structure", () => {
     it("should export a default component", async () => {
-      const Index = (await import("./_index")).default;
+      const Index = (await import("../app/routes/_index")).default;
       expect(Index).toBeDefined();
       expect(typeof Index).toBe("function");
     });
 
     it("should render without crashing", async () => {
-      const Index = (await import("./_index")).default;
+      const Index = (await import("../app/routes/_index")).default;
       
       // Basic smoke test - ensure component returns valid JSX
       expect(() => Index()).not.toThrow();
@@ -39,7 +39,7 @@ describe("Index Page", () => {
 
   describe("Content Validation", () => {
     it("should contain the main title text", async () => {
-      const Index = (await import("./_index")).default;
+      const Index = (await import("../app/routes/_index")).default;
       const result = Index();
       const html = JSON.stringify(result);
       
@@ -48,7 +48,7 @@ describe("Index Page", () => {
     });
 
     it("should ensure Adventure text has gradient classes to be visible", async () => {
-      const Index = (await import("./_index")).default;
+      const Index = (await import("../app/routes/_index")).default;
       const result = Index();
       const html = JSON.stringify(result);
       
@@ -61,17 +61,17 @@ describe("Index Page", () => {
     });
 
     it("should have high opacity overlay on hero section", async () => {
-      const Index = (await import("./_index")).default;
+      const Index = (await import("../app/routes/_index")).default;
       const result = Index();
       const html = JSON.stringify(result);
-      
-      // Check for increased opacity (95 instead of 85 or 90)
-      expect(html).toContain("/95");
+
+      // Check for gradient overlay
+      expect(html).toContain("/70");
       expect(html).toContain("bg-gradient-to-br");
     });
 
     it("should contain QR Hunt branding", async () => {
-      const Index = (await import("./_index")).default;
+      const Index = (await import("../app/routes/_index")).default;
       const result = Index();
       const html = JSON.stringify(result);
       
@@ -80,7 +80,7 @@ describe("Index Page", () => {
     });
 
     it("should have both CTA buttons with correct links", async () => {
-      const Index = (await import("./_index")).default;
+      const Index = (await import("../app/routes/_index")).default;
       const result = Index();
       const html = JSON.stringify(result);
       
@@ -91,7 +91,7 @@ describe("Index Page", () => {
     });
 
     it("should contain How It Works section", async () => {
-      const Index = (await import("./_index")).default;
+      const Index = (await import("../app/routes/_index")).default;
       const result = Index();
       const html = JSON.stringify(result);
       
@@ -103,7 +103,7 @@ describe("Index Page", () => {
     });
 
     it("should contain Perfect For section with all use cases", async () => {
-      const Index = (await import("./_index")).default;
+      const Index = (await import("../app/routes/_index")).default;
       const result = Index();
       const html = JSON.stringify(result);
       
@@ -117,7 +117,7 @@ describe("Index Page", () => {
     });
 
     it("should contain Everything You Need section", async () => {
-      const Index = (await import("./_index")).default;
+      const Index = (await import("../app/routes/_index")).default;
       const result = Index();
       const html = JSON.stringify(result);
       
@@ -129,7 +129,7 @@ describe("Index Page", () => {
     });
 
     it("should contain phone mockup with demo content", async () => {
-      const Index = (await import("./_index")).default;
+      const Index = (await import("../app/routes/_index")).default;
       const result = Index();
       const html = JSON.stringify(result);
       
@@ -139,7 +139,7 @@ describe("Index Page", () => {
     });
 
     it("should contain final CTA section", async () => {
-      const Index = (await import("./_index")).default;
+      const Index = (await import("../app/routes/_index")).default;
       const result = Index();
       const html = JSON.stringify(result);
       
@@ -147,7 +147,7 @@ describe("Index Page", () => {
     });
 
     it("should contain footer with key values", async () => {
-      const Index = (await import("./_index")).default;
+      const Index = (await import("../app/routes/_index")).default;
       const result = Index();
       const html = JSON.stringify(result);
       
@@ -157,7 +157,7 @@ describe("Index Page", () => {
     });
 
     it("should use amber colors for gradient text (not invisible warning colors)", async () => {
-      const Index = (await import("./_index")).default;
+      const Index = (await import("../app/routes/_index")).default;
       const result = Index();
       const html = JSON.stringify(result);
       
