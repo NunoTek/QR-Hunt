@@ -1,6 +1,6 @@
 {
   "name": "qr-hunt",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "private": true,
   "description": "Self-hostable QR code scavenger hunt platform",
   "type": "module",
