@@ -150,6 +150,15 @@ export async function scanRoutes(fastify: FastifyInstance) {
             isEnd: progress.currentNode.isEnd,
           }
         : null,
+      nextClue: progress.nextClue
+        ? {
+            id: progress.nextClue.id,
+            title: progress.nextClue.title,
+            content: progress.nextClue.content,
+            contentType: progress.nextClue.contentType,
+            mediaUrl: progress.nextClue.mediaUrl,
+          }
+        : null,
       startingClue,
       scannedNodes,
       nextNodesCount: progress.nextNodes.length,

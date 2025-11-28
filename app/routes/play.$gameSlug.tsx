@@ -33,6 +33,13 @@ interface LoaderData {
     mediaUrl: string | null;
     isEnd: boolean;
   } | null;
+  nextClue: {
+    id: string;
+    title: string;
+    content: string | null;
+    contentType: string;
+    mediaUrl: string | null;
+  } | null;
   startingClue: {
     id: string;
     title: string;
@@ -101,6 +108,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
     let progressData = {
       currentNode: null,
+      nextClue: null,
       startingClue: null,
       scannedNodes: [],
       nodesFound: 0,
@@ -127,6 +135,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       gameName: gameData.name,
       gameLogoUrl: gameData.logoUrl || null,
       currentNode: progressData.currentNode,
+      nextClue: progressData.nextClue || null,
       startingClue: progressData.startingClue || null,
       scannedNodes: progressData.scannedNodes || [],
       nodesFound: progressData.nodesFound,
@@ -184,7 +193,7 @@ function PlayGameContent() {
           text: `Join our team in ${data.gameName}!\n\nGame ID: ${data.gameSlug}\nTeam Code: ${data.teamCode}`,
           url: shareLink,
         });
-      } catch (err) {
+      } catch {
         // User cancelled or share failed - ignore
       }
     } else {
@@ -252,6 +261,7 @@ function PlayGameContent() {
           setIsAutoScanning(false);
         });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Show victory screen
@@ -286,7 +296,7 @@ function PlayGameContent() {
           </div>
         </div>
 
-        <Link to={`/leaderboard/${data.gameSlug}`} className="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium text-white bg-[var(--color-primary)] rounded-lg hover:opacity-90 transition-colors mt-6 shadow-md">
+        <Link to={`/leaderboard/${data.gameSlug}`} className="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium bg-[var(--color-primary)] rounded-lg hover:opacity-90 transition-colors mt-6 shadow-md" style={{ color: "white" }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M8 6L21 6" />
             <path d="M8 12L21 12" />
@@ -330,7 +340,7 @@ function PlayGameContent() {
           </div>
         </div>
 
-        <Link to={`/leaderboard/${data.gameSlug}`} className="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium text-white bg-[var(--color-primary)] rounded-lg hover:opacity-90 transition-colors mt-6 shadow-md">
+        <Link to={`/leaderboard/${data.gameSlug}`} className="inline-flex items-center justify-center gap-2 px-6 py-3 text-base font-medium bg-[var(--color-primary)] rounded-lg hover:opacity-90 transition-colors mt-6 shadow-md" style={{ color: "white" }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M8 6L21 6" />
             <path d="M8 12L21 12" />
@@ -347,6 +357,12 @@ function PlayGameContent() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] py-6 px-4 flex justify-center">
+      {/* Fixed points display at top right */}
+      <div className="fixed top-4 right-4 z-40 flex flex-col items-center px-4 py-2 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] rounded-xl text-white shadow-lg">
+        <span className="text-2xl font-extrabold leading-none">{data.totalPoints}</span>
+        <span className="text-xs opacity-90">points</span>
+      </div>
+
       <div className="w-full max-w-2xl">
         {/* Auto-scan loading overlay */}
         {isAutoScanning && !autoScanResult && (
@@ -357,7 +373,7 @@ function PlayGameContent() {
         )}
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="flex items-center gap-4 mb-6 pr-24">
           <div className="flex flex-col gap-1">
             <div className="inline-flex items-center gap-2 text-sm text-secondary">
               {data.gameLogoUrl && (
@@ -381,47 +397,37 @@ function PlayGameContent() {
               <h1 className="text-2xl sm:text-3xl font-bold text-primary">{data.teamName}</h1>
             </div>
           </div>
-          <div className="flex flex-col items-center px-5 py-3 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] rounded-xl text-white shadow-md">
-            <span className="text-3xl font-extrabold leading-none">{data.totalPoints}</span>
-            <span className="text-xs opacity-90">points</span>
-          </div>
         </div>
 
-        {/* Current clue or scanner */}
-        {data.currentNode ? (
-          <div className="mb-6">
-            <ClueDisplay node={data.currentNode} />
-            <div className="mt-6">
-              <div className="flex items-center gap-4 p-4 bg-tertiary rounded-xl mb-4">
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-elevated text-[var(--color-primary)] flex-shrink-0">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                    <circle cx="12" cy="13" r="4" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="font-semibold text-primary">Use this clue to find the next location</p>
-                  <p className="text-sm text-muted">Scan the QR code when you get there</p>
-                </div>
-              </div>
-              <QRScanner gameSlug={data.gameSlug} token={data.token} autoStart />
-            </div>
-          </div>
-        ) : data.startingClue ? (
+        {/* Next clue to find */}
+        {data.nextClue ? (
           <div className="mb-6">
             <div className="p-6 bg-elevated rounded-lg border shadow-sm">
               <div className="flex items-center gap-4 mb-5">
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-[var(--color-success)] to-emerald-700 text-white flex-shrink-0">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polygon points="5 3 19 12 5 21 5 3" />
-                  </svg>
+                <div className={`flex items-center justify-center w-12 h-12 rounded-full text-white flex-shrink-0 ${
+                  data.scannedNodes.length === 0
+                    ? "bg-gradient-to-br from-[var(--color-success)] to-emerald-700"
+                    : "bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)]"
+                }`}>
+                  {data.scannedNodes.length === 0 ? (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg>
+                  ) : (
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="10" r="3" />
+                      <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z" />
+                    </svg>
+                  )}
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-primary m-0">Your Starting Clue</h2>
-                  <p className="text-muted text-sm m-0">{data.startingClue.title}</p>
+                  <h2 className="text-xl font-bold text-primary m-0">
+                    {data.scannedNodes.length === 0 ? "Your Starting Clue" : "Next Clue"}
+                  </h2>
+                  <p className="text-muted text-sm m-0">{data.nextClue.title}</p>
                 </div>
               </div>
-              <ClueDisplay node={data.startingClue} hideTitle />
+              <ClueDisplay node={data.nextClue} hideTitle />
             </div>
             <div className="mt-6">
               <div className="flex items-center gap-4 p-4 bg-tertiary rounded-xl mb-4">
@@ -432,8 +438,16 @@ function PlayGameContent() {
                   </svg>
                 </div>
                 <div>
-                  <p className="font-semibold text-primary">Find the location and scan the QR code</p>
-                  <p className="text-sm text-muted">This will start your hunt!</p>
+                  <p className="font-semibold text-primary">
+                    {data.scannedNodes.length === 0
+                      ? "Find the location and scan the QR code"
+                      : "Use this clue to find the next location"}
+                  </p>
+                  <p className="text-sm text-muted">
+                    {data.scannedNodes.length === 0
+                      ? "This will start your hunt!"
+                      : "Scan the QR code when you get there"}
+                  </p>
                 </div>
               </div>
               <QRScanner gameSlug={data.gameSlug} token={data.token} autoStart />

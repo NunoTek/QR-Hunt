@@ -6,13 +6,13 @@ import { gameRepository } from "../../domain/repositories/GameRepository.js";
 import { teamRepository } from "../../domain/repositories/TeamRepository.js";
 import { nodeRepository } from "../../domain/repositories/NodeRepository.js";
 import { edgeRepository } from "../../domain/repositories/EdgeRepository.js";
+import { scanRepository } from "../../domain/repositories/ScanRepository.js";
 import {
   createGameSchema,
   updateGameSchema,
   createNodeSchema,
   updateNodeSchema,
   createEdgeSchema,
-  updateEdgeSchema,
   createTeamSchema,
   updateTeamSchema,
 } from "../schemas.js";
@@ -107,6 +107,11 @@ export async function adminRoutes(fastify: FastifyInstance) {
             timeBonusEnabled: parseResult.data.settings.timeBonusEnabled ?? true,
             timeBonusMultiplier: parseResult.data.settings.timeBonusMultiplier || 1.5,
           };
+        }
+
+        // Reset all scans when game is set to draft
+        if (parseResult.data.status === "draft") {
+          scanRepository.deleteByGameId(request.params.id);
         }
 
         const game = gameService.updateGame(request.params.id, updateData);

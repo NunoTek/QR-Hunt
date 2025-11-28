@@ -1,7 +1,7 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, Link, useActionData, useLoaderData, useNavigation, useRevalidator } from "@remix-run/react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Chat } from "~/components/Chat";
 import { QRCodeGenerator } from "~/components/QRCodeGenerator";
 import { QRIdentifyScanner } from "~/components/QRIdentifyScanner";
@@ -23,6 +23,7 @@ interface Node {
   isStart: boolean;
   isEnd: boolean;
   points: number;
+  adminComment: string | null;
 }
 
 interface Edge {
@@ -63,6 +64,7 @@ interface LoaderData {
     url: string;
     isStart: boolean;
     isEnd: boolean;
+    adminComment: string | null;
   }>;
   baseUrl: string;
   adminCode: string;
@@ -148,6 +150,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
             isStart: formData.get("isStart") === "on",
             isEnd: formData.get("isEnd") === "on",
             points: parseInt(formData.get("points")?.toString() || "100", 10),
+            adminComment: formData.get("adminComment") || undefined,
           }),
         });
         if (!response.ok) {
@@ -181,6 +184,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
             isStart: formData.get("isStart") === "on",
             isEnd: formData.get("isEnd") === "on",
             points: parseInt(formData.get("points")?.toString() || "100", 10),
+            adminComment: formData.get("adminComment") || null,
           }),
         });
         if (!response.ok) {
@@ -298,6 +302,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
         break;
       }
 
+      case "setStatus": {
+        const newStatus = formData.get("status")?.toString();
+        if (!newStatus || !["draft", "active", "completed"].includes(newStatus)) {
+          return json({ error: "Invalid status" });
+        }
+        const response = await fetch(`${baseUrl}/api/v1/admin/games/${gameId}`, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({ status: newStatus }),
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          return json({ error: data.error || "Failed to update game status" });
+        }
+        break;
+      }
+
       case "deleteGame": {
         await fetch(`${baseUrl}/api/v1/admin/games/${gameId}`, {
           method: "DELETE",
@@ -321,7 +342,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     }
 
-    return json({ success: true });
+    return json({ success: true, action: actionType });
   } catch {
     return json({ error: "Operation failed" });
   }
@@ -370,6 +391,7 @@ function AdminGameDetailContent() {
   const [activeTab, setActiveTab] = useState<"nodes" | "edges" | "teams" | "qrcodes" | "settings">("nodes");
   const [selectedQR, setSelectedQR] = useState<{ url: string; title: string } | null>(null);
   const [showQRIdentifyScanner, setShowQRIdentifyScanner] = useState(false);
+  const [previewNode, setPreviewNode] = useState<Node | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [editingNode, setEditingNode] = useState<Node | null>(null);
@@ -377,6 +399,50 @@ function AdminGameDetailContent() {
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [teamLogoUrl, setTeamLogoUrl] = useState<string>("");
   const deleteTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const lastActionDataRef = useRef<typeof actionData | null>(null);
+
+  // Show toast notifications for action results
+  useEffect(() => {
+    if (!actionData || actionData === lastActionDataRef.current) return;
+    lastActionDataRef.current = actionData;
+
+    if ("error" in actionData && actionData.error) {
+      toast.error(actionData.error);
+    } else if ("success" in actionData && actionData.success && "action" in actionData) {
+      switch (actionData.action) {
+        case "updateGameLogo":
+          toast.success("Game logo updated");
+          break;
+        case "setStatus":
+          toast.success("Game status updated");
+          break;
+        case "activateGame":
+          toast.success("Game activated successfully");
+          break;
+        case "completeGame":
+          toast.success("Game marked as completed");
+          break;
+        case "createNode":
+          toast.success("Node created");
+          break;
+        case "updateNode":
+          toast.success("Node updated");
+          break;
+        case "createEdge":
+          toast.success("Edge created");
+          break;
+        case "updateEdge":
+          toast.success("Edge updated");
+          break;
+        case "createTeam":
+          toast.success("Team created");
+          break;
+        case "updateTeam":
+          toast.success("Team updated");
+          break;
+      }
+    }
+  }, [actionData, toast]);
 
   const handleDelete = useCallback(
     async (type: "node" | "edge" | "team", id: string, name: string) => {
@@ -476,7 +542,7 @@ function AdminGameDetailContent() {
             {data.game.status === "active" && (
               <Form method="post" className="inline">
                 <input type="hidden" name="_action" value="completeGame" />
-                <button type="submit" className={btnSecondary} disabled={isSubmitting}>
+                <button type="submit" className={btnPrimary} disabled={isSubmitting}>
                   Complete Game
                 </button>
               </Form>
@@ -541,8 +607,8 @@ function AdminGameDetailContent() {
                 <thead>
                   <tr className="border-b border-border">
                     <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">Title</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase hidden sm:table-cell">Key</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase hidden md:table-cell">Type</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">Key</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">Type</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">Pts</th>
                     <th className="px-4 py-3"></th>
                   </tr>
@@ -551,15 +617,26 @@ function AdminGameDetailContent() {
                   {data.nodes.map((node) => (
                     <tr key={node.id} className="hover:bg-secondary">
                       <td className="px-4 py-3 text-primary">
-                        <span className="font-medium">{node.title}</span>
-                        {node.isStart && <NodeBadge type="start" />}
-                        {node.isEnd && <NodeBadge type="end" />}
+                        <div>
+                          <span className="font-medium">{node.title}</span>
+                          {node.isStart && <NodeBadge type="start" />}
+                          {node.isEnd && <NodeBadge type="end" />}
+                        </div>
+                        {node.adminComment && (
+                          <p className="text-xs text-muted mt-0.5 italic">📝 {node.adminComment}</p>
+                        )}
                       </td>
-                      <td className="px-4 py-3 text-secondary hidden sm:table-cell">{node.nodeKey}</td>
-                      <td className="px-4 py-3 text-secondary hidden md:table-cell">{node.contentType}</td>
+                      <td className="px-4 py-3 text-secondary">{node.nodeKey}</td>
+                      <td className="px-4 py-3 text-secondary">{node.contentType}</td>
                       <td className="px-4 py-3 text-secondary">{node.points}</td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1 justify-end">
+                          <button onClick={() => setPreviewNode(node)} className={`${btnSecondary} ${btnSmall}`} title="Preview clue">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                              <circle cx="12" cy="12" r="3" />
+                            </svg>
+                          </button>
                           <button onClick={() => setEditingNode(node)} className={`${btnSecondary} ${btnSmall}`}>Edit</button>
                           <button onClick={() => handleDelete("node", node.id, node.title)} className={`${btnDanger} ${btnSmall}`}>Delete</button>
                         </div>
@@ -588,7 +665,7 @@ function AdminGameDetailContent() {
 
               <div>
                 <label className="block text-sm font-medium text-secondary mb-1">Content</label>
-                <textarea name="content" className={inputClasses} rows={3} defaultValue={editingNode?.content || ""} key={`content-${editingNode?.id || "new"}`} />
+                <textarea name="content" className={inputClasses} rows={6} defaultValue={editingNode?.content || ""} key={`content-${editingNode?.id || "new"}`} />
               </div>
 
               <div>
@@ -603,13 +680,24 @@ function AdminGameDetailContent() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary mb-1">Media URL</label>
+                <label className="block text-sm font-medium text-secondary mb-1">
+                  Media URL
+                  <span className="ml-2 text-xs text-muted font-normal">(optional)</span>
+                </label>                
                 <input type="url" name="mediaUrl" className={inputClasses} defaultValue={editingNode?.mediaUrl || ""} key={`media-${editingNode?.id || "new"}`} />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-secondary mb-1">Points</label>
                 <input type="number" name="points" className={inputClasses} defaultValue={editingNode?.points || 100} key={`points-${editingNode?.id || "new"}`} />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-secondary mb-1">
+                  Admin Comment
+                  <span className="ml-2 text-xs text-muted font-normal">(only visible to admins)</span>
+                </label>
+                <textarea name="adminComment" className={inputClasses} rows={2} placeholder="Internal notes about this node..." defaultValue={editingNode?.adminComment || ""} key={`comment-${editingNode?.id || "new"}`} />
               </div>
 
               <div className="flex items-center gap-2">
@@ -721,7 +809,7 @@ function AdminGameDetailContent() {
                   <tr className="border-b border-border">
                     <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">Team</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">Code</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase hidden sm:table-cell">Start Node</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">Start Node</th>
                     <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
@@ -739,7 +827,7 @@ function AdminGameDetailContent() {
                         <td className="px-4 py-3">
                           <code className="bg-secondary px-2 py-1 rounded text-[var(--color-primary)] text-sm">{team.code}</code>
                         </td>
-                        <td className="px-4 py-3 text-secondary hidden sm:table-cell">{startNode?.title || "Default"}</td>
+                        <td className="px-4 py-3 text-secondary">{startNode?.title || "Default"}</td>
                         <td className="px-4 py-3">
                           <div className="flex gap-1 justify-end">
                             <button onClick={() => copyTeamShareInfo(team)} className={`${btnSecondary} ${btnSmall}`}>Share</button>
@@ -833,7 +921,7 @@ function AdminGameDetailContent() {
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">Node</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase hidden md:table-cell">URL</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">URL</th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -845,7 +933,7 @@ function AdminGameDetailContent() {
                       {qr.isStart && <NodeBadge type="start" />}
                       {qr.isEnd && <NodeBadge type="end" />}
                     </td>
-                    <td className="px-4 py-3 hidden md:table-cell">
+                    <td className="px-4 py-3">
                       <code className="text-xs text-secondary break-all">{qr.url}</code>
                     </td>
                     <td className="px-4 py-3">
@@ -874,22 +962,161 @@ function AdminGameDetailContent() {
 
       {/* Settings Tab */}
       {activeTab === "settings" && (
-        <div className="bg-elevated rounded-xl border p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-primary mb-2">Game Logo</h3>
-          <p className="text-secondary text-sm mb-4">Set a logo for your game. This will be used as the default logo for QR codes.</p>
+        <div className="space-y-6">
+          {/* Game Status */}
+          <div className="bg-elevated rounded-xl border p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-primary mb-2">Game Status</h3>
+            <p className="text-secondary text-sm mb-4">Control the current status of your game.</p>
 
-          {data.game.logoUrl && (
-            <img src={data.game.logoUrl} alt="Game Logo" className="max-w-[150px] max-h-[150px] rounded-lg border mb-4" />
-          )}
-
-          <Form method="post" className="space-y-4">
-            <input type="hidden" name="_action" value="updateGameLogo" />
-            <div>
-              <label className="block text-sm font-medium text-secondary mb-1">Logo URL</label>
-              <input type="url" name="logoUrl" className={inputClasses} placeholder="https://example.com/logo.png" defaultValue={data.game.logoUrl || ""} />
+            <div className="flex items-center gap-4 p-4 rounded-lg border mb-4" style={{
+              backgroundColor: data.game.status === "draft" ? "var(--color-warning)" + "10" :
+                             data.game.status === "active" ? "var(--color-success)" + "10" :
+                             "var(--color-info)" + "10",
+              borderColor: data.game.status === "draft" ? "var(--color-warning)" + "30" :
+                          data.game.status === "active" ? "var(--color-success)" + "30" :
+                          "var(--color-info)" + "30"
+            }}>
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                data.game.status === "draft" ? "bg-[var(--color-warning)]/20 text-[var(--color-warning)]" :
+                data.game.status === "active" ? "bg-[var(--color-success)]/20 text-[var(--color-success)]" :
+                "bg-[var(--color-info)]/20 text-[var(--color-info)]"
+              }`}>
+                {data.game.status === "draft" ? (
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                ) : data.game.status === "active" ? (
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="5 3 19 12 5 21 5 3" />
+                  </svg>
+                ) : (
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
+                  </svg>
+                )}
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-primary">
+                  {data.game.status === "draft" ? "Draft" :
+                   data.game.status === "active" ? "Active" : "Completed"}
+                </p>
+                <p className="text-sm text-secondary">
+                  {data.game.status === "draft" ? "Game is being set up and not yet playable." :
+                   data.game.status === "active" ? "Game is live! Teams can join and play." :
+                   "Game has ended. Results are final."}
+                </p>
+              </div>
             </div>
-            <button type="submit" className={btnPrimary} disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save Logo"}</button>
-          </Form>
+
+            <p className="text-sm text-muted mb-3">Change the game status:</p>
+            <div className="flex flex-wrap gap-3">
+              {/* Draft button */}
+              <Form method="post" className="inline">
+                <input type="hidden" name="_action" value="setStatus" />
+                <input type="hidden" name="status" value="draft" />
+                <button
+                  type="submit"
+                  className={`inline-flex items-center gap-2 px-4 py-2 font-medium rounded-lg transition-colors disabled:opacity-50 ${
+                    data.game.status === "draft"
+                      ? "bg-[var(--color-warning)] text-white cursor-default"
+                      : "bg-[var(--color-warning)]/15 text-[var(--color-warning)] border border-[var(--color-warning)]/30 hover:bg-[var(--color-warning)]/25"
+                  }`}
+                  disabled={isSubmitting || data.game.status === "draft"}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                  Draft
+                </button>
+              </Form>
+
+              {/* Active button */}
+              <Form method="post" className="inline">
+                <input type="hidden" name="_action" value={data.game.status === "draft" ? "activateGame" : "setStatus"} />
+                <input type="hidden" name="status" value="active" />
+                <button
+                  type="submit"
+                  className={`inline-flex items-center gap-2 px-4 py-2 font-medium rounded-lg transition-colors disabled:opacity-50 ${
+                    data.game.status === "active"
+                      ? "bg-[var(--color-success)] text-white cursor-default"
+                      : "bg-[var(--color-success)]/15 text-[var(--color-success)] border border-[var(--color-success)]/30 hover:bg-[var(--color-success)]/25"
+                  }`}
+                  disabled={isSubmitting || data.game.status === "active" || (data.game.status === "draft" && !canActivate)}
+                  title={data.game.status === "draft" && !canActivate ? "Complete setup requirements first" : undefined}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="5 3 19 12 5 21 5 3" />
+                  </svg>
+                  Active
+                </button>
+              </Form>
+
+              {/* Completed button */}
+              <Form method="post" className="inline">
+                <input type="hidden" name="_action" value={data.game.status === "active" ? "completeGame" : "setStatus"} />
+                <input type="hidden" name="status" value="completed" />
+                <button
+                  type="submit"
+                  className={`inline-flex items-center gap-2 px-4 py-2 font-medium rounded-lg transition-colors disabled:opacity-50 ${
+                    data.game.status === "completed"
+                      ? "bg-[var(--color-info)] text-white cursor-default"
+                      : "bg-[var(--color-info)]/15 text-[var(--color-info)] border border-[var(--color-info)]/30 hover:bg-[var(--color-info)]/25"
+                  }`}
+                  disabled={isSubmitting || data.game.status === "completed"}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
+                  </svg>
+                  Completed
+                </button>
+              </Form>
+            </div>
+
+            {!canActivate && data.game.status === "draft" && (
+              <p className="text-sm text-[var(--color-warning)] mt-3">
+                Complete the setup checklist above before activating the game.
+              </p>
+            )}
+          </div>
+
+          {/* Game Logo */}
+          <div className="mt-4 bg-elevated rounded-xl border p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-primary mb-2">Game Logo</h3>
+            <p className="text-secondary text-sm mb-4">Set a logo for your game. This will be used as the default logo for QR codes.</p>
+
+            {data.game.logoUrl && (
+              <img src={data.game.logoUrl} alt="Game Logo" className="max-w-[150px] max-h-[150px] rounded-lg border mb-4" />
+            )}
+
+            <Form method="post" className="space-y-4">
+              <input type="hidden" name="_action" value="updateGameLogo" />
+              <div>
+                <label className="block text-sm font-medium text-secondary mb-1">Logo URL</label>
+                <input type="url" name="logoUrl" className={inputClasses} placeholder="https://example.com/logo.png" defaultValue={data.game.logoUrl || ""} />
+              </div>
+              <button type="submit" className={btnPrimary} disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save Logo"}</button>
+            </Form>
+          </div>
+
+          {/* Danger Zone */}
+          <div className="mt-4 bg-elevated rounded-xl border border-[var(--color-error)]/50 p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-[var(--color-error)] mb-2">Danger Zone</h3>
+            <p className="text-secondary text-sm mb-4">
+              Deleting this game will permanently remove all nodes, edges, teams, and scan data. This action cannot be undone.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowDeleteModal(true)}
+              className={btnDanger}
+              disabled={isSubmitting}
+            >
+              Delete Game
+            </button>
+          </div>
         </div>
       )}
 
@@ -911,21 +1138,109 @@ function AdminGameDetailContent() {
         />
       )}
 
-      {/* Danger Zone */}
-      <div className="mt-8 bg-elevated rounded-xl border border-[var(--color-error)]/50 p-6 shadow-sm">
-        <h3 className="text-lg font-semibold text-[var(--color-error)] mb-2">Danger Zone</h3>
-        <p className="text-secondary text-sm mb-4">
-          Deleting this game will permanently remove all nodes, edges, teams, and scan data. This action cannot be undone.
-        </p>
-        <button
-          type="button"
-          onClick={() => setShowDeleteModal(true)}
-          className={btnDanger}
-          disabled={isSubmitting}
-        >
-          Delete Game
-        </button>
-      </div>
+      {/* Node Preview Modal */}
+      {previewNode && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-4">
+          <div className="rounded-xl max-w-md w-full shadow-xl animate-fade-in" style={{ backgroundColor: 'var(--bg-elevated)' }}>
+            <div className="p-4 border-b border-border flex items-center justify-between" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+              <div className="flex items-center gap-2">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--color-primary)]">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                <h3 className="text-lg font-semibold text-primary">Clue Preview</h3>
+              </div>
+              <button
+                onClick={() => setPreviewNode(null)}
+                className="text-muted hover:text-primary transition-colors p-1"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6">
+              {/* Player View Simulation */}
+              <div className="bg-secondary rounded-xl p-4 border">
+                <div className="text-center mb-4">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[var(--color-success)]/15 text-[var(--color-success)] mb-3">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h4 className="text-xl font-bold text-primary">{previewNode.title}</h4>
+                  <div className="flex items-center justify-center gap-2 mt-1">
+                    <p className="text-sm text-[var(--color-success)]">+{previewNode.points} points!</p>
+                    {previewNode.isStart && <NodeBadge type="start" />}
+                    {previewNode.isEnd && <NodeBadge type="end" />}
+                  </div>
+                </div>
+
+                <div className="bg-tertiary rounded-lg p-4 mb-4">
+                  {previewNode.contentType === "image" && previewNode.mediaUrl ? (
+                    <img src={previewNode.mediaUrl} alt={previewNode.title} className="w-full rounded-lg" />
+                  ) : previewNode.contentType === "video" && previewNode.mediaUrl ? (
+                    <div className="aspect-video bg-black rounded-lg flex items-center justify-center">
+                      <svg width="48" height="48" viewBox="0 0 24 24" fill="white" className="opacity-80">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                      </svg>
+                    </div>
+                  ) : previewNode.contentType === "audio" && previewNode.mediaUrl ? (
+                    <div className="flex items-center justify-center gap-3 py-4">
+                      <div className="w-12 h-12 rounded-full bg-[var(--color-primary)]/15 flex items-center justify-center">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="2">
+                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+                        </svg>
+                      </div>
+                      <span className="text-sm text-secondary">Audio content</span>
+                    </div>
+                  ) : previewNode.contentType === "link" && previewNode.mediaUrl ? (
+                    <a href={previewNode.mediaUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[var(--color-primary)] hover:underline">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                      </svg>
+                      {previewNode.mediaUrl}
+                    </a>
+                  ) : (
+                    <p className="text-secondary text-sm whitespace-pre-wrap">{previewNode.content || "No content set for this node."}</p>
+                  )}
+                </div>
+
+                {previewNode.passwordRequired && (
+                  <div className="bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/30 rounded-lg p-3 mb-4">
+                    <p className="text-sm text-[var(--color-warning)] flex items-center gap-2">
+                      <span>🔒</span>
+                      Password required to unlock this clue
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Admin Note */}
+              {previewNode.adminComment && (
+                <div className="mt-4 p-3 bg-[var(--color-info)]/10 border border-[var(--color-info)]/30 rounded-lg">
+                  <p className="text-xs text-[var(--color-info)] font-medium mb-1">Admin Note:</p>
+                  <p className="text-sm text-secondary italic">📝 {previewNode.adminComment}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-border flex justify-end gap-2" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+              <button onClick={() => setPreviewNode(null)} className={btnSecondary}>
+                Close
+              </button>
+              <button onClick={() => { setEditingNode(previewNode); setPreviewNode(null); }} className={btnPrimary}>
+                Edit Node
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Game Confirmation Modal */}
       {showDeleteModal && (

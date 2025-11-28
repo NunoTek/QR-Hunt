@@ -3,6 +3,7 @@ import { json, redirect } from "@remix-run/node";
 import { Form, useActionData, useNavigation, useSearchParams } from "@remix-run/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Spinner } from "~/components/Loading";
+import { useToast } from "~/components/Toast";
 import { Version } from "~/components/Version";
 import { getApiUrl } from "~/lib/api";
 
@@ -54,8 +55,8 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const headers = new Headers();
-    const isProduction = process.env.NODE_ENV === "production";
-    const secureFlag = isProduction ? "; Secure" : "";
+    const isSecure = new URL(request.url).protocol === "https:";
+    const secureFlag = isSecure ? "; Secure" : "";
     headers.append(
       "Set-Cookie",
       `team_token=${data.token}; Path=/; HttpOnly; SameSite=Lax${secureFlag}; Max-Age=${48 * 60 * 60}`
@@ -179,6 +180,18 @@ export default function JoinGame() {
   const [teamCode, setTeamCode] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   const submitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastActionDataRef = useRef<typeof actionData | null>(null);
+  const toast = useToast();
+
+  // Show toast on error
+  useEffect(() => {
+    if (!actionData || actionData === lastActionDataRef.current) return;
+    lastActionDataRef.current = actionData;
+
+    if (actionData?.error) {
+      toast.error(actionData.error);
+    }
+  }, [actionData, toast]);
 
   // Debounced auto-submit when code is complete
   const handleCodeComplete = useCallback(() => {

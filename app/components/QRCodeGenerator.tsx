@@ -1,5 +1,5 @@
 import QRCode from "qrcode";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useToast } from "./Toast";
 
 interface QRCodeGeneratorProps {
@@ -29,11 +29,7 @@ export function QRCodeGenerator({
   const [errorCorrectionLevel, setErrorCorrectionLevel] = useState<"L" | "M" | "Q" | "H">("H");
   const toast = useToast();
 
-  useEffect(() => {
-    generateQRCode();
-  }, [url, foregroundColor, backgroundColor, logoUrl, logoSize, errorCorrectionLevel, size]);
-
-  const generateQRCode = async () => {
+  const generateQRCode = useCallback(async () => {
     if (!canvasRef.current) return;
 
     const canvas = canvasRef.current;
@@ -75,7 +71,11 @@ export function QRCodeGenerator({
     } catch (err) {
       console.error("Failed to generate QR code:", err);
     }
-  };
+  }, [url, foregroundColor, backgroundColor, logoUrl, logoSize, errorCorrectionLevel, size]);
+
+  useEffect(() => {
+    generateQRCode();
+  }, [generateQRCode]);
 
   const downloadQRCode = (format: "png" | "svg") => {
     if (!canvasRef.current) return;
@@ -267,7 +267,7 @@ export function QRCodeGenerator({
         </div>
 
         <div className="flex gap-2 sm:gap-3 p-4 sm:p-4 sm:px-6 border-t border-border flex-wrap" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-          <button onClick={() => downloadQRCode("png")} className="flex-1 min-w-[110px] sm:min-w-[120px] inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors min-h-[2.75rem] sm:min-h-[3rem]">
+          <button onClick={() => downloadQRCode("png")} className="flex-1 min-w-[110px] sm:min-w-[120px] inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium text-primary bg-tertiary rounded-lg hover:bg-tertiary/80 transition-colors border min-h-[2.75rem] sm:min-h-[3rem]">
             Download PNG
           </button>
           <button onClick={() => downloadQRCode("svg")} className="flex-1 min-w-[110px] sm:min-w-[120px] inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium text-primary bg-tertiary rounded-lg hover:bg-tertiary/80 transition-colors border min-h-[2.75rem] sm:min-h-[3rem]">

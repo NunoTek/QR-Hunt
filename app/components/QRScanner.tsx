@@ -32,7 +32,7 @@ declare global {
   }
 }
 
-export function QRScanner({ gameSlug, token, autoStart = false }: QRScannerProps & { autoStart?: boolean }) {
+export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false }: QRScannerProps & { autoStart?: boolean }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isScanning, setIsScanning] = useState(false);

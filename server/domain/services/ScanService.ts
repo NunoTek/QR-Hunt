@@ -215,6 +215,7 @@ export class ScanService {
     const nodesFound = scans.length;
 
     let currentNode: Node | null = null;
+    let nextClue: Node | null = null;
     let nextNodes: Node[] = [];
     let isFinished = false;
 
@@ -233,10 +234,21 @@ export class ScanService {
       } else {
         // Show remaining nodes to find
         nextNodes = allNodes.filter((n) => !scannedNodeIds.has(n.id));
+
+        // Get next clue from edges (first unscanned node connected via edge)
+        if (currentNode) {
+          const connectedNodes = this.getNextNodes(currentNode.id);
+          nextClue = connectedNodes.find((n) => !scannedNodeIds.has(n.id)) || null;
+
+          // If no connected unscanned nodes, pick first remaining node
+          if (!nextClue && nextNodes.length > 0) {
+            nextClue = nextNodes[0];
+          }
+        }
       }
     } else if (team.startNodeId) {
-      // Team hasn't scanned yet, show start node
-      currentNode = nodeRepository.findById(team.startNodeId);
+      // Team hasn't scanned yet, show start node as the clue to find
+      nextClue = nodeRepository.findById(team.startNodeId);
       nextNodes = allNodes.filter((n) => n.id !== team.startNodeId);
     }
 
@@ -244,6 +256,7 @@ export class ScanService {
       team,
       scans,
       currentNode,
+      nextClue,
       nextNodes,
       totalPoints,
       nodesFound,

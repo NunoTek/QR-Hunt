@@ -9,6 +9,7 @@ A self-hostable QR code scavenger hunt platform. Create interactive treasure hun
 - **Game Status Workflow**: Draft → Active → Completed lifecycle
 - **Custom Branding**: Upload logos for games and QR codes
 - **Configurable Scoring**: Points-based, node count, or time-based ranking
+- **Score Reset**: Changing status to "draft" resets all team progress
 
 ### Node System
 - **Flexible Content Types**: Text, images, videos, audio, or links
@@ -21,7 +22,8 @@ A self-hostable QR code scavenger hunt platform. Create interactive treasure hun
 - **Auto-Submit Join Code**: Automatically submits when 6-character code is complete
 - **Built-in QR Scanner**: Camera-based scanning directly in the browser
 - **Progress Tracking**: Shows X/Y QR codes found with complete scan history
-- **Starting Clue**: Teams see their first clue immediately upon joining
+- **Clue-Based Navigation**: Each scan reveals the next clue to find the next QR code
+- **Fixed Points Display**: Points always visible at top-right while playing
 - **Dark/Light Theme**: User-selectable theme preference
 
 ### Real-time Features
@@ -105,12 +107,12 @@ The app runs on `http://localhost:5173` (Remix) with the API on port `3002`.
 ### For Players
 
 1. **Join Game**: Visit the game URL and enter your team code (auto-submits when complete)
-2. **View Starting Clue**: Your first clue appears immediately
-3. **Find Locations**: Use clues to find QR code locations
-4. **Scan QR Codes**: Use the built-in scanner or phone camera
-5. **Track Progress**: See how many QR codes you've found (X/Y)
-6. **Find All Clues**: Scan every QR code in any order
-7. **Chat with Admin**: Ask for hints or report issues
+2. **View Starting Clue**: Your first clue appears immediately - it tells you where to find the first QR code
+3. **Find & Scan**: Use the clue to locate the QR code, then scan it with the built-in scanner
+4. **Follow the Trail**: After each scan, a new clue appears guiding you to the next QR code
+5. **Track Progress**: Your points are always visible at the top-right; see X/Y QR codes found
+6. **Find All QR Codes**: Scan every QR code (order doesn't matter after starting)
+7. **Chat with Admin**: Ask for hints or report issues anytime
 8. **Win!**: First team to find ALL QR codes and scan an end node wins
 
 ## API Reference
