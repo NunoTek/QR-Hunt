@@ -7,6 +7,7 @@ import { ClueDisplay } from "~/components/ClueDisplay";
 import { Spinner } from "~/components/Loading";
 import { QRScanner } from "~/components/QRScanner";
 import { ToastProvider, useToast } from "~/components/Toast";
+import { Version } from "~/components/Version";
 import { getApiUrl } from "~/lib/api";
 import { playCoinSound, playDefeatSound, playSuccessSound, playVictorySound } from "~/lib/sounds";
 
@@ -146,6 +147,7 @@ export default function PlayGame() {
   return (
     <ToastProvider>
       <PlayGameContent />
+      <Version />
     </ToastProvider>
   );
 }

@@ -37,14 +37,14 @@ stages:
             inputs:
               versionSpec: '$(NODE_VERSION)'
 
-          - task: Cache@2
-            displayName: 'Cache npm dependencies'
-            inputs:
-              key: 'npm | "$(Agent.OS)" | package-lock.json'
-              restoreKeys: |
-                npm | "$(Agent.OS)"
-              path: $(npm_config_cache)
-            continueOnError: true
+          # - task: Cache@2
+          #   displayName: 'Cache npm dependencies'
+          #   inputs:
+          #     key: 'npm | "$(Agent.OS)" | package-lock.json'
+          #     restoreKeys: |
+          #       npm | "$(Agent.OS)"
+          #     path: $(npm_config_cache)
+          #   continueOnError: true
 
           - script: npm ci
             displayName: 'Install dependencies'
@@ -79,3 +79,34 @@ stages:
               artifact: 'dist'
               publishLocation: 'pipeline'
             condition: succeeded()
+
+  - stage: BumpVersion
+    displayName: 'Bump Version'
+    dependsOn: Build
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'), ne(variables['Build.Reason'], 'PullRequest'))
+    jobs:
+      - job: BumpVersion
+        displayName: 'Bump Patch Version'
+        steps:
+          - checkout: self
+            persistCredentials: true
+
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(NODE_VERSION)'
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+
+          - script: |
+              git config user.email "azure-pipelines@dev.azure.com"
+              git config user.name "Azure Pipelines"
+            displayName: 'Configure Git'
+
+          - script: node scripts/bump-version.js patch
+            displayName: 'Bump patch version'
+
+          - script: |
+              NEW_VERSION=$(node -p "require('./package.json').version")
+              git add package.json
+              git commit -m "chore: bump version to ${NEW_VERSION} [skip ci]"
+              git push origin HEAD:main
+            displayName: 'Commit and push version bump'

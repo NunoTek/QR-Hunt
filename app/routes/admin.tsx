@@ -3,6 +3,7 @@ import { json, redirect } from "@remix-run/node";
 import { Form, Link, Outlet, useActionData, useLoaderData, useLocation, useNavigation } from "@remix-run/react";
 import { useEffect } from "react";
 import { useToast } from "~/components/Toast";
+import { Version } from "~/components/Version";
 
 export const meta: MetaFunction = () => {
   return [{ title: "Admin Dashboard - QR Hunt" }];
@@ -190,9 +191,10 @@ function AdminLayout() {
 export default function Admin() {
   const data = useLoaderData<typeof loader>();
 
-  if (!data.isAuthenticated) {
-    return <AdminLogin />;
-  }
-
-  return <AdminLayout />;
+  return (
+    <>
+      {data.isAuthenticated ? <AdminLayout /> : <AdminLogin />}
+      <Version />
+    </>
+  );
 }
