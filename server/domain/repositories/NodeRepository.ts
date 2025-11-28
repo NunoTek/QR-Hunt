@@ -15,6 +15,7 @@ interface NodeRow {
   is_start: number;
   is_end: number;
   points: number;
+  admin_comment: string | null;
   metadata: string;
   created_at: string;
 }
@@ -33,6 +34,7 @@ function rowToNode(row: NodeRow): Node {
     isStart: row.is_start === 1,
     isEnd: row.is_end === 1,
     points: row.points,
+    adminComment: row.admin_comment,
     metadata: JSON.parse(row.metadata) as Record<string, unknown>,
     createdAt: row.created_at,
   };
@@ -55,6 +57,7 @@ export class NodeRepository {
     isStart?: boolean;
     isEnd?: boolean;
     points?: number;
+    adminComment?: string;
     metadata?: Record<string, unknown>;
   }): Node {
     const db = getDatabase();
@@ -63,8 +66,8 @@ export class NodeRepository {
 
     db.prepare(
       `INSERT INTO nodes (id, game_id, node_key, title, content, content_type, media_url,
-       password_required, password_hash, is_start, is_end, points, metadata)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       password_required, password_hash, is_start, is_end, points, admin_comment, metadata)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       id,
       data.gameId,
@@ -78,6 +81,7 @@ export class NodeRepository {
       data.isStart ? 1 : 0,
       data.isEnd ? 1 : 0,
       data.points ?? 100,
+      data.adminComment || null,
       JSON.stringify(data.metadata || {})
     );
 
@@ -137,6 +141,7 @@ export class NodeRepository {
       isStart: boolean;
       isEnd: boolean;
       points: number;
+      adminComment: string | null;
       metadata: Record<string, unknown>;
     }>
   ): Node | null {
@@ -186,6 +191,10 @@ export class NodeRepository {
     if (data.points !== undefined) {
       updates.push("points = ?");
       values.push(data.points);
+    }
+    if (data.adminComment !== undefined) {
+      updates.push("admin_comment = ?");
+      values.push(data.adminComment);
     }
     if (data.metadata !== undefined) {
       updates.push("metadata = ?");

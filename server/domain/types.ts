@@ -42,6 +42,7 @@ export interface Node {
   isStart: boolean;
   isEnd: boolean;
   points: number;
+  adminComment: string | null;
   metadata: Record<string, unknown>;
   createdAt: string;
 }

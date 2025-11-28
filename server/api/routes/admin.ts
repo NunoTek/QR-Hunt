@@ -7,6 +7,7 @@ import { teamRepository } from "../../domain/repositories/TeamRepository.js";
 import { nodeRepository } from "../../domain/repositories/NodeRepository.js";
 import { edgeRepository } from "../../domain/repositories/EdgeRepository.js";
 import { scanRepository } from "../../domain/repositories/ScanRepository.js";
+import type { ContentType, EdgeCondition, GameSettings } from "../../domain/types.js";
 import {
   createGameSchema,
   updateGameSchema,
@@ -540,6 +541,231 @@ export async function adminRoutes(fastify: FastifyInstance) {
       }));
 
       return reply.send({ qrCodes });
+    }
+  );
+
+  // ==================== EXPORT/IMPORT ====================
+
+  // Export game data
+  fastify.get(
+    "/games/:gameId/export",
+    async (
+      request: FastifyRequest<{ Params: { gameId: string } }>,
+      reply: FastifyReply
+    ) => {
+      const game = gameRepository.findById(request.params.gameId);
+      if (!game) {
+        return reply.status(404).send({ error: "Game not found" });
+      }
+
+      const nodes = nodeRepository.findByGameId(request.params.gameId);
+      const edges = edgeRepository.findByGameId(request.params.gameId);
+      const teams = teamRepository.findByGameId(request.params.gameId);
+
+      // Build node ID to key mapping for edges
+      const nodeIdToKey = new Map<string, string>();
+      for (const node of nodes) {
+        nodeIdToKey.set(node.id, node.nodeKey);
+      }
+
+      const exportData = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        game: {
+          name: game.name,
+          publicSlug: game.publicSlug,
+          status: game.status,
+          settings: game.settings,
+          logoUrl: game.logoUrl,
+        },
+        nodes: nodes.map((node) => ({
+          nodeKey: node.nodeKey,
+          title: node.title,
+          content: node.content,
+          contentType: node.contentType,
+          mediaUrl: node.mediaUrl,
+          passwordRequired: node.passwordRequired,
+          // Note: we don't export password hashes for security
+          isStart: node.isStart,
+          isEnd: node.isEnd,
+          points: node.points,
+          adminComment: node.adminComment,
+          metadata: node.metadata,
+        })),
+        edges: edges.map((edge) => ({
+          fromNodeKey: nodeIdToKey.get(edge.fromNodeId) || edge.fromNodeId,
+          toNodeKey: nodeIdToKey.get(edge.toNodeId) || edge.toNodeId,
+          condition: edge.condition,
+          sortOrder: edge.sortOrder,
+        })),
+        teams: teams.map((team) => ({
+          name: team.name,
+          code: team.code,
+          startNodeKey: team.startNodeId ? nodeIdToKey.get(team.startNodeId) : null,
+          logoUrl: team.logoUrl,
+        })),
+      };
+
+      reply.header("Content-Type", "application/json");
+      reply.header(
+        "Content-Disposition",
+        `attachment; filename="${game.publicSlug}-export.json"`
+      );
+      return reply.send(exportData);
+    }
+  );
+
+  // Import game data
+  fastify.post(
+    "/games/import",
+    async (
+      request: FastifyRequest<{
+        Body: {
+          data: {
+            version: number;
+            game: {
+              name: string;
+              publicSlug: string;
+              status?: string;
+              settings?: Record<string, unknown>;
+              logoUrl?: string | null;
+            };
+            nodes: Array<{
+              nodeKey: string;
+              title: string;
+              content?: string | null;
+              contentType?: string;
+              mediaUrl?: string | null;
+              passwordRequired?: boolean;
+              isStart?: boolean;
+              isEnd?: boolean;
+              points?: number;
+              adminComment?: string | null;
+              metadata?: Record<string, unknown>;
+            }>;
+            edges: Array<{
+              fromNodeKey: string;
+              toNodeKey: string;
+              condition?: { type?: string; value?: string };
+              sortOrder?: number;
+            }>;
+            teams: Array<{
+              name: string;
+              code: string;
+              startNodeKey?: string | null;
+              logoUrl?: string | null;
+            }>;
+          };
+          overwrite?: boolean;
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
+      const { data, overwrite } = request.body;
+
+      if (!data || !data.game || !data.nodes) {
+        return reply.status(400).send({ error: "Invalid import data" });
+      }
+
+      // Check if game with this slug already exists
+      const existingGame = gameRepository.findBySlug(data.game.publicSlug);
+
+      let gameId: string;
+
+      if (existingGame) {
+        if (!overwrite) {
+          return reply.status(409).send({
+            error: "Game with this slug already exists",
+            existingGameId: existingGame.id,
+          });
+        }
+
+        // Delete existing nodes, edges, teams (cascade will handle edges)
+        const existingNodes = nodeRepository.findByGameId(existingGame.id);
+        for (const node of existingNodes) {
+          nodeRepository.delete(node.id);
+        }
+        const existingTeams = teamRepository.findByGameId(existingGame.id);
+        for (const team of existingTeams) {
+          teamRepository.delete(team.id);
+        }
+
+        // Update game settings
+        gameRepository.update(existingGame.id, {
+          name: data.game.name,
+          settings: data.game.settings as unknown as GameSettings,
+          logoUrl: data.game.logoUrl,
+        });
+
+        gameId = existingGame.id;
+      } else {
+        // Create new game
+        const newGame = gameService.createGame({
+          name: data.game.name,
+          publicSlug: data.game.publicSlug,
+          logoUrl: data.game.logoUrl || undefined,
+          settings: data.game.settings as unknown as GameSettings,
+        });
+        gameId = newGame.id;
+      }
+
+      // Create nodes and build key to ID mapping
+      const nodeKeyToId = new Map<string, string>();
+      for (const nodeData of data.nodes) {
+        const node = nodeRepository.create({
+          gameId,
+          nodeKey: nodeData.nodeKey,
+          title: nodeData.title,
+          content: nodeData.content || undefined,
+          contentType: (nodeData.contentType as ContentType) || "text",
+          mediaUrl: nodeData.mediaUrl || undefined,
+          passwordRequired: nodeData.passwordRequired || false,
+          isStart: nodeData.isStart || false,
+          isEnd: nodeData.isEnd || false,
+          points: nodeData.points ?? 100,
+          adminComment: nodeData.adminComment || undefined,
+          metadata: nodeData.metadata || {},
+        });
+        nodeKeyToId.set(nodeData.nodeKey, node.id);
+      }
+
+      // Create edges
+      for (const edgeData of data.edges || []) {
+        const fromNodeId = nodeKeyToId.get(edgeData.fromNodeKey);
+        const toNodeId = nodeKeyToId.get(edgeData.toNodeKey);
+
+        if (fromNodeId && toNodeId) {
+          edgeRepository.create({
+            gameId,
+            fromNodeId,
+            toNodeId,
+            condition: edgeData.condition as EdgeCondition,
+            sortOrder: edgeData.sortOrder || 0,
+          });
+        }
+      }
+
+      // Create teams
+      for (const teamData of data.teams || []) {
+        const startNodeId = teamData.startNodeKey
+          ? nodeKeyToId.get(teamData.startNodeKey)
+          : undefined;
+
+        teamRepository.create({
+          gameId,
+          name: teamData.name,
+          code: teamData.code,
+          startNodeId,
+          logoUrl: teamData.logoUrl || undefined,
+        });
+      }
+
+      const game = gameRepository.findById(gameId);
+      return reply.status(existingGame ? 200 : 201).send({
+        success: true,
+        message: existingGame ? "Game updated from import" : "Game imported successfully",
+        game,
+      });
     }
   );
 }

@@ -63,6 +63,7 @@ export const createNodeSchema = z.object({
   isStart: z.boolean().optional(),
   isEnd: z.boolean().optional(),
   points: z.number().int().min(0).optional(),
+  adminComment: z.string().max(1000).optional(),
   metadata: z.record(z.unknown()).optional(),
 });
 
@@ -77,6 +78,7 @@ export const updateNodeSchema = z.object({
   isStart: z.boolean().optional(),
   isEnd: z.boolean().optional(),
   points: z.number().int().min(0).optional(),
+  adminComment: z.string().max(1000).nullable().optional(),
   metadata: z.record(z.unknown()).optional(),
 });
 

@@ -135,6 +135,25 @@ describe("NodeRepository", () => {
 
       expect(node.nodeKey).toBe("MYKEY12345");
     });
+
+    it("should create a node with admin comment", () => {
+      const node = nodeRepository.create({
+        gameId,
+        title: "Commented Node",
+        adminComment: "This is an internal note for admins",
+      });
+
+      expect(node.adminComment).toBe("This is an internal note for admins");
+    });
+
+    it("should create a node with null admin comment by default", () => {
+      const node = nodeRepository.create({
+        gameId,
+        title: "No Comment Node",
+      });
+
+      expect(node.adminComment).toBeNull();
+    });
   });
 
   describe("findById", () => {
@@ -356,6 +375,31 @@ describe("NodeRepository", () => {
       const updated = nodeRepository.update(node.id, { content: null });
 
       expect(updated!.content).toBeNull();
+    });
+
+    it("should update admin comment", () => {
+      const node = nodeRepository.create({
+        gameId,
+        title: "Admin Comment Test",
+      });
+
+      const updated = nodeRepository.update(node.id, {
+        adminComment: "New admin note",
+      });
+
+      expect(updated!.adminComment).toBe("New admin note");
+    });
+
+    it("should allow setting admin comment to null", () => {
+      const node = nodeRepository.create({
+        gameId,
+        title: "Clear Comment",
+        adminComment: "Old comment",
+      });
+
+      const updated = nodeRepository.update(node.id, { adminComment: null });
+
+      expect(updated!.adminComment).toBeNull();
     });
 
     it("should return null for non-existent node", () => {
