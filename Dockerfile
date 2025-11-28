@@ -27,6 +27,7 @@ RUN npm ci --only=production
 # Copy dist first, then copy build into dist/build
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/build ./dist/build
+COPY --from=builder /app/package.json ./dist/package.json
 
 # Create data directory
 RUN mkdir -p /app/data
