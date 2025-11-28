@@ -73,6 +73,7 @@ stages:
           APP_VERSION: $[ stageDependencies.BumpVersion.BumpVersion.outputs['version.APP_VERSION'] ]
         steps:
           - checkout: self
+            persistCredentials: true
 
           - script: |
               git pull origin main
