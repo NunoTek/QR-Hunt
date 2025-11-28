@@ -40,6 +40,14 @@ interface Team {
   logoUrl: string | null;
 }
 
+interface Feedback {
+  id: string;
+  teamName: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+}
+
 interface Game {
   id: string;
   name: string;
@@ -388,7 +396,7 @@ function AdminGameDetailContent() {
   const navigation = useNavigation();
   const revalidator = useRevalidator();
   const toast = useToast();
-  const [activeTab, setActiveTab] = useState<"nodes" | "edges" | "teams" | "qrcodes" | "settings">("nodes");
+  const [activeTab, setActiveTab] = useState<"nodes" | "edges" | "teams" | "qrcodes" | "feedback" | "settings">("nodes");
   const [selectedQR, setSelectedQR] = useState<{ url: string; title: string } | null>(null);
   const [showQRIdentifyScanner, setShowQRIdentifyScanner] = useState(false);
   const [previewNode, setPreviewNode] = useState<Node | null>(null);
@@ -398,8 +406,59 @@ function AdminGameDetailContent() {
   const [editingEdge, setEditingEdge] = useState<Edge | null>(null);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [teamLogoUrl, setTeamLogoUrl] = useState<string>("");
+  const [feedbackList, setFeedbackList] = useState<Feedback[]>([]);
+  const [feedbackStats, setFeedbackStats] = useState<{ averageRating: number | null; count: number }>({ averageRating: null, count: 0 });
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
   const deleteTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const lastActionDataRef = useRef<typeof actionData | null>(null);
+  const feedbackLoadedRef = useRef(false);
+
+  // Load feedback when switching to feedback tab
+  useEffect(() => {
+    if (activeTab === "feedback" && !feedbackLoadedRef.current) {
+      feedbackLoadedRef.current = true;
+      setFeedbackLoading(true);
+      fetch(`/api/v1/feedback/admin/${data.game.id}`, {
+        headers: { "x-admin-code": adminCode },
+      })
+        .then((res) => res.json())
+        .then((result) => {
+          setFeedbackList(result.feedback || []);
+          setFeedbackStats({
+            averageRating: result.averageRating,
+            count: result.count || 0,
+          });
+        })
+        .catch(() => {
+          toast.error("Failed to load feedback");
+        })
+        .finally(() => {
+          setFeedbackLoading(false);
+        });
+    }
+  }, [activeTab, data.game.id, adminCode, toast]);
+
+  // Delete feedback
+  const handleDeleteFeedback = async (feedbackId: string, teamName: string) => {
+    try {
+      const response = await fetch(`/api/v1/feedback/admin/${feedbackId}`, {
+        method: "DELETE",
+        headers: { "x-admin-code": adminCode },
+      });
+      if (response.ok) {
+        setFeedbackList((prev) => prev.filter((f) => f.id !== feedbackId));
+        setFeedbackStats((prev) => ({
+          ...prev,
+          count: prev.count - 1,
+        }));
+        toast.success(`Feedback from "${teamName}" deleted`);
+      } else {
+        toast.error("Failed to delete feedback");
+      }
+    } catch {
+      toast.error("Failed to delete feedback");
+    }
+  };
 
   // Show toast notifications for action results
   useEffect(() => {
@@ -577,7 +636,7 @@ function AdminGameDetailContent() {
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-border pb-3 flex-wrap">
-        {(["nodes", "edges", "teams", "qrcodes", "settings"] as const).map((tab) => (
+        {(["nodes", "edges", "teams", "qrcodes", "feedback", "settings"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -588,10 +647,13 @@ function AdminGameDetailContent() {
             }`}
           >
             {tab === "qrcodes" ? "QR Codes" : tab.charAt(0).toUpperCase() + tab.slice(1)}
-            {tab !== "settings" && (
+            {tab !== "settings" && tab !== "feedback" && (
               <span className="ml-2 opacity-70">
                 ({tab === "nodes" ? data.nodes.length : tab === "edges" ? data.edges.length : tab === "teams" ? data.teams.length : data.qrCodes.length})
               </span>
+            )}
+            {tab === "feedback" && feedbackStats.count > 0 && (
+              <span className="ml-2 opacity-70">({feedbackStats.count})</span>
             )}
           </button>
         ))}
@@ -957,6 +1019,76 @@ function AdminGameDetailContent() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* Feedback Tab */}
+      {activeTab === "feedback" && (
+        <div className="bg-elevated rounded-xl border overflow-hidden shadow-sm">
+          <div className="p-4 border-b border-border">
+            <h3 className="text-lg font-semibold text-primary">Team Feedback</h3>
+            <p className="text-secondary text-sm mt-1">
+              View feedback submitted by teams during or after the game.
+            </p>
+            {feedbackStats.averageRating !== null && (
+              <div className="flex items-center gap-3 mt-3">
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <span key={star} className="text-lg">
+                      {star <= Math.round(feedbackStats.averageRating || 0) ? "⭐" : "☆"}
+                    </span>
+                  ))}
+                </div>
+                <span className="text-primary font-semibold">{feedbackStats.averageRating?.toFixed(1)}</span>
+                <span className="text-muted">({feedbackStats.count} {feedbackStats.count === 1 ? "review" : "reviews"})</span>
+              </div>
+            )}
+          </div>
+
+          {feedbackLoading ? (
+            <div className="p-8 text-center text-muted">Loading feedback...</div>
+          ) : feedbackList.length === 0 ? (
+            <div className="p-8 text-center text-muted">
+              <div className="text-4xl mb-2">📝</div>
+              <p>No feedback yet.</p>
+              <p className="text-sm mt-1">Teams can submit feedback during or after the game.</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {feedbackList.map((fb) => (
+                <div key={fb.id} className="p-4 hover:bg-secondary transition-colors">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="font-semibold text-primary">{fb.teamName}</span>
+                        <div className="flex items-center gap-0.5">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <span key={star} className="text-sm">
+                              {star <= fb.rating ? "⭐" : "☆"}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      {fb.comment && (
+                        <p className="text-secondary text-sm">{fb.comment}</p>
+                      )}
+                      <p className="text-xs text-muted mt-2">
+                        {new Date(fb.createdAt).toLocaleDateString()} at {new Date(fb.createdAt).toLocaleTimeString()}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteFeedback(fb.id, fb.teamName)}
+                      className={`${btnDanger} ${btnSmall}`}
+                      title="Delete feedback"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

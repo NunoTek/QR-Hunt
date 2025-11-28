@@ -61,6 +61,10 @@ async function start() {
     fastify.route({
       method: ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD"],
       url: "*",
+      config: {
+        // Disable body parsing so we can forward the raw body to Remix
+        rawBody: true,
+      },
       handler: async (request, reply) => {
       try {
         // Use forwarded headers when behind a proxy
@@ -68,27 +72,63 @@ async function start() {
         const host = (request.headers["x-forwarded-host"] as string) || request.headers.host || "localhost";
         const url = new URL(request.url, `${protocol}://${host}`);
 
+        // Get the raw body for POST/PUT/PATCH requests
+        let body: BodyInit | undefined;
+        if (request.method !== "GET" && request.method !== "HEAD") {
+          const contentType = request.headers["content-type"] || "";
+          if (contentType.includes("application/json")) {
+            body = JSON.stringify(request.body);
+          } else if (contentType.includes("application/x-www-form-urlencoded")) {
+            // Convert parsed form body back to URL-encoded string
+            const params = new URLSearchParams();
+            const formBody = request.body as Record<string, string>;
+            if (formBody && typeof formBody === "object") {
+              for (const [key, value] of Object.entries(formBody)) {
+                if (value !== undefined && value !== null) {
+                  params.append(key, String(value));
+                }
+              }
+            }
+            body = params.toString();
+            fastify.log.info({ url: url.toString(), body, contentType }, "Form submission");
+          } else if (request.body) {
+            body = JSON.stringify(request.body);
+          }
+        }
+
         const webRequest = new Request(url.toString(), {
           method: request.method,
           headers: request.headers as HeadersInit,
-          body:
-            request.method !== "GET" && request.method !== "HEAD"
-              ? JSON.stringify(request.body)
-              : undefined,
+          body,
         });
 
         const response = await remixHandler(webRequest, {});
 
+        fastify.log.info({
+          url: url.toString(),
+          status: response.status,
+          hasCookies: (response.headers.getSetCookie?.()?.length || 0) > 0
+        }, "Remix response");
+
         reply.status(response.status);
 
-        for (const [key, value] of response.headers.entries()) {
-          reply.header(key, value);
+        // Handle Set-Cookie headers specially - they need getSetCookie() method
+        const setCookieHeaders = response.headers.getSetCookie?.() || [];
+        for (const cookie of setCookieHeaders) {
+          reply.header("Set-Cookie", cookie);
         }
 
-        const body = await response.text();
-        return reply.send(body);
+        // Forward other headers (excluding Set-Cookie which we handled above)
+        for (const [key, value] of response.headers.entries()) {
+          if (key.toLowerCase() !== "set-cookie") {
+            reply.header(key, value);
+          }
+        }
+
+        const responseBody = await response.text();
+        return reply.send(responseBody);
       } catch (error) {
-        fastify.log.error(error);
+        fastify.log.error(error, "Remix handler error");
         return reply.status(500).send("Internal Server Error");
       }
       },
