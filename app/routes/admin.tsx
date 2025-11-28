@@ -1,6 +1,8 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, Link, Outlet, useActionData, useLoaderData, useLocation, useNavigation } from "@remix-run/react";
+import { useEffect } from "react";
+import { useToast } from "~/components/Toast";
 
 export const meta: MetaFunction = () => {
   return [{ title: "Admin Dashboard - QR Hunt" }];
@@ -31,9 +33,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
     if (adminCode === expectedCode) {
       const headers = new Headers();
+      const isProduction = process.env.NODE_ENV === "production";
+      const secureFlag = isProduction ? "; Secure" : "";
       headers.append(
         "Set-Cookie",
-        `admin_code=${adminCode}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${7 * 24 * 60 * 60}`
+        `admin_code=${adminCode}; Path=/; HttpOnly; SameSite=Lax${secureFlag}; Max-Age=${7 * 24 * 60 * 60}`
       );
       return redirect("/admin", { headers });
     }
@@ -54,6 +58,13 @@ function AdminLogin() {
   const navigation = useNavigation();
   const actionData = useActionData<{ error?: string }>();
   const isSubmitting = navigation.state === "submitting";
+  const toast = useToast();
+
+  useEffect(() => {
+    if (actionData?.error) {
+      toast.error(actionData.error);
+    }
+  }, [actionData?.error, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-bg-primary via-bg-secondary to-bg-primary">
