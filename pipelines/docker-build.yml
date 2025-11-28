@@ -28,19 +28,61 @@ variables:
     value: '$(Build.SourcesDirectory)/Dockerfile'
   - name: BUILD_CONTEXT
     value: '$(Build.SourcesDirectory)'
+  - name: NODE_VERSION
+    value: '22.x'
 
 stages:
+  - stage: BumpVersion
+    displayName: 'Bump Version'
+    jobs:
+      - job: BumpVersion
+        displayName: 'Bump Patch Version'
+        steps:
+          - checkout: self
+            persistCredentials: true
+
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(NODE_VERSION)'
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+
+          - script: |
+              git config user.email "azure-pipelines@dev.azure.com"
+              git config user.name "Azure Pipelines"
+            displayName: 'Configure Git'
+
+          - script: node scripts/bump-version.js patch
+            displayName: 'Bump patch version'
+
+          - script: |
+              NEW_VERSION=$(node -p "require('./package.json').version")
+              echo "##vso[task.setvariable variable=APP_VERSION;isOutput=true]$NEW_VERSION"
+              git add package.json
+              git commit -m "chore: bump version to ${NEW_VERSION} [skip ci]"
+              git push origin HEAD:main
+            displayName: 'Commit and push version bump'
+            name: version
+
   - stage: Build
     displayName: 'Build Docker Image'
+    dependsOn: BumpVersion
     jobs:
       - job: BuildAndPush
         displayName: 'Build and Push Docker Image'
+        variables:
+          APP_VERSION: $[ stageDependencies.BumpVersion.BumpVersion.outputs['version.APP_VERSION'] ]
         steps:
+          - checkout: self
+
+          - script: |
+              git pull origin main
+            displayName: 'Pull latest version'
+
           - script: |
               docker build \
                 -f $(DOCKERFILE_PATH) \
                 -t $(ACR_REGISTRY)/$(IMAGE_NAME):$(Build.BuildId) \
-                -t $(ACR_REGISTRY)/$(IMAGE_NAME):$(Build.SourceBranchName) \
+                -t $(ACR_REGISTRY)/$(IMAGE_NAME):$(APP_VERSION) \
                 -t $(ACR_REGISTRY)/$(IMAGE_NAME):latest \
                 --build-arg BUILD_ID=$(Build.BuildId) \
                 $(BUILD_CONTEXT)
@@ -52,15 +94,9 @@ stages:
 
           - script: |
               docker push $(ACR_REGISTRY)/$(IMAGE_NAME):$(Build.BuildId)
-              docker push $(ACR_REGISTRY)/$(IMAGE_NAME):$(Build.SourceBranchName)
+              docker push $(ACR_REGISTRY)/$(IMAGE_NAME):$(APP_VERSION)
               docker push $(ACR_REGISTRY)/$(IMAGE_NAME):latest
             displayName: 'Push image to ACR'
-
-          # Tag with semantic version if this is a tag build
-          - script: |
-              docker push $(ACR_REGISTRY)/$(IMAGE_NAME):$(Build.SourceBranchName)
-            displayName: 'Push semantic version tag'
-            condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/v')
 
           - script: |
               docker logout $(ACR_REGISTRY)
