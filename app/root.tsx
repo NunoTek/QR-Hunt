@@ -17,7 +17,7 @@ export const meta: MetaFunction = () => {
   return [
     { title: "QR Hunt - Scavenger Hunt Platform" },
     { name: "description", content: "Self-hostable QR code scavenger hunt platform" },
-    { name: "theme-color", content: "#6366f1" },
+    { name: "theme-color", content: "#6366f1" }, // "#06b6d4"
   ];
 };
 
@@ -26,6 +26,9 @@ export const links: LinksFunction = () => {
     { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
     { rel: "manifest", href: "/manifest.json" },
     { rel: "apple-touch-icon", href: "/favicon.svg" },
+    { rel: "preconnect", href: "https://fonts.googleapis.com" },
+    { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+    { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" },
   ];
 };
 

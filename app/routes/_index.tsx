@@ -70,14 +70,14 @@ export default function Index() {
 
       {/* How It Works Section */}
       <section className="py-12 sm:py-16 lg:py-20 xl:py-24 px-4 sm:px-6 lg:px-8 bg-secondary">
-        <div className="max-w-6xl mx-auto">
+        <div className="mx-auto">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-center text-primary mb-8 sm:mb-12 lg:mb-16">
             How It Works
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
             {/* Feature 1 */}
-            <div className="bg-elevated/50 p-5 sm:p-6 lg:p-8 rounded-2xl border border-border transition-all hover:border-[var(--color-primary)]/50 hover:-translate-y-1 duration-normal">
+            <div className="bg-elevated/50 p-5 sm:p-6 lg:p-8 rounded-2xl border transition-all hover:border-[var(--color-primary)]/50 hover:-translate-y-1 duration-normal">
               <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] flex items-center justify-center mb-4 sm:mb-5">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="sm:w-7 sm:h-7">
                   <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -92,7 +92,7 @@ export default function Index() {
             </div>
 
             {/* Feature 2 */}
-            <div className="bg-elevated/50 p-5 sm:p-6 lg:p-8 rounded-2xl border border-border transition-all hover:border-[var(--color-primary)]/50 hover:-translate-y-1 duration-normal">
+            <div className="bg-elevated/50 p-5 sm:p-6 lg:p-8 rounded-2xl border transition-all hover:border-[var(--color-primary)]/50 hover:-translate-y-1 duration-normal">
               <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] flex items-center justify-center mb-4 sm:mb-5">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="sm:w-7 sm:h-7">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -106,7 +106,7 @@ export default function Index() {
             </div>
 
             {/* Feature 3 */}
-            <div className="bg-elevated/50 p-5 sm:p-6 lg:p-8 rounded-2xl border border-border transition-all hover:border-[var(--color-primary)]/50 hover:-translate-y-1 duration-normal">
+            <div className="bg-elevated/50 p-5 sm:p-6 lg:p-8 rounded-2xl border transition-all hover:border-[var(--color-primary)]/50 hover:-translate-y-1 duration-normal">
               <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] flex items-center justify-center mb-4 sm:mb-5">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="sm:w-7 sm:h-7">
                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
@@ -118,7 +118,7 @@ export default function Index() {
             </div>
 
             {/* Feature 4 */}
-            <div className="bg-elevated/50 p-5 sm:p-6 lg:p-8 rounded-2xl border border-border transition-all hover:border-[var(--color-primary)]/50 hover:-translate-y-1 duration-normal">
+            <div className="bg-elevated/50 p-5 sm:p-6 lg:p-8 rounded-2xl border transition-all hover:border-[var(--color-primary)]/50 hover:-translate-y-1 duration-normal">
               <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] flex items-center justify-center mb-4 sm:mb-5">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" className="sm:w-7 sm:h-7">
                   <path d="M12 20V10" />
@@ -135,7 +135,7 @@ export default function Index() {
 
       {/* Perfect For Section */}
       <section className="py-12 sm:py-16 lg:py-20 xl:py-24 px-4 sm:px-6 lg:px-8 bg-primary">
-        <div className="max-w-6xl mx-auto">
+        <div className="mx-auto">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-center text-primary mb-8 sm:mb-12 lg:mb-16">
             Perfect For
           </h2>
@@ -149,7 +149,7 @@ export default function Index() {
               { icon: "🏛️", title: "Museums & Tours", desc: "Create engaging self-guided experiences" },
               { icon: "💒", title: "Weddings", desc: "Fun activities for guests to enjoy" },
             ].map((item, i) => (
-              <div key={i} className="bg-secondary p-4 sm:p-5 lg:p-6 rounded-xl border border-border hover:border-[var(--color-primary)]/50 transition-colors text-center">
+              <div key={i} className="bg-secondary p-4 sm:p-5 lg:p-6 rounded-xl border hover:border-[var(--color-primary)]/50 transition-colors text-center">
                 <span className="text-3xl sm:text-4xl block mb-2 sm:mb-3" role="img" aria-label={item.title}>{item.icon}</span>
                 <h4 className="font-bold text-primary text-xs sm:text-sm lg:text-base mb-1">{item.title}</h4>
                 <p className="text-tertiary text-xs lg:text-sm">{item.desc}</p>
@@ -161,7 +161,7 @@ export default function Index() {
 
       {/* Features List Section */}
       <section className="py-12 sm:py-16 lg:py-20 xl:py-24 px-4 sm:px-6 lg:px-8 bg-secondary">
-        <div className="max-w-6xl mx-auto">
+        <div className="mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16 items-center">
             {/* Features List */}
             <div>
@@ -252,7 +252,7 @@ export default function Index() {
 
       {/* Footer */}
       <footer className="py-6 sm:py-8 px-4 sm:px-6 lg:px-8 bg-secondary border-t border-gray-800">
-        <div className="max-w-6xl mx-auto text-center">
+        <div className="mx-auto text-center">
           <div className="flex items-center justify-center gap-2 text-lg sm:text-xl font-bold text-secondary mb-2">
             <span>🎯</span>
             <span>QR Hunt</span>

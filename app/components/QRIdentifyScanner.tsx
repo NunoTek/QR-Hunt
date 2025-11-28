@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Spinner } from "~/components/Loading";
 import { useToast } from "~/components/Toast";
 
 interface QRIdentifyScannerProps {
@@ -251,7 +250,7 @@ export function QRIdentifyScanner({ nodes, onClose }: QRIdentifyScannerProps) {
                 </svg>
               </div>
               <h4 className="text-lg font-semibold text-primary mb-2">QR Code Identified!</h4>
-              <div className="p-4 rounded-lg border border-border mb-4" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+              <div className="p-4 rounded-lg border mb-4" style={{ backgroundColor: 'var(--bg-secondary)' }}>
                 <p className="text-xl font-bold text-primary mb-2">{identifiedNode.title}</p>
                 <div className="flex justify-center gap-2">
                   {identifiedNode.isStart && (

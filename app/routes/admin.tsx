@@ -57,7 +57,7 @@ function AdminLogin() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-bg-primary via-bg-secondary to-bg-primary">
-      <div className="w-full max-w-md bg-elevated rounded-2xl shadow-2xl p-6 sm:p-8 border border-border animate-fade-in">
+      <div className="w-full max-w-md bg-elevated rounded-2xl shadow-2xl p-6 sm:p-8 border animate-fade-in">
         <div className="text-center mb-6 sm:mb-8">
           <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
             <span className="text-4xl" aria-label="Target">🎯</span>
@@ -123,7 +123,7 @@ function AdminLayout() {
     <div className="min-h-screen bg-primary">
       {/* Top Navigation */}
       <header className="bg-[var(--bg-elevated)] border-b border-[var(--border-color)] sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 flex-wrap gap-y-2">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 text-primary font-bold text-lg hover:text-[var(--color-primary)] transition-colors">
@@ -159,7 +159,7 @@ function AdminLayout() {
               <input type="hidden" name="_action" value="logout" />
               <button
                 type="submit"
-                className="px-3 py-2 sm:px-4 text-sm text-tertiary hover:text-primary border border-border hover:border-strong rounded-lg transition-all"
+                className="px-3 py-2 sm:px-4 text-sm text-tertiary hover:text-primary border hover:border-strong rounded-lg transition-all"
               >
                 Sign Out
               </button>
@@ -169,7 +169,7 @@ function AdminLayout() {
       </header>
 
       {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <main className="mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <Outlet />
       </main>
     </div>
