@@ -27,6 +27,7 @@ interface Node {
   isEnd: boolean;
   points: number;
   adminComment: string | null;
+  activated: boolean;
 }
 
 interface Edge {
@@ -76,6 +77,7 @@ interface LoaderData {
     url: string;
     isStart: boolean;
     isEnd: boolean;
+    activated: boolean;
     adminComment: string | null;
   }>;
   baseUrl: string;
@@ -233,6 +235,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
         if (!response.ok) {
           const data = await response.json();
           return json({ error: data.error || "Failed to update random mode" });
+        }
+        break;
+      }
+
+      case "toggleActivated": {
+        const nodeId = formData.get("nodeId");
+        const activated = formData.get("activated") === "true";
+        const response = await fetch(`${baseUrl}/api/v1/admin/nodes/${nodeId}`, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({ activated }),
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          return json({ error: data.error || "Failed to toggle activation" });
         }
         break;
       }
@@ -429,6 +446,8 @@ function AdminGameDetailContent() {
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [downloadingQRCodes, setDownloadingQRCodes] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0 });
+  const [nodeFilter, setNodeFilter] = useState({ title: "", activated: "all" as "all" | "activated" | "not-activated" });
+  const [qrFilter, setQrFilter] = useState({ title: "", activated: "all" as "all" | "activated" | "not-activated" });
   const deleteTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const lastActionDataRef = useRef<typeof actionData | null>(null);
   const feedbackLoadedRef = useRef(false);
@@ -475,6 +494,44 @@ function AdminGameDetailContent() {
 
     return canvas.toDataURL("image/png");
   }, []);
+
+  // Filter nodes based on title and activated status
+  const filteredNodes = data.nodes.filter((node) => {
+    const matchesTitle = node.title.toLowerCase().includes(nodeFilter.title.toLowerCase());
+    const matchesActivated = nodeFilter.activated === "all" ||
+      (nodeFilter.activated === "activated" && node.activated) ||
+      (nodeFilter.activated === "not-activated" && !node.activated);
+    return matchesTitle && matchesActivated;
+  });
+
+  // Filter QR codes based on title and activated status
+  const filteredQRCodes = data.qrCodes.filter((qr) => {
+    const matchesTitle = qr.title.toLowerCase().includes(qrFilter.title.toLowerCase());
+    const matchesActivated = qrFilter.activated === "all" ||
+      (qrFilter.activated === "activated" && qr.activated) ||
+      (qrFilter.activated === "not-activated" && !qr.activated);
+    return matchesTitle && matchesActivated;
+  });
+
+  // Handler for activating a node via QR scanner
+  const handleActivateNode = useCallback(async (nodeId: string) => {
+    const baseUrl = getApiUrl();
+    try {
+      const response = await fetch(`${baseUrl}/api/v1/admin/nodes/${nodeId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-code": adminCode,
+        },
+        body: JSON.stringify({ activated: true }),
+      });
+      if (response.ok) {
+        revalidator.revalidate();
+      }
+    } catch (err) {
+      console.error("Failed to activate node:", err);
+    }
+  }, [adminCode, revalidator]);
 
   // Function to download all QR codes as a ZIP file
   const downloadAllQRCodes = useCallback(async () => {
@@ -611,6 +668,9 @@ function AdminGameDetailContent() {
           break;
         case "updateRandomMode":
           toast.success("Random mode updated");
+          break;
+        case "toggleActivated":
+          toast.success("Node activation updated");
           break;
       }
     }
@@ -777,6 +837,32 @@ function AdminGameDetailContent() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Nodes Table */}
           <div className="lg:col-span-2 bg-elevated rounded-xl border overflow-hidden shadow-sm">
+            {/* Filters */}
+            <div className="p-4 border-b border-border flex flex-col sm:flex-row gap-3">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  placeholder="Filter by title..."
+                  value={nodeFilter.title}
+                  onChange={(e) => setNodeFilter({ ...nodeFilter, title: e.target.value })}
+                  className="w-full px-3 py-2 text-sm bg-secondary text-primary border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+              <div>
+                <select
+                  value={nodeFilter.activated}
+                  onChange={(e) => setNodeFilter({ ...nodeFilter, activated: e.target.value as "all" | "activated" | "not-activated" })}
+                  className="w-full px-3 py-2 text-sm bg-secondary text-primary border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                >
+                  <option value="all">All Status</option>
+                  <option value="activated">Activated</option>
+                  <option value="not-activated">Not Activated</option>
+                </select>
+              </div>
+              <div className="text-sm text-muted self-center">
+                {filteredNodes.length} / {data.nodes.length} nodes
+              </div>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -785,11 +871,12 @@ function AdminGameDetailContent() {
                     <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">Key</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">Type</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">Pts</th>
+                    <th className="text-center px-4 py-3 text-xs font-medium text-muted uppercase">Activated</th>
                     <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {data.nodes.map((node) => (
+                  {filteredNodes.map((node) => (
                     <tr key={node.id} className="hover:bg-secondary">
                       <td className="px-4 py-3 text-primary">
                         <div>
@@ -804,6 +891,32 @@ function AdminGameDetailContent() {
                       <td className="px-4 py-3 text-secondary">{node.nodeKey}</td>
                       <td className="px-4 py-3 text-secondary">{node.contentType}</td>
                       <td className="px-4 py-3 text-secondary">{node.points}</td>
+                      <td className="px-4 py-3 text-center">
+                        <Form method="post" className="inline">
+                          <input type="hidden" name="_action" value="toggleActivated" />
+                          <input type="hidden" name="nodeId" value={node.id} />
+                          <input type="hidden" name="activated" value={(!node.activated).toString()} />
+                          <button
+                            type="submit"
+                            className={`inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
+                              node.activated
+                                ? "bg-success/20 text-success hover:bg-success/30"
+                                : "bg-muted/20 text-muted hover:bg-muted/30"
+                            }`}
+                            title={node.activated ? "Click to deactivate" : "Click to activate"}
+                          >
+                            {node.activated ? (
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M20 6L9 17l-5-5" />
+                              </svg>
+                            ) : (
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10" />
+                              </svg>
+                            )}
+                          </button>
+                        </Form>
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1 justify-end">
                           <button onClick={() => setPreviewNode(node)} className={`${btnSecondary} ${btnSmall}`} title="Preview clue">
@@ -1122,8 +1235,34 @@ function AdminGameDetailContent() {
                   <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                   <circle cx="12" cy="13" r="4" />
                 </svg>
-                Scan to Identify
+                Scan to Identify / Activate
               </button>
+            </div>
+          </div>
+          {/* Filters */}
+          <div className="p-4 border-b border-border flex flex-col sm:flex-row gap-3">
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder="Filter by title..."
+                value={qrFilter.title}
+                onChange={(e) => setQrFilter({ ...qrFilter, title: e.target.value })}
+                className="w-full px-3 py-2 text-sm bg-secondary text-primary border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+            <div>
+              <select
+                value={qrFilter.activated}
+                onChange={(e) => setQrFilter({ ...qrFilter, activated: e.target.value as "all" | "activated" | "not-activated" })}
+                className="w-full px-3 py-2 text-sm bg-secondary text-primary border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              >
+                <option value="all">All Status</option>
+                <option value="activated">Activated</option>
+                <option value="not-activated">Not Activated</option>
+              </select>
+            </div>
+            <div className="text-sm text-muted self-center">
+              {filteredQRCodes.length} / {data.qrCodes.length} QR codes
             </div>
           </div>
           <div className="overflow-x-auto">
@@ -1132,11 +1271,12 @@ function AdminGameDetailContent() {
                 <tr className="border-b border-border">
                   <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">Node</th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">URL</th>
+                  <th className="text-center px-4 py-3 text-xs font-medium text-muted uppercase">Activated</th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {data.qrCodes.map((qr) => (
+                {filteredQRCodes.map((qr) => (
                   <tr key={qr.nodeId} className="hover:bg-secondary">
                     <td className="px-4 py-3 text-primary">
                       {qr.title}
@@ -1145,6 +1285,32 @@ function AdminGameDetailContent() {
                     </td>
                     <td className="px-4 py-3">
                       <code className="text-xs text-secondary break-all">{qr.url}</code>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <Form method="post" className="inline">
+                        <input type="hidden" name="_action" value="toggleActivated" />
+                        <input type="hidden" name="nodeId" value={qr.nodeId} />
+                        <input type="hidden" name="activated" value={(!qr.activated).toString()} />
+                        <button
+                          type="submit"
+                          className={`inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
+                            qr.activated
+                              ? "bg-success/20 text-success hover:bg-success/30"
+                              : "bg-muted/20 text-muted hover:bg-muted/30"
+                          }`}
+                          title={qr.activated ? "Click to deactivate" : "Click to activate"}
+                        >
+                          {qr.activated ? (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M20 6L9 17l-5-5" />
+                            </svg>
+                          ) : (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10" />
+                            </svg>
+                          )}
+                        </button>
+                      </Form>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2 justify-end">
@@ -1161,8 +1327,8 @@ function AdminGameDetailContent() {
                     </td>
                   </tr>
                 ))}
-                {data.qrCodes.length === 0 && (
-                  <tr><td colSpan={3} className="px-4 py-8 text-center text-muted">No nodes yet. Add nodes first to generate QR codes.</td></tr>
+                {filteredQRCodes.length === 0 && (
+                  <tr><td colSpan={4} className="px-4 py-8 text-center text-muted">No QR codes match the current filters.</td></tr>
                 )}
               </tbody>
             </table>
@@ -1364,7 +1530,7 @@ function AdminGameDetailContent() {
           </div>
 
           {/* Random Mode Setting */}
-          <div className="bg-elevated rounded-xl border p-6 shadow-sm">
+          <div className="mt-4 bg-elevated rounded-xl border p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-primary mb-2">Clue Order Mode</h3>
             <p className="text-secondary text-sm mb-4">Control how teams receive their next clue after scanning a QR code.</p>
 
@@ -1423,7 +1589,7 @@ function AdminGameDetailContent() {
             <div className="flex flex-wrap gap-3">
               <a
                 href={`${data.baseUrl}/api/v1/admin/games/${data.game.id}/export`}
-                className={btnPrimary}
+                className={`${btnSecondary} cursor-pointer`}
                 download={`${data.game.publicSlug}-export.json`}
               >
                 <svg className="w-4 h-4 mr-2 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1512,6 +1678,7 @@ function AdminGameDetailContent() {
         <QRIdentifyScanner
           nodes={data.qrCodes}
           onClose={() => setShowQRIdentifyScanner(false)}
+          onActivate={handleActivateNode}
         />
       )}
 

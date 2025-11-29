@@ -135,6 +135,10 @@ export async function scanRoutes(fastify: FastifyInstance) {
     const allNodes = nodeRepository.findByGameId(progress.team.gameId);
     const totalNodes = allNodes.length;
 
+    // Check if random mode is enabled
+    const game = gameRepository.findById(progress.team.gameId);
+    const isRandomMode = game?.settings.randomMode ?? false;
+
     return reply.send({
       team: {
         id: progress.team.id,
@@ -168,6 +172,24 @@ export async function scanRoutes(fastify: FastifyInstance) {
       isFinished: progress.isFinished,
       isWinner: winStatus?.isWinner ?? false,
       scansCount: progress.scans.length,
+      isRandomMode,
+    });
+  });
+
+  // Shuffle to a new random clue (only works in random mode)
+  fastify.post("/shuffle-clue", async (request: FastifyRequest, reply: FastifyReply) => {
+    const result = scanService.shuffleRandomClue(request.team!.id);
+
+    if (!result.success) {
+      return reply.status(400).send({
+        success: false,
+        message: result.message,
+      });
+    }
+
+    return reply.send({
+      success: true,
+      newClue: result.newClue,
     });
   });
 }

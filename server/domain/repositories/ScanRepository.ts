@@ -172,6 +172,7 @@ export class ScanRepository {
     lastNodeId: string | null;
     lastNodeTitle: string | null;
     nextNodeTitle: string | null;
+    currentClueTitle: string | null;
   }> {
     const db = getDatabase();
     const rows = db
@@ -208,6 +209,14 @@ export class ScanRepository {
           INNER JOIN edges e ON ls.node_id = e.from_node_id
           INNER JOIN nodes n ON e.to_node_id = n.id
           WHERE e.game_id = ?
+        ),
+        current_clues AS (
+          SELECT
+            t.id as team_id,
+            cn.title as current_clue_title
+          FROM teams t
+          LEFT JOIN nodes cn ON t.current_clue_id = cn.id
+          WHERE t.game_id = ?
         )
         SELECT
           ts.team_id,
@@ -216,12 +225,14 @@ export class ScanRepository {
           ts.last_scan_time,
           ls.node_id as last_node_id,
           ls.node_title as last_node_title,
-          nn.next_node_title
+          nn.next_node_title,
+          cc.current_clue_title
         FROM team_stats ts
         LEFT JOIN last_scans ls ON ts.team_id = ls.team_id
-        LEFT JOIN next_nodes nn ON ts.team_id = nn.team_id`
+        LEFT JOIN next_nodes nn ON ts.team_id = nn.team_id
+        LEFT JOIN current_clues cc ON ts.team_id = cc.team_id`
       )
-      .all(gameId, gameId, gameId, gameId) as Array<{
+      .all(gameId, gameId, gameId, gameId, gameId) as Array<{
       team_id: string;
       nodes_found: number;
       total_points: number;
@@ -229,6 +240,7 @@ export class ScanRepository {
       last_node_id: string | null;
       last_node_title: string | null;
       next_node_title: string | null;
+      current_clue_title: string | null;
     }>;
 
     return rows.map((row) => ({
@@ -239,6 +251,7 @@ export class ScanRepository {
       lastNodeId: row.last_node_id,
       lastNodeTitle: row.last_node_title,
       nextNodeTitle: row.next_node_title,
+      currentClueTitle: row.current_clue_title,
     }));
   }
 }

@@ -16,6 +16,7 @@ interface NodeRow {
   is_end: number;
   points: number;
   admin_comment: string | null;
+  activated: number;
   metadata: string;
   created_at: string;
 }
@@ -35,6 +36,7 @@ function rowToNode(row: NodeRow): Node {
     isEnd: row.is_end === 1,
     points: row.points,
     adminComment: row.admin_comment,
+    activated: row.activated === 1,
     metadata: JSON.parse(row.metadata) as Record<string, unknown>,
     createdAt: row.created_at,
   };
@@ -112,6 +114,14 @@ export class NodeRepository {
     return rows.map(rowToNode);
   }
 
+  findActivatedByGameId(gameId: string): Node[] {
+    const db = getDatabase();
+    const rows = db
+      .prepare("SELECT * FROM nodes WHERE game_id = ? AND activated = 1 ORDER BY created_at ASC")
+      .all(gameId) as NodeRow[];
+    return rows.map(rowToNode);
+  }
+
   findStartNodes(gameId: string): Node[] {
     const db = getDatabase();
     const rows = db
@@ -142,6 +152,7 @@ export class NodeRepository {
       isEnd: boolean;
       points: number;
       adminComment: string | null;
+      activated: boolean;
       metadata: Record<string, unknown>;
     }>
   ): Node | null {
@@ -195,6 +206,10 @@ export class NodeRepository {
     if (data.adminComment !== undefined) {
       updates.push("admin_comment = ?");
       values.push(data.adminComment);
+    }
+    if (data.activated !== undefined) {
+      updates.push("activated = ?");
+      values.push(data.activated ? 1 : 0);
     }
     if (data.metadata !== undefined) {
       updates.push("metadata = ?");

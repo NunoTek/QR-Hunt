@@ -1,11 +1,15 @@
+import jsQR from "jsqr";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Spinner } from "~/components/Loading";
 import { useToast } from "~/components/Toast";
 import { playCoinSound, playErrorSound, playSuccessSound } from "~/lib/sounds";
+import { QR_SCANNER } from "~/config/constants";
 
 interface QRScannerProps {
   gameSlug: string;
   token: string;
+  autoStart?: boolean;
+  onScanSuccess?: () => void;
 }
 
 interface ScanResult {
@@ -32,7 +36,7 @@ declare global {
   }
 }
 
-export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false }: QRScannerProps & { autoStart?: boolean }) {
+export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false, onScanSuccess }: QRScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isScanning, setIsScanning] = useState(false);
@@ -50,9 +54,6 @@ export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false }: QRS
   const lastScanAttemptRef = useRef<number>(0);
   const toast = useToast();
   const hasAutoStartedRef = useRef(false);
-
-  // Minimum time between scan attempts (ms)
-  const SCAN_COOLDOWN = 2000;
 
   const stopCamera = useCallback(() => {
     if (animationRef.current) {
@@ -110,16 +111,20 @@ export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false }: QRS
         // Play coin/success sound
         playSuccessSound();
         if (result.pointsAwarded) {
-          setTimeout(() => playCoinSound(), 200);
+          setTimeout(() => playCoinSound(), QR_SCANNER.COIN_SOUND_DELAY_MS);
         }
         toast.success(result.message);
         if (result.pointsAwarded) {
           toast.success(`+${result.pointsAwarded} points!`);
         }
+        // Call success callback if provided
+        if (onScanSuccess) {
+          onScanSuccess();
+        }
         // Full page reload to fetch new clue data from server
         setTimeout(() => {
           window.location.reload();
-        }, 1500);
+        }, QR_SCANNER.RELOAD_DELAY_MS);
       } else {
         playErrorSound();
         toast.error(result.message);
@@ -133,7 +138,7 @@ export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false }: QRS
       setIsProcessing(false);
       isProcessingRef.current = false;
     }
-  }, [token, toast]);
+  }, [token, toast, onScanSuccess]);
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,7 +186,7 @@ export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false }: QRS
       }
 
       const now = Date.now();
-      if (now - lastScanAttemptRef.current < SCAN_COOLDOWN) {
+      if (now - lastScanAttemptRef.current < QR_SCANNER.SCAN_COOLDOWN_MS) {
         return false;
       }
 
@@ -197,6 +202,7 @@ export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false }: QRS
     };
 
     if (barcodeDetectorRef.current) {
+      // Use native BarcodeDetector (Chrome, Edge, etc.)
       barcodeDetectorRef.current
         .detect(canvas)
         .then((barcodes) => {
@@ -211,8 +217,17 @@ export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false }: QRS
           animationRef.current = requestAnimationFrame(scanQRCode);
         });
     } else {
-      // BarcodeDetector not available - show helpful message
-      // Continue scanning loop, user will need to use manual entry
+      // Fallback to jsQR for iOS Safari and other browsers without BarcodeDetector
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: "dontInvert",
+      });
+
+      if (code && code.data) {
+        if (processBarcode(code.data)) {
+          return;
+        }
+      }
       animationRef.current = requestAnimationFrame(scanQRCode);
     }
   }, [stopCamera, submitScan, extractNodeKey]);
@@ -247,8 +262,8 @@ export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false }: QRS
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: { ideal: "environment" },
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
+            width: { ideal: QR_SCANNER.VIDEO_WIDTH },
+            height: { ideal: QR_SCANNER.VIDEO_HEIGHT },
           },
           audio: false,
         });

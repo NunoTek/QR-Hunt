@@ -68,6 +68,101 @@ export default function Index() {
         </div>
       </section>
 
+      {/* The Player Experience Section */}
+      <section className="py-12 sm:py-16 lg:py-20 xl:py-24 px-4 sm:px-6 lg:px-8 bg-primary">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-primary mb-3 sm:mb-4">
+              The Player Experience
+            </h2>
+            <p className="text-secondary text-base sm:text-lg max-w-2xl mx-auto">
+              Teams race to find hidden QR codes scattered around a location. Each scan reveals a clue leading to the next location. First team to find all codes wins!
+            </p>
+          </div>
+
+          {/* Flow Steps */}
+          <div className="relative">
+            {/* Connection Line (hidden on mobile) */}
+            <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-[var(--color-primary)]/20 via-[var(--color-primary)] to-[var(--color-primary)]/20 -translate-y-1/2 z-0" />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 relative z-10">
+              {/* Step 1: Join */}
+              <div className="bg-elevated p-5 sm:p-6 rounded-2xl border-2 border-[var(--color-primary)]/30 hover:border-[var(--color-primary)] transition-all text-center group">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] flex items-center justify-center mx-auto mb-4 text-white text-2xl sm:text-3xl group-hover:scale-110 transition-transform">
+                  🎮
+                </div>
+                <h3 className="text-base sm:text-lg font-bold text-primary mb-2">1. Join the Game</h3>
+                <p className="text-secondary text-sm">
+                  Open the link, enter your 6-digit team code, and you're ready to play!
+                </p>
+              </div>
+
+              {/* Arrow (mobile only - hidden when grid becomes 2 columns) */}
+              <div className="flex justify-center sm:hidden text-[var(--color-primary)] -my-1">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 5v14M19 12l-7 7-7-7" />
+                </svg>
+              </div>
+
+              {/* Step 2: Read Clue */}
+              <div className="bg-elevated p-5 sm:p-6 rounded-2xl border-2 border-[var(--color-primary)]/30 hover:border-[var(--color-primary)] transition-all text-center group">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] flex items-center justify-center mx-auto mb-4 text-white text-2xl sm:text-3xl group-hover:scale-110 transition-transform">
+                  📜
+                </div>
+                <h3 className="text-base sm:text-lg font-bold text-primary mb-2">2. Read the Clue</h3>
+                <p className="text-secondary text-sm">
+                  "Find the old oak tree near the fountain in the main square..."
+                </p>
+              </div>
+
+              {/* Arrow (mobile only - hidden when grid becomes 2 columns) */}
+              <div className="flex justify-center sm:hidden text-[var(--color-primary)] -my-1">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 5v14M19 12l-7 7-7-7" />
+                </svg>
+              </div>
+
+              {/* Step 3: Hunt */}
+              <div className="bg-elevated p-5 sm:p-6 rounded-2xl border-2 border-[var(--color-primary)]/30 hover:border-[var(--color-primary)] transition-all text-center group">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] flex items-center justify-center mx-auto mb-4 text-white text-2xl sm:text-3xl group-hover:scale-110 transition-transform">
+                  🔍
+                </div>
+                <h3 className="text-base sm:text-lg font-bold text-primary mb-2">3. Hunt & Discover</h3>
+                <p className="text-secondary text-sm">
+                  Work together, explore the area, and find the hidden QR code!
+                </p>
+              </div>
+
+              {/* Arrow (mobile only - hidden when grid becomes 2 columns) */}
+              <div className="flex justify-center sm:hidden text-[var(--color-primary)] -my-1">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 5v14M19 12l-7 7-7-7" />
+                </svg>
+              </div>
+
+              {/* Step 4: Scan & Score */}
+              <div className="bg-elevated p-5 sm:p-6 rounded-2xl border-2 border-[var(--color-primary)]/30 hover:border-[var(--color-primary)] transition-all text-center group">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-[var(--color-success)] to-emerald-700 flex items-center justify-center mx-auto mb-4 text-white text-2xl sm:text-3xl group-hover:scale-110 transition-transform">
+                  ✨
+                </div>
+                <h3 className="text-base sm:text-lg font-bold text-primary mb-2">4. Scan & Score!</h3>
+                <p className="text-secondary text-sm">
+                  Scan the QR code, earn points, and reveal the next clue!
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Repeat indicator */}
+          <div className="flex items-center justify-center gap-3 mt-6 sm:mt-8 text-[var(--color-primary)]">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" />
+            </svg>
+            <span className="font-semibold text-sm sm:text-base">Repeat until victory!</span>
+          </div>
+        </div>
+      </section>
+
       {/* How It Works Section */}
       <section className="py-12 sm:py-16 lg:py-20 xl:py-24 px-4 sm:px-6 lg:px-8 bg-secondary">
         <div className="mx-auto">

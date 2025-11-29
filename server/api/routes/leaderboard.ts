@@ -2,10 +2,10 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { gameService } from "../../domain/services/GameService.js";
 import { gameRepository } from "../../domain/repositories/GameRepository.js";
 import { gameEvents } from "../../lib/eventEmitter.js";
+import { LEADERBOARD_CACHE, SSE } from "../../config/constants.js";
 
 // Simple in-memory cache for leaderboard data
 const leaderboardCache = new Map<string, { data: unknown; timestamp: number }>();
-const CACHE_TTL_MS = 5000; // 5 seconds cache
 
 interface LeaderboardResponse {
   game: {
@@ -29,7 +29,7 @@ interface LeaderboardResponse {
 
 function getCachedLeaderboard(slug: string): LeaderboardResponse | null {
   const cached = leaderboardCache.get(slug);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+  if (cached && Date.now() - cached.timestamp < LEADERBOARD_CACHE.TTL_MS) {
     return cached.data as LeaderboardResponse;
   }
   return null;
@@ -133,10 +133,10 @@ export async function leaderboardRoutes(fastify: FastifyInstance) {
         reply.raw.write(`data: ${JSON.stringify(initialData)}\n\n`);
       }
 
-      // Keep-alive ping every 30 seconds
+      // Keep-alive ping
       const keepAliveInterval = setInterval(() => {
         reply.raw.write(`: ping\n\n`);
-      }, 30000);
+      }, SSE.KEEP_ALIVE_INTERVAL_MS);
 
       // Listen for leaderboard updates
       const onLeaderboardUpdate = (data: unknown) => {

@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { getApiUrl } from "~/lib/api";
 import { Spinner } from "~/components/Loading";
 import { useToast } from "~/components/Toast";
-import { playNotificationSound } from "~/lib/sounds";
+import { playNotificationSound, playRankUpSound, playRankDownSound } from "~/lib/sounds";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   return [
@@ -81,6 +81,12 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   return json<LoaderData>({ ...data, streamUrl });
 }
 
+interface RankChange {
+  teamName: string;
+  direction: "up" | "down";
+  positions: number;
+}
+
 export default function Leaderboard() {
   const loaderData = useLoaderData<typeof loader>();
   const [data, setData] = useState<LeaderboardData>(loaderData);
@@ -89,9 +95,66 @@ export default function Leaderboard() {
   const [lastScan, setLastScan] = useState<{ teamName: string; points: number } | null>(null);
   const [feedbackData, setFeedbackData] = useState<FeedbackData | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [rankChanges, setRankChanges] = useState<Map<string, RankChange>>(new Map());
   const eventSourceRef = useRef<EventSource | null>(null);
   const feedbackLoadedRef = useRef(false);
+  const previousRanksRef = useRef<Map<string, number>>(new Map());
   const toast = useToast();
+
+  // Initialize previous ranks on mount only
+  useEffect(() => {
+    if (previousRanksRef.current.size === 0) {
+      const ranks = new Map<string, number>();
+      loaderData.leaderboard.forEach((entry) => {
+        ranks.set(entry.teamName, entry.rank);
+      });
+      previousRanksRef.current = ranks;
+    }
+  }, [loaderData.leaderboard]);
+
+  // Detect rank changes and trigger animations/sounds
+  const handleLeaderboardUpdate = useCallback((newData: LeaderboardData) => {
+    const newChanges = new Map<string, RankChange>();
+    let hasRankUp = false;
+    let hasRankDown = false;
+
+    newData.leaderboard.forEach((entry) => {
+      const prevRank = previousRanksRef.current.get(entry.teamName);
+      if (prevRank !== undefined && prevRank !== entry.rank) {
+        const positions = Math.abs(prevRank - entry.rank);
+        if (entry.rank < prevRank) {
+          newChanges.set(entry.teamName, { teamName: entry.teamName, direction: "up", positions });
+          hasRankUp = true;
+        } else {
+          newChanges.set(entry.teamName, { teamName: entry.teamName, direction: "down", positions });
+          hasRankDown = true;
+        }
+      }
+    });
+
+    // Play sounds for rank changes
+    if (hasRankUp) {
+      playRankUpSound();
+    } else if (hasRankDown) {
+      playRankDownSound();
+    }
+
+    // Update rank changes for animations
+    if (newChanges.size > 0) {
+      setRankChanges(newChanges);
+      // Clear rank changes after animation
+      setTimeout(() => setRankChanges(new Map()), 2000);
+    }
+
+    // Update previous ranks
+    const ranks = new Map<string, number>();
+    newData.leaderboard.forEach((entry) => {
+      ranks.set(entry.teamName, entry.rank);
+    });
+    previousRanksRef.current = ranks;
+
+    setData(newData);
+  }, []);
 
   // Load feedback when game is completed
   useEffect(() => {
@@ -126,7 +189,7 @@ export default function Leaderboard() {
     eventSource.addEventListener("leaderboard", (event) => {
       try {
         const newData = JSON.parse(event.data) as LeaderboardData;
-        setData(newData);
+        handleLeaderboardUpdate(newData);
       } catch (e) {
         console.error("Failed to parse leaderboard data", e);
       }
@@ -157,7 +220,7 @@ export default function Leaderboard() {
       // Reconnect after 5 seconds
       setTimeout(connectSSE, 5000);
     };
-  }, [data.game.slug, data.game.status, toast]);
+  }, [data.game.slug, data.game.status, toast, handleLeaderboardUpdate]);
 
   useEffect(() => {
     connectSSE();
@@ -188,12 +251,44 @@ export default function Leaderboard() {
       const response = await fetch(`/api/v1/game/${data.game.slug}/leaderboard`);
       if (response.ok) {
         const newData = await response.json();
-        setData(newData);
+        handleLeaderboardUpdate(newData);
       }
     } catch (e) {
       console.error("Failed to refresh", e);
     }
     setTimeout(() => setIsRefreshing(false), 500);
+  };
+
+  // Get rank change class for animation
+  const getRankChangeClass = (teamName: string): string => {
+    const change = rankChanges.get(teamName);
+    if (!change) return "";
+    return change.direction === "up" ? "rank-up" : "rank-down";
+  };
+
+  // Get rank change indicator
+  const getRankChangeIndicator = (teamName: string): React.ReactNode => {
+    const change = rankChanges.get(teamName);
+    if (!change) return null;
+    return (
+      <span className={`rank-change-indicator ${change.direction}`}>
+        {change.direction === "up" ? (
+          <>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <polyline points="18 15 12 9 6 15" />
+            </svg>
+            <span>{change.positions}</span>
+          </>
+        ) : (
+          <>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+            <span>{change.positions}</span>
+          </>
+        )}
+      </span>
+    );
   };
 
   const getRankStyle = (rank: number, isFinished: boolean) => {
@@ -279,11 +374,14 @@ export default function Leaderboard() {
             {data.leaderboard.map((entry, index) => (
               <div
                 key={`${entry.teamName}-${entry.rank}`}
-                className={`leaderboard-item ${entry.isFinished ? "finished" : ""} ${index === 0 ? "first-place" : ""} ${lastScan?.teamName === entry.teamName ? "just-scored" : ""}`}
+                className={`leaderboard-item ${entry.isFinished ? "finished" : ""} ${index === 0 ? "first-place" : ""} ${lastScan?.teamName === entry.teamName ? "just-scored" : ""} ${getRankChangeClass(entry.teamName)}`}
                 style={{ animationDelay: `${index * 50}ms` }}
               >
-                <div className="rank-badge" style={getRankStyle(entry.rank, entry.isFinished)}>
-                  {entry.rank === 1 && entry.isFinished ? "👑" : `#${entry.rank}`}
+                <div className="rank-badge-container">
+                  <div className="rank-badge" style={getRankStyle(entry.rank, entry.isFinished)}>
+                    {entry.rank === 1 && entry.isFinished ? "👑" : `#${entry.rank}`}
+                  </div>
+                  {getRankChangeIndicator(entry.teamName)}
                 </div>
 
                 <div className="team-info">
@@ -500,6 +598,12 @@ export default function Leaderboard() {
           0% { background: var(--color-info-bg); transform: scale(1.02); }
           100% { background: var(--bg-elevated); transform: scale(1); }
         }
+        .rank-badge-container {
+          position: relative;
+          display: flex;
+          align-items: center;
+          flex-shrink: 0;
+        }
         .rank-badge {
           display: flex;
           align-items: center;
@@ -510,6 +614,48 @@ export default function Leaderboard() {
           font-weight: 700;
           font-size: 0.75rem;
           flex-shrink: 0;
+        }
+        .rank-change-indicator {
+          position: absolute;
+          left: 100%;
+          margin-left: 4px;
+          display: flex;
+          align-items: center;
+          gap: 2px;
+          font-size: 0.7rem;
+          font-weight: 700;
+          padding: 2px 6px;
+          border-radius: 10px;
+          white-space: nowrap;
+          animation: fadeSlideIn 0.3s ease;
+        }
+        .rank-change-indicator.up {
+          color: #16a34a;
+          background: rgba(22, 163, 74, 0.15);
+        }
+        .rank-change-indicator.down {
+          color: #dc2626;
+          background: rgba(220, 38, 38, 0.15);
+        }
+        @keyframes fadeSlideIn {
+          0% { opacity: 0; transform: translateX(-10px); }
+          100% { opacity: 1; transform: translateX(0); }
+        }
+        .leaderboard-item.rank-up {
+          animation: rankUpAnimation 0.6s ease;
+        }
+        .leaderboard-item.rank-down {
+          animation: rankDownAnimation 0.6s ease;
+        }
+        @keyframes rankUpAnimation {
+          0% { transform: translateY(20px); opacity: 0.5; background: rgba(22, 163, 74, 0.1); }
+          50% { transform: translateY(-5px); background: rgba(22, 163, 74, 0.2); }
+          100% { transform: translateY(0); opacity: 1; background: var(--bg-elevated); }
+        }
+        @keyframes rankDownAnimation {
+          0% { transform: translateY(-20px); opacity: 0.5; background: rgba(220, 38, 38, 0.1); }
+          50% { transform: translateY(5px); background: rgba(220, 38, 38, 0.15); }
+          100% { transform: translateY(0); opacity: 1; background: var(--bg-elevated); }
         }
         .team-info {
           flex: 1;

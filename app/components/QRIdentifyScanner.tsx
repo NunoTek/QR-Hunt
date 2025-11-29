@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { useToast } from "~/components/Toast";
+import { useQRScanner, extractNodeKeyFromUrl } from "~/hooks/useQRScanner";
+import { QR_IDENTIFY_SCANNER } from "~/config/constants";
 
 interface QRIdentifyScannerProps {
   nodes: Array<{
@@ -9,243 +11,51 @@ interface QRIdentifyScannerProps {
     url: string;
     isStart: boolean;
     isEnd: boolean;
+    activated: boolean;
     adminComment: string | null;
   }>;
   onClose: () => void;
+  onActivate?: (nodeId: string) => void;
 }
 
-type BarcodeDetectorType = {
-  detect: (source: HTMLCanvasElement | ImageBitmap) => Promise<Array<{ rawValue: string }>>;
-};
-
-declare global {
-  interface Window {
-    BarcodeDetector?: new (options: { formats: string[] }) => BarcodeDetectorType;
-  }
-}
-
-export function QRIdentifyScanner({ nodes, onClose }: QRIdentifyScannerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isScanning, setIsScanning] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
+export function QRIdentifyScanner({ nodes, onClose, onActivate }: QRIdentifyScannerProps) {
   const [identifiedNode, setIdentifiedNode] = useState<typeof nodes[0] | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const animationRef = useRef<number | null>(null);
-  const barcodeDetectorRef = useRef<BarcodeDetectorType | null>(null);
-  const lastScannedRef = useRef<string | null>(null);
-  const isProcessingRef = useRef(false);
-  const lastScanAttemptRef = useRef<number>(0);
   const toast = useToast();
 
-  // Minimum time between scan attempts (ms)
-  const SCAN_COOLDOWN = 1000;
-
-  const stopCamera = useCallback(() => {
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-      animationRef.current = null;
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    setIsScanning(false);
-  }, []);
-
-  const extractNodeKey = useCallback((url: string): string | null => {
-    try {
-      const urlObj = new URL(url);
-      const pathParts = urlObj.pathname.split("/");
-      const nodeIndex = pathParts.findIndex((part) => part === "n");
-      if (nodeIndex !== -1 && pathParts[nodeIndex + 1]) {
-        return pathParts[nodeIndex + 1];
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  }, []);
-
-  const identifyQRCode = useCallback((qrData: string) => {
-    // Prevent duplicate processing using ref (synchronous check)
-    if (isProcessingRef.current) {
-      return false;
-    }
-
-    const now = Date.now();
-    if (now - lastScanAttemptRef.current < SCAN_COOLDOWN) {
-      return false;
-    }
-
-    const nodeKey = extractNodeKey(qrData);
+  const handleScan = useCallback((qrData: string): boolean => {
+    const nodeKey = extractNodeKeyFromUrl(qrData);
     if (nodeKey) {
-      isProcessingRef.current = true;
-      lastScanAttemptRef.current = now;
-
       const matchedNode = nodes.find(n => n.nodeKey === nodeKey);
       if (matchedNode) {
         setIdentifiedNode(matchedNode);
-        stopCamera();
         toast.success(`Found: ${matchedNode.title}`);
-        isProcessingRef.current = false;
         return true;
       } else {
         toast.warning("QR code not found in this game");
-        isProcessingRef.current = false;
       }
     }
     return false;
-  }, [nodes, extractNodeKey, stopCamera, toast]);
+  }, [nodes, toast]);
 
-  const scanQRCode = useCallback(() => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
+  const {
+    videoRef,
+    canvasRef,
+    isScanning,
+    cameraError,
+    startCamera,
+    stopCamera,
+    resetScanner,
+  } = useQRScanner({
+    scanCooldownMs: QR_IDENTIFY_SCANNER.SCAN_COOLDOWN_MS,
+    onScan: handleScan,
+    autoStart: true,
+  });
 
-    if (!video || !canvas || video.readyState !== video.HAVE_ENOUGH_DATA) {
-      animationRef.current = requestAnimationFrame(scanQRCode);
-      return;
-    }
-
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx) {
-      animationRef.current = requestAnimationFrame(scanQRCode);
-      return;
-    }
-
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    if (window.BarcodeDetector && !barcodeDetectorRef.current) {
-      try {
-        barcodeDetectorRef.current = new window.BarcodeDetector({
-          formats: ["qr_code"],
-        });
-      } catch {
-        barcodeDetectorRef.current = null;
-      }
-    }
-
-    if (barcodeDetectorRef.current) {
-      // Skip detection if already processing
-      if (isProcessingRef.current) {
-        animationRef.current = requestAnimationFrame(scanQRCode);
-        return;
-      }
-
-      barcodeDetectorRef.current
-        .detect(canvas)
-        .then((barcodes) => {
-          if (barcodes.length > 0 && barcodes[0].rawValue) {
-            const qrData = barcodes[0].rawValue;
-            if (qrData !== lastScannedRef.current) {
-              lastScannedRef.current = qrData;
-              if (identifyQRCode(qrData)) {
-                return;
-              }
-            }
-          }
-          animationRef.current = requestAnimationFrame(scanQRCode);
-        })
-        .catch(() => {
-          animationRef.current = requestAnimationFrame(scanQRCode);
-        });
-    } else {
-      animationRef.current = requestAnimationFrame(scanQRCode);
-    }
-  }, [identifyQRCode]);
-
-  const startCamera = useCallback(async () => {
-    setCameraError(null);
+  const handleScanAnother = useCallback(() => {
     setIdentifiedNode(null);
-    lastScannedRef.current = null;
-
-    if (!window.isSecureContext) {
-      const errorMsg = "Camera requires HTTPS. Please use a secure connection.";
-      setCameraError(errorMsg);
-      toast.error(errorMsg);
-      return;
-    }
-
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      const errorMsg = "Camera not supported in this browser.";
-      setCameraError(errorMsg);
-      toast.error(errorMsg);
-      return;
-    }
-
-    try {
-      let stream: MediaStream;
-
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: "environment" },
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-          },
-          audio: false,
-        });
-      } catch {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: false,
-        });
-      }
-
-      streamRef.current = stream;
-      setIsScanning(true);
-    } catch (err) {
-      let errorMsg = "Unable to access camera.";
-
-      if (err instanceof Error) {
-        if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
-          errorMsg = "Camera permission denied. Please allow camera access and try again.";
-        } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
-          errorMsg = "No camera found on this device.";
-        } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
-          errorMsg = "Camera is already in use by another application.";
-        }
-      }
-
-      setCameraError(errorMsg);
-      toast.error(errorMsg);
-    }
-  }, [toast]);
-
-  useEffect(() => {
-    // Auto-start camera when component mounts
+    resetScanner();
     startCamera();
-    return () => {
-      stopCamera();
-    };
-  }, [stopCamera, startCamera]);
-
-  useEffect(() => {
-    if (isScanning && streamRef.current && videoRef.current && !videoRef.current.srcObject) {
-      const video = videoRef.current;
-      video.srcObject = streamRef.current;
-
-      video.onloadedmetadata = () => {
-        video.play()
-          .then(() => {
-            toast.info("Scanner ready! Point at a QR code");
-            animationRef.current = requestAnimationFrame(scanQRCode);
-          })
-          .catch((err) => {
-            console.error("Failed to play video:", err);
-            setCameraError("Failed to start video playback");
-            toast.error("Failed to start video playback");
-          });
-      };
-
-      video.onerror = () => {
-        setCameraError("Video failed to load");
-        toast.error("Video failed to load");
-      };
-    }
-  }, [isScanning, scanQRCode, toast]);
+  }, [resetScanner, startCamera]);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-3 sm:p-4">
@@ -279,7 +89,7 @@ export function QRIdentifyScanner({ nodes, onClose }: QRIdentifyScannerProps) {
               <h4 className="text-lg font-semibold text-primary mb-2">QR Code Identified!</h4>
               <div className="p-4 rounded-lg border mb-4" style={{ backgroundColor: 'var(--bg-secondary)' }}>
                 <p className="text-xl font-bold text-primary mb-2">{identifiedNode.title}</p>
-                <div className="flex justify-center gap-2">
+                <div className="flex justify-center gap-2 flex-wrap">
                   {identifiedNode.isStart && (
                     <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-success/15 text-success border border-success/30">
                       Start
@@ -290,6 +100,13 @@ export function QRIdentifyScanner({ nodes, onClose }: QRIdentifyScannerProps) {
                       End
                     </span>
                   )}
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                    identifiedNode.activated
+                      ? "bg-success/15 text-success border border-success/30"
+                      : "bg-warning/15 text-warning border border-warning/30"
+                  }`}>
+                    {identifiedNode.activated ? "Activated" : "Not Activated"}
+                  </span>
                 </div>
                 {identifiedNode.adminComment && (
                   <p className="text-sm text-secondary mt-3 italic bg-warning/10 px-3 py-2 rounded-lg">
@@ -298,12 +115,21 @@ export function QRIdentifyScanner({ nodes, onClose }: QRIdentifyScannerProps) {
                 )}
                 <p className="text-xs text-muted mt-3 break-all">{identifiedNode.url}</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                {onActivate && !identifiedNode.activated && (
+                  <button
+                    onClick={() => {
+                      onActivate(identifiedNode.nodeId);
+                      setIdentifiedNode({ ...identifiedNode, activated: true });
+                      toast.success("Node activated!");
+                    }}
+                    className="flex-1 px-4 py-2 text-sm font-medium text-white bg-success rounded-lg hover:bg-success/80 transition-colors"
+                  >
+                    Activate
+                  </button>
+                )}
                 <button
-                  onClick={() => {
-                    setIdentifiedNode(null);
-                    startCamera();
-                  }}
+                  onClick={handleScanAnother}
                   className="flex-1 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors"
                 >
                   Scan Another

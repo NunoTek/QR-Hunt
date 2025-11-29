@@ -5,6 +5,7 @@ import { nodeRepository } from "../repositories/NodeRepository.js";
 import { edgeRepository } from "../repositories/EdgeRepository.js";
 import { scanRepository } from "../repositories/ScanRepository.js";
 import type { Scan, Node, TeamProgress } from "../types.js";
+import { GAME } from "../../config/constants.js";
 
 export interface ScanResult {
   success: boolean;
@@ -24,43 +25,29 @@ export class ScanService {
     clientIp?: string;
     userAgent?: string;
   }): ScanResult {
-    const team = teamRepository.findById(data.teamId);
-    if (!team) {
-      return { success: false, message: "Team not found" };
+    // Validate team and game
+    const entityValidation = this.validateTeamAndGame(data.teamId);
+    if (!entityValidation.valid) {
+      return { success: false, message: entityValidation.message };
     }
+    const { team, game } = entityValidation;
 
-    const game = gameRepository.findById(team.gameId);
-    if (!game) {
-      return { success: false, message: "Game not found" };
-    }
-
-    if (game.status !== "active") {
-      return { success: false, message: "Game is not active" };
-    }
-
-    const node = nodeRepository.findByNodeKey(team.gameId, data.nodeKey);
+    // Find and validate node
+    const node = nodeRepository.findByNodeKey(team!.gameId, data.nodeKey);
     if (!node) {
       return { success: false, message: "Invalid QR code" };
     }
 
     // Check if this is a valid scan based on team progress
-    const validationResult = this.validateScan(team.id, node);
-    if (!validationResult.valid) {
-      return { success: false, message: validationResult.message };
+    const scanValidation = this.validateScan(team!.id, node);
+    if (!scanValidation.valid) {
+      return { success: false, message: scanValidation.message };
     }
 
-    // Check password if required
-    if (node.passwordRequired) {
-      if (!data.password) {
-        return {
-          success: false,
-          message: "Password required",
-          node: this.sanitizeNode(node),
-        };
-      }
-      if (!this.verifyPassword(data.password, node.passwordHash)) {
-        return { success: false, message: "Incorrect password" };
-      }
+    // Validate password if required
+    const passwordValidation = this.validatePasswordIfRequired(node, data.password);
+    if (!passwordValidation.valid) {
+      return passwordValidation.result!;
     }
 
     // Check if already scanned
@@ -72,12 +59,10 @@ export class ScanService {
       };
     }
 
-    // Calculate points
+    // Calculate points and record scan
     const pointsAwarded = this.calculatePoints(data.teamId, node);
-
-    // Record the scan
     const scan = scanRepository.create({
-      gameId: team.gameId,
+      gameId: team!.gameId,
       teamId: data.teamId,
       nodeId: node.id,
       clientIp: data.clientIp,
@@ -85,35 +70,111 @@ export class ScanService {
       pointsAwarded,
     });
 
-    // Check if game is complete (all nodes scanned and last scan is an end node)
-    const allNodes = nodeRepository.findByGameId(team.gameId);
-    const teamScans = scanRepository.findByTeamId(data.teamId);
-    const scannedNodeIds = new Set(teamScans.map((s) => s.nodeId));
-    const allNodesScanned = allNodes.every((n) => scannedNodeIds.has(n.id));
-    const isGameComplete = allNodesScanned && node.isEnd;
-
-    // Get remaining nodes to scan
-    const remainingNodes = allNodes.filter((n) => !scannedNodeIds.has(n.id));
-
-    let message = "QR scanned successfully";
-    if (isGameComplete) {
-      message = "Congratulations! You found all QR codes and finished!";
-    } else if (allNodesScanned && !node.isEnd) {
-      message = "All QR codes found! Now find an end point to finish!";
-    } else {
-      const remaining = remainingNodes.length;
-      message = `QR scanned! ${remaining} more to find.`;
-    }
+    // Check completion status and build response
+    const completionStatus = this.checkCompletionStatus(team!.gameId, data.teamId, node);
 
     return {
       success: true,
-      message,
+      message: completionStatus.message,
       node: this.sanitizeNode(node),
-      nextNodes: remainingNodes.map(this.sanitizeNode),
-      isGameComplete,
+      nextNodes: completionStatus.remainingNodes.map(this.sanitizeNode),
+      isGameComplete: completionStatus.isGameComplete,
       pointsAwarded,
       scan,
     };
+  }
+
+  /** Validates that team exists and game is active */
+  private validateTeamAndGame(teamId: string): {
+    valid: boolean;
+    message: string;
+    team?: ReturnType<typeof teamRepository.findById>;
+    game?: ReturnType<typeof gameRepository.findById>;
+  } {
+    const team = teamRepository.findById(teamId);
+    if (!team) {
+      return { valid: false, message: "Team not found" };
+    }
+
+    const game = gameRepository.findById(team.gameId);
+    if (!game) {
+      return { valid: false, message: "Game not found" };
+    }
+
+    if (game.status !== "active") {
+      return { valid: false, message: "Game is not active" };
+    }
+
+    return { valid: true, message: "", team, game };
+  }
+
+  /** Validates password if node requires one */
+  private validatePasswordIfRequired(
+    node: Node,
+    password?: string
+  ): { valid: boolean; result?: ScanResult } {
+    if (!node.passwordRequired) {
+      return { valid: true };
+    }
+
+    if (!password) {
+      return {
+        valid: false,
+        result: {
+          success: false,
+          message: "Password required",
+          node: this.sanitizeNode(node),
+        },
+      };
+    }
+
+    if (!this.verifyPassword(password, node.passwordHash)) {
+      return {
+        valid: false,
+        result: { success: false, message: "Incorrect password" },
+      };
+    }
+
+    return { valid: true };
+  }
+
+  /** Checks game completion status and generates appropriate message */
+  private checkCompletionStatus(
+    gameId: string,
+    teamId: string,
+    lastNode: Node
+  ): {
+    isGameComplete: boolean;
+    allNodesScanned: boolean;
+    remainingNodes: Node[];
+    message: string;
+  } {
+    const allNodes = nodeRepository.findActivatedByGameId(gameId);
+    const teamScans = scanRepository.findByTeamId(teamId);
+    const scannedNodeIds = new Set(teamScans.map((s) => s.nodeId));
+    const allNodesScanned = allNodes.every((n) => scannedNodeIds.has(n.id));
+    const isGameComplete = allNodesScanned && lastNode.isEnd;
+    const remainingNodes = allNodes.filter((n) => !scannedNodeIds.has(n.id));
+
+    const message = this.constructSuccessMessage(isGameComplete, allNodesScanned, lastNode.isEnd, remainingNodes.length);
+
+    return { isGameComplete, allNodesScanned, remainingNodes, message };
+  }
+
+  /** Constructs the appropriate success message based on game state */
+  private constructSuccessMessage(
+    isGameComplete: boolean,
+    allNodesScanned: boolean,
+    isEndNode: boolean,
+    remainingCount: number
+  ): string {
+    if (isGameComplete) {
+      return "Congratulations! You found all QR codes and finished!";
+    }
+    if (allNodesScanned && !isEndNode) {
+      return "All QR codes found! Now find an end point to finish!";
+    }
+    return `QR scanned! ${remainingCount} more to find.`;
   }
 
   private validateScan(teamId: string, node: Node): { valid: boolean; message: string } {
@@ -136,12 +197,12 @@ export class ScanService {
       return { valid: true, message: "" };
     }
 
-    // Check if all nodes have been scanned
-    const allNodes = nodeRepository.findByGameId(team.gameId);
+    // Check if all activated nodes have been scanned
+    const allNodes = nodeRepository.findActivatedByGameId(team.gameId);
     const scannedNodeIds = new Set(scans.map((s) => s.nodeId));
     const allNodesScanned = allNodes.every((n) => scannedNodeIds.has(n.id));
 
-    // If all nodes scanned, only allow end nodes to finish the game
+    // If all activated nodes scanned, only allow end nodes to finish the game
     if (allNodesScanned) {
       if (!node.isEnd) {
         return { valid: false, message: "You've found all QR codes! Find an end point to finish." };
@@ -168,8 +229,8 @@ export class ScanService {
           Date.now() - new Date(lastScan.timestamp).getTime();
         const minutesTaken = timeDiff / (1000 * 60);
 
-        // Bonus for fast completion (under 5 minutes)
-        if (minutesTaken < 5) {
+        // Bonus for fast completion
+        if (minutesTaken < GAME.TIME_BONUS_THRESHOLD_MINUTES) {
           points = Math.round(points * game.settings.timeBonusMultiplier);
         }
       }
@@ -222,8 +283,8 @@ export class ScanService {
     let nextNodes: Node[] = [];
     let isFinished = false;
 
-    // Get all nodes and check completion
-    const allNodes = nodeRepository.findByGameId(team.gameId);
+    // Get activated nodes only (for clues and completion)
+    const allNodes = nodeRepository.findActivatedByGameId(team.gameId);
     const scannedNodeIds = new Set(scans.map((s) => s.nodeId));
     const allNodesScanned = allNodes.every((n) => scannedNodeIds.has(n.id));
 
@@ -237,16 +298,17 @@ export class ScanService {
       // Finished = all nodes scanned AND last scan is an end node
       if (allNodesScanned && currentNode?.isEnd) {
         isFinished = true;
+        // Clear current clue when finished
+        if (team.currentClueId) {
+          teamRepository.update(teamId, { currentClueId: null });
+        }
       } else {
         // Show remaining nodes to find
         nextNodes = allNodes.filter((n) => !scannedNodeIds.has(n.id));
 
         if (isRandomMode) {
-          // Random mode: pick a random unscanned node as next clue
-          if (nextNodes.length > 0) {
-            const randomIndex = Math.floor(Math.random() * nextNodes.length);
-            nextClue = nextNodes[randomIndex];
-          }
+          // Random mode: use persisted clue or assign a new one
+          nextClue = this.getOrAssignRandomClue(team, nextNodes);
         } else {
           // Standard mode: get next clue from edges (first unscanned node connected via edge)
           if (currentNode) {
@@ -265,12 +327,11 @@ export class ScanService {
       nextClue = nodeRepository.findById(team.startNodeId);
       nextNodes = allNodes.filter((n) => n.id !== team.startNodeId);
     } else if (isRandomMode) {
-      // Random mode with no start node: pick a random start node
+      // Random mode with no start node: use persisted clue or pick a random start node
       const startNodes = allNodes.filter((n) => n.isStart);
       if (startNodes.length > 0) {
-        const randomIndex = Math.floor(Math.random() * startNodes.length);
-        nextClue = startNodes[randomIndex];
-        nextNodes = allNodes.filter((n) => n.id !== nextClue!.id);
+        nextClue = this.getOrAssignRandomClue(team, startNodes);
+        nextNodes = allNodes.filter((n) => n.id !== nextClue?.id);
       }
     }
 
@@ -286,6 +347,72 @@ export class ScanService {
     };
   }
 
+  // Get the persisted random clue or assign a new one
+  private getOrAssignRandomClue(team: { id: string; currentClueId: string | null }, availableNodes: Node[]): Node | null {
+    if (availableNodes.length === 0) return null;
+
+    // Check if there's a persisted clue that's still valid (not scanned yet)
+    if (team.currentClueId) {
+      const persistedClue = availableNodes.find((n) => n.id === team.currentClueId);
+      if (persistedClue) {
+        return persistedClue;
+      }
+      // Persisted clue was scanned or deleted, need a new one
+    }
+
+    // Assign a new random clue
+    const randomIndex = Math.floor(Math.random() * availableNodes.length);
+    const newClue = availableNodes[randomIndex];
+    teamRepository.update(team.id, { currentClueId: newClue.id });
+    return newClue;
+  }
+
+  // Shuffle to a new random clue (for "Try another" button)
+  shuffleRandomClue(teamId: string): { success: boolean; newClue?: Node; message?: string } {
+    const team = teamRepository.findById(teamId);
+    if (!team) {
+      return { success: false, message: "Team not found" };
+    }
+
+    const game = gameRepository.findById(team.gameId);
+    if (!game) {
+      return { success: false, message: "Game not found" };
+    }
+
+    if (!game.settings.randomMode) {
+      return { success: false, message: "Random mode is not enabled for this game" };
+    }
+
+    const scans = scanRepository.findByTeamId(teamId);
+    const scannedNodeIds = new Set(scans.map((s) => s.nodeId));
+    const allNodes = nodeRepository.findActivatedByGameId(team.gameId);
+
+    let availableNodes: Node[];
+    if (scans.length === 0) {
+      // No scans yet, pick from activated start nodes
+      availableNodes = allNodes.filter((n) => n.isStart);
+    } else {
+      // Pick from unscanned activated nodes
+      availableNodes = allNodes.filter((n) => !scannedNodeIds.has(n.id));
+    }
+
+    // Filter out current clue to ensure we get a different one
+    if (team.currentClueId && availableNodes.length > 1) {
+      availableNodes = availableNodes.filter((n) => n.id !== team.currentClueId);
+    }
+
+    if (availableNodes.length === 0) {
+      return { success: false, message: "No other clues available" };
+    }
+
+    // Pick a random new clue
+    const randomIndex = Math.floor(Math.random() * availableNodes.length);
+    const newClue = availableNodes[randomIndex];
+    teamRepository.update(teamId, { currentClueId: newClue.id });
+
+    return { success: true, newClue: this.sanitizeNode(newClue) };
+  }
+
   checkIfWinner(teamId: string): { isWinner: boolean; winnerTeamId?: string } {
     const team = teamRepository.findById(teamId);
     if (!team) return { isWinner: false };
@@ -293,11 +420,11 @@ export class ScanService {
     const game = gameRepository.findById(team.gameId);
     if (!game) return { isWinner: false };
 
-    const allNodes = nodeRepository.findByGameId(team.gameId);
+    const allNodes = nodeRepository.findActivatedByGameId(team.gameId);
     const endNodeIds = new Set(allNodes.filter((n) => n.isEnd).map((n) => n.id));
     const totalNodesCount = allNodes.length;
 
-    // Find all teams that have finished (scanned all nodes + ended on an end node)
+    // Find all teams that have finished (scanned all activated nodes + ended on an end node)
     const teams = teamRepository.findByGameId(team.gameId);
     let firstFinisher: { teamId: string; finishTime: Date } | null = null;
 

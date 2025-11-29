@@ -1,72 +1,16 @@
-import type { ActionFunctionArgs, MetaFunction } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
-import { Form, useActionData, useNavigation, useSearchParams } from "@remix-run/react";
+import type { MetaFunction } from "@remix-run/node";
+import { useNavigate, useSearchParams } from "@remix-run/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Spinner } from "~/components/Loading";
 import { useToast } from "~/components/Toast";
 import { Version } from "~/components/Version";
-import { getApiUrl } from "~/lib/api";
+import { setToken, setGameSlug } from "~/lib/tokenStorage";
 
 export const meta: MetaFunction = () => {
   return [
     { title: "Join Game - QR Hunt" },
   ];
 };
-
-interface ActionData {
-  error?: string;
-  fieldErrors?: {
-    gameSlug?: string[];
-    teamCode?: string[];
-  };
-}
-
-export async function action({ request }: ActionFunctionArgs) {
-  const formData = await request.formData();
-  const gameSlug = formData.get("gameSlug")?.toString().trim().toLowerCase();
-  const teamCode = formData.get("teamCode")?.toString().trim().toUpperCase();
-
-  const fieldErrors: ActionData["fieldErrors"] = {};
-
-  if (!gameSlug) {
-    fieldErrors.gameSlug = ["Game ID is required"];
-  }
-  if (!teamCode) {
-    fieldErrors.teamCode = ["Team code is required"];
-  }
-
-  if (Object.keys(fieldErrors).length > 0) {
-    return json<ActionData>({ fieldErrors }, { status: 400 });
-  }
-
-  const baseUrl = getApiUrl();
-
-  try {
-    const response = await fetch(`${baseUrl}/api/v1/auth/join`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ gameSlug, teamCode }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return json<ActionData>({ error: data.error || "Failed to join game" }, { status: 400 });
-    }
-
-    const headers = new Headers();
-    const isSecure = new URL(request.url).protocol === "https:";
-    const secureFlag = isSecure ? "; Secure" : "";
-    headers.append(
-      "Set-Cookie",
-      `team_token=${data.token}; Path=/; HttpOnly; SameSite=Lax${secureFlag}; Max-Age=${48 * 60 * 60}`
-    );
-
-    return redirect(`/play/${gameSlug}`, { headers });
-  } catch {
-    return json<ActionData>({ error: "Failed to connect to server" }, { status: 500 });
-  }
-}
 
 const CODE_LENGTH = 6;
 
@@ -78,7 +22,7 @@ function TeamCodeInput({
 }: {
   value: string;
   onChange: (value: string) => void;
-  onComplete?: () => void;
+  onComplete?: (completeCode: string) => void;
   disabled: boolean;
 }) {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -96,8 +40,7 @@ function TeamCodeInput({
     if (index < CODE_LENGTH - 1) {
       inputRefs.current[index + 1]?.focus();
     } else if (updatedValue.length === CODE_LENGTH && onComplete) {
-      // Last character entered, trigger complete
-      onComplete();
+      onComplete(updatedValue);
     }
   };
 
@@ -127,9 +70,8 @@ function TeamCodeInput({
     const nextIndex = Math.min(pastedData.length, CODE_LENGTH - 1);
     inputRefs.current[nextIndex]?.focus();
 
-    // If pasted data completes the code, trigger complete
     if (pastedData.length === CODE_LENGTH && onComplete) {
-      onComplete();
+      onComplete(pastedData);
     }
   };
 
@@ -166,47 +108,90 @@ function TeamCodeInput({
           spellCheck={false}
         />
       ))}
-      <input type="hidden" name="teamCode" value={value} />
     </div>
   );
 }
 
 export default function JoinGame() {
-  const actionData = useActionData<typeof action>();
-  const navigation = useNavigation();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const isSubmitting = navigation.state === "submitting";
   const prefillGame = searchParams.get("game") || "";
+  const pendingScan = searchParams.get("scan") || "";
+
+  const [gameSlugInput, setGameSlugInput] = useState(prefillGame);
   const [teamCode, setTeamCode] = useState("");
-  const formRef = useRef<HTMLFormElement>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ gameSlug?: string; teamCode?: string }>({});
+
   const submitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastActionDataRef = useRef<typeof actionData | null>(null);
   const toast = useToast();
 
-  // Show toast on error
-  useEffect(() => {
-    if (!actionData || actionData === lastActionDataRef.current) return;
-    lastActionDataRef.current = actionData;
+  // Handle form submission - client-side API call
+  // codeOverride allows passing the code directly to avoid stale closure issues
+  const handleSubmit = useCallback(async (e?: React.FormEvent, codeOverride?: string) => {
+    e?.preventDefault();
 
-    if (actionData?.error) {
-      toast.error(actionData.error);
+    const gameSlug = gameSlugInput.trim().toLowerCase();
+    const code = (codeOverride ?? teamCode).trim().toUpperCase();
+
+    // Validate
+    const errors: typeof fieldErrors = {};
+    if (!gameSlug) errors.gameSlug = "Game ID is required";
+    if (!code || code.length !== CODE_LENGTH) errors.teamCode = "Team code must be 6 characters";
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
     }
-  }, [actionData, toast]);
+
+    setFieldErrors({});
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/v1/auth/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameSlug, teamCode: code }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Failed to join game");
+        toast.error(data.error || "Failed to join game");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Store token in localStorage (no cookies!)
+      setToken(data.token);
+      setGameSlug(gameSlug);
+
+      // Navigate to play page with pending scan if any
+      const playUrl = pendingScan
+        ? `/play/${gameSlug}?scan=${pendingScan}`
+        : `/play/${gameSlug}`;
+      navigate(playUrl);
+    } catch {
+      setError("Failed to connect to server");
+      toast.error("Failed to connect to server");
+      setIsSubmitting(false);
+    }
+  }, [gameSlugInput, teamCode, navigate, toast, pendingScan]);
 
   // Debounced auto-submit when code is complete
-  const handleCodeComplete = useCallback(() => {
-    // Clear any existing timeout
+  const handleCodeComplete = useCallback((completeCode: string) => {
     if (submitTimeoutRef.current) {
       clearTimeout(submitTimeoutRef.current);
     }
-
-    // Debounce the submit by 300ms
     submitTimeoutRef.current = setTimeout(() => {
-      if (formRef.current && !isSubmitting) {
-        formRef.current.requestSubmit();
+      if (!isSubmitting) {
+        handleSubmit(undefined, completeCode);
       }
     }, 300);
-  }, [isSubmitting]);
+  }, [isSubmitting, handleSubmit]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -231,18 +216,18 @@ export default function JoinGame() {
         </div>
 
         {/* Error Alert */}
-        {actionData?.error && (
+        {error && (
           <div className="flex items-center gap-3 bg-[var(--color-error)]/10 border border-[var(--color-error)]/30 text-[var(--color-error)] px-4 py-3 rounded-xl mb-4 sm:mb-6 animate-slide-in-down">
             <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
-            <span className="text-sm">{actionData.error}</span>
+            <span className="text-sm">{error}</span>
           </div>
         )}
 
-        <Form ref={formRef} method="post" className="space-y-5 sm:space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
           {/* Game ID Field */}
           <div>
             <label htmlFor="gameSlug" className="flex items-center gap-2 text-sm font-medium text-secondary mb-2">
@@ -254,15 +239,15 @@ export default function JoinGame() {
             <input
               type="text"
               id="gameSlug"
-              name="gameSlug"
+              value={gameSlugInput}
+              onChange={(e) => setGameSlugInput(e.target.value)}
               className="w-full px-4 py-3 bg-secondary border rounded-xl text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
               placeholder="e.g., summer-hunt-2024"
-              defaultValue={prefillGame}
               autoComplete="off"
               disabled={isSubmitting}
             />
-            {actionData?.fieldErrors?.gameSlug && (
-              <p className="mt-2 text-sm text-[var(--color-error)]">{actionData.fieldErrors.gameSlug[0]}</p>
+            {fieldErrors.gameSlug && (
+              <p className="mt-2 text-sm text-[var(--color-error)]">{fieldErrors.gameSlug}</p>
             )}
           </div>
 
@@ -279,15 +264,20 @@ export default function JoinGame() {
             </label>
             <TeamCodeInput
               value={teamCode}
-              onChange={setTeamCode}
+              onChange={(val) => {
+                setTeamCode(val);
+                if (fieldErrors.teamCode) {
+                  setFieldErrors((prev) => ({ ...prev, teamCode: undefined }));
+                }
+              }}
               onComplete={handleCodeComplete}
               disabled={isSubmitting}
             />
             <p className="mt-3 text-xs sm:text-sm text-muted text-center">
               Your team code was provided by the game organizer
             </p>
-            {actionData?.fieldErrors?.teamCode && (
-              <p className="mt-2 text-sm text-[var(--color-error)] text-center">{actionData.fieldErrors.teamCode[0]}</p>
+            {fieldErrors.teamCode && (
+              <p className="mt-2 text-sm text-[var(--color-error)] text-center">{fieldErrors.teamCode}</p>
             )}
           </div>
 
@@ -313,7 +303,7 @@ export default function JoinGame() {
               </>
             )}
           </button>
-        </Form>
+        </form>
 
         {/* Back Link */}
         <div className="mt-8 text-center mt-5 sm:mt-6">

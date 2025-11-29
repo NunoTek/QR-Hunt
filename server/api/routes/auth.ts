@@ -27,15 +27,8 @@ export async function authRoutes(fastify: FastifyInstance) {
         return reply.status(400).send({ error: result.message });
       }
 
-      // Set cookie for web clients
-      reply.setCookie("team_token", result.session!.token, {
-        path: "/",
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 48 * 60 * 60, // 48 hours
-      });
-
+      // Return token in response body - client stores in localStorage
+      // No cookies for GDPR compliance
       return reply.send({
         success: true,
         team: {
@@ -51,23 +44,18 @@ export async function authRoutes(fastify: FastifyInstance) {
 
   // Logout
   fastify.post("/logout", async (request: FastifyRequest, reply: FastifyReply) => {
-    const token =
-      request.headers.authorization?.replace("Bearer ", "") ||
-      (request.cookies as Record<string, string>)?.team_token;
+    const token = request.headers.authorization?.replace("Bearer ", "");
 
     if (token) {
       authService.logout(token);
     }
 
-    reply.clearCookie("team_token", { path: "/" });
     return reply.send({ success: true });
   });
 
   // Validate current session
   fastify.get("/me", async (request: FastifyRequest, reply: FastifyReply) => {
-    const token =
-      request.headers.authorization?.replace("Bearer ", "") ||
-      (request.cookies as Record<string, string>)?.team_token;
+    const token = request.headers.authorization?.replace("Bearer ", "");
 
     if (!token) {
       return reply.status(401).send({ error: "Not authenticated" });
