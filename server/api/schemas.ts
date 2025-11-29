@@ -81,6 +81,7 @@ export const updateNodeSchema = z.object({
   isEnd: z.boolean().optional(),
   points: z.number().int().min(0).optional(),
   adminComment: z.string().max(1000).nullable().optional(),
+  activated: z.boolean().optional(),
   metadata: z.record(z.unknown()).optional(),
 });
 

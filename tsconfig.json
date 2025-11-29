@@ -26,6 +26,6 @@
     "server/**/*.ts",
     "vite.config.ts",
     "vitest.config.ts"
-, "tests/QRScanner.test.tsx", "app/routes/_index.test.tsx.old"  ],
+],
   "exclude": ["node_modules", "dist", "build"]
 }

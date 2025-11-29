@@ -3,8 +3,9 @@ import { gameRepository } from "../repositories/GameRepository.js";
 import { teamRepository } from "../repositories/TeamRepository.js";
 import { sessionRepository } from "../repositories/SessionRepository.js";
 import type { Team, TeamSession } from "../types.js";
+import { AUTH } from "../../config/constants.js";
 
-const ADMIN_CODE = process.env.ADMIN_CODE || "admin123";
+const ADMIN_CODE = process.env.ADMIN_CODE || AUTH.DEFAULT_ADMIN_CODE;
 
 export interface JoinResult {
   success: boolean;
@@ -30,7 +31,7 @@ export class AuthService {
     }
 
     // Create session for team
-    const session = sessionRepository.create(team.id, 48); // 48 hour session
+    const session = sessionRepository.create(team.id, AUTH.SESSION_DURATION_HOURS);
 
     return {
       success: true,
@@ -56,7 +57,7 @@ export class AuthService {
     }
 
     // Extend session on valid use
-    sessionRepository.extendSession(token, 48);
+    sessionRepository.extendSession(token, AUTH.SESSION_DURATION_HOURS);
 
     return { valid: true, team, session };
   }

@@ -1,6 +1,7 @@
 import { nanoid } from "nanoid";
 import { getDatabase } from "../../db/database.js";
 import type { Team } from "../types.js";
+import { TEAM_CODE } from "../../config/constants.js";
 
 interface TeamRow {
   id: string;
@@ -8,6 +9,7 @@ interface TeamRow {
   code: string;
   name: string;
   start_node_id: string | null;
+  current_clue_id: string | null;
   logo_url: string | null;
   created_at: string;
 }
@@ -19,16 +21,16 @@ function rowToTeam(row: TeamRow): Team {
     code: row.code,
     name: row.name,
     startNodeId: row.start_node_id,
+    currentClueId: row.current_clue_id,
     logoUrl: row.logo_url,
     createdAt: row.created_at,
   };
 }
 
 function generateTeamCode(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
-  for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  for (let i = 0; i < TEAM_CODE.LENGTH; i++) {
+    code += TEAM_CODE.CHARSET.charAt(Math.floor(Math.random() * TEAM_CODE.CHARSET.length));
   }
   return code;
 }
@@ -87,7 +89,7 @@ export class TeamRepository {
 
   update(
     id: string,
-    data: Partial<{ name: string; code: string; startNodeId: string | null; logoUrl: string | null }>
+    data: Partial<{ name: string; code: string; startNodeId: string | null; currentClueId: string | null; logoUrl: string | null }>
   ): Team | null {
     const db = getDatabase();
     const existing = this.findById(id);
@@ -107,6 +109,10 @@ export class TeamRepository {
     if (data.startNodeId !== undefined) {
       updates.push("start_node_id = ?");
       values.push(data.startNodeId);
+    }
+    if (data.currentClueId !== undefined) {
+      updates.push("current_clue_id = ?");
+      values.push(data.currentClueId);
     }
     if (data.logoUrl !== undefined) {
       updates.push("logo_url = ?");

@@ -2,7 +2,18 @@ import { gameRepository } from "../repositories/GameRepository.js";
 import { nodeRepository } from "../repositories/NodeRepository.js";
 import { scanRepository } from "../repositories/ScanRepository.js";
 import { teamRepository } from "../repositories/TeamRepository.js";
-import type { Game, GameSettings, GameStatus, LeaderboardEntry } from "../types.js";
+import type { Game, GameSettings, GameStatus, LeaderboardEntry, Node, Team } from "../types.js";
+
+/** Data from scan repository for leaderboard calculation */
+interface LeaderboardTeamData {
+  teamId: string;
+  nodesFound: number;
+  totalPoints: number;
+  lastScanTime: string | null;
+  lastNodeId: string | null;
+  nextNodeTitle: string | null;
+  currentClueTitle: string | null;
+}
 
 export class GameService {
   createGame(data: {
@@ -89,67 +100,116 @@ export class GameService {
 
     const teams = teamRepository.findByGameId(gameId);
     const allNodes = nodeRepository.findByGameId(gameId);
-    const totalNodesCount = allNodes.length;
-    const endNodeIds = new Set(allNodes.filter((n) => n.isEnd).map((n) => n.id));
-
-    // Use optimized single-query method to get all leaderboard data
     const leaderboardData = scanRepository.getLeaderboardData(gameId);
     const dataMap = new Map(leaderboardData.map((d) => [d.teamId, d]));
 
-    const entries: LeaderboardEntry[] = teams.map((team) => {
-      const data = dataMap.get(team.id);
-      // Finished = all nodes scanned AND last scan is an end node
-      const allNodesScanned = (data?.nodesFound || 0) >= totalNodesCount;
-      const endedOnEndNode = data?.lastNodeId ? endNodeIds.has(data.lastNodeId) : false;
-      const isFinished = allNodesScanned && endedOnEndNode;
+    const entries = teams.map((team) =>
+      this.createLeaderboardEntry(team, dataMap.get(team.id), allNodes)
+    );
 
-      return {
-        teamId: team.id,
-        teamName: team.name,
-        teamLogoUrl: team.logoUrl,
-        nodesFound: data?.nodesFound || 0,
-        totalPoints: data?.totalPoints || 0,
-        // Show the next node they're looking for (current clue points to next location)
-        currentNodeTitle: data?.nextNodeTitle || null,
-        lastScanTime: data?.lastScanTime || null,
-        isFinished,
-        rank: 0,
-      };
-    });
+    this.sortLeaderboardEntries(entries, game.settings.rankingMode);
+    this.assignRanks(entries);
 
-    // Sort based on game settings
+    return entries;
+  }
+
+  /** Creates a single leaderboard entry for a team */
+  private createLeaderboardEntry(
+    team: Team,
+    data: LeaderboardTeamData | undefined,
+    allNodes: Node[]
+  ): LeaderboardEntry {
+    const isFinished = this.isTeamFinished(data, allNodes);
+    const currentClue = this.getCurrentClue(team, data, allNodes);
+
+    return {
+      teamId: team.id,
+      teamName: team.name,
+      teamLogoUrl: team.logoUrl,
+      nodesFound: data?.nodesFound || 0,
+      totalPoints: data?.totalPoints || 0,
+      currentNodeTitle: currentClue,
+      lastScanTime: data?.lastScanTime || null,
+      isFinished,
+      rank: 0,
+    };
+  }
+
+  /** Determines if a team has finished the game */
+  private isTeamFinished(
+    data: LeaderboardTeamData | undefined,
+    allNodes: Node[]
+  ): boolean {
+    if (!data) return false;
+
+    const totalNodesCount = allNodes.length;
+    const endNodeIds = new Set(allNodes.filter((n) => n.isEnd).map((n) => n.id));
+
+    const allNodesScanned = data.nodesFound >= totalNodesCount;
+    const endedOnEndNode = data.lastNodeId ? endNodeIds.has(data.lastNodeId) : false;
+
+    return allNodesScanned && endedOnEndNode;
+  }
+
+  /** Gets the current clue for a team */
+  private getCurrentClue(
+    team: Team,
+    data: LeaderboardTeamData | undefined,
+    allNodes: Node[]
+  ): string | null {
+    // Priority: currentClueTitle (random mode) -> nextNodeTitle (edge-based) -> start node title
+    if (data) {
+      return data.currentClueTitle || data.nextNodeTitle || null;
+    }
+
+    // Team hasn't scanned anything yet, show their start node clue
+    if (team.startNodeId) {
+      const startNode = allNodes.find((n) => n.id === team.startNodeId);
+      return startNode?.title || null;
+    }
+
+    return null;
+  }
+
+  /** Sorts leaderboard entries based on ranking mode */
+  private sortLeaderboardEntries(
+    entries: LeaderboardEntry[],
+    rankingMode: string
+  ): void {
     entries.sort((a, b) => {
-      // Finished teams first
+      // Finished teams always rank first
       if (a.isFinished && !b.isFinished) return -1;
       if (!a.isFinished && b.isFinished) return 1;
 
-      switch (game.settings.rankingMode) {
+      switch (rankingMode) {
         case "points":
           return b.totalPoints - a.totalPoints;
         case "nodes":
           if (b.nodesFound !== a.nodesFound) {
             return b.nodesFound - a.nodesFound;
           }
-          return (
-            new Date(a.lastScanTime || 0).getTime() -
-            new Date(b.lastScanTime || 0).getTime()
-          );
+          return this.compareByTime(a, b);
         case "time":
-          return (
-            new Date(a.lastScanTime || 0).getTime() -
-            new Date(b.lastScanTime || 0).getTime()
-          );
+          return this.compareByTime(a, b);
         default:
           return b.totalPoints - a.totalPoints;
       }
     });
+  }
 
-    // Assign ranks
+  /** Compares two entries by their last scan time */
+  private compareByTime(a: LeaderboardEntry, b: LeaderboardEntry): number {
+    return (
+      new Date(a.lastScanTime || 0).getTime() -
+      new Date(b.lastScanTime || 0).getTime()
+    );
+  }
+
+  /** Assigns ranks to sorted entries */
+  private assignRanks(entries: LeaderboardEntry[]): void {
     entries.forEach((entry, index) => {
       entry.rank = index + 1;
     });
-
-    return entries;
   }
 
   getGameStatus(gameId: string): {

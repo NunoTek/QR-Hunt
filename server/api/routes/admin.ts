@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { requireAdminAuth } from "../middleware.js";
 import { gameService } from "../../domain/services/GameService.js";
 import { authService } from "../../domain/services/AuthService.js";
+import { teamService } from "../../domain/services/TeamService.js";
 import { gameRepository } from "../../domain/repositories/GameRepository.js";
 import { teamRepository } from "../../domain/repositories/TeamRepository.js";
 import { nodeRepository } from "../../domain/repositories/NodeRepository.js";
@@ -432,50 +433,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const { gameId, name, code, startNodeId, logoUrl } = parseResult.data;
-
-      // Auto-assign start node if not specified
-      let assignedStartNodeId = startNodeId;
-      if (!assignedStartNodeId) {
-        const startNodes = nodeRepository.findStartNodes(gameId);
-        if (startNodes.length > 0) {
-          // Get existing teams and their start node assignments
-          const existingTeams = teamRepository.findByGameId(gameId);
-          const startNodeUsage = new Map<string, number>();
-
-          // Initialize usage count for each start node
-          for (const node of startNodes) {
-            startNodeUsage.set(node.id, 0);
-          }
-
-          // Count how many teams are assigned to each start node
-          for (const team of existingTeams) {
-            if (team.startNodeId && startNodeUsage.has(team.startNodeId)) {
-              startNodeUsage.set(team.startNodeId, startNodeUsage.get(team.startNodeId)! + 1);
-            }
-          }
-
-          // Find the start node with the least usage
-          let minUsage = Infinity;
-          let leastUsedNodeId = startNodes[0].id;
-          for (const [nodeId, usage] of startNodeUsage) {
-            if (usage < minUsage) {
-              minUsage = usage;
-              leastUsedNodeId = nodeId;
-            }
-          }
-
-          assignedStartNodeId = leastUsedNodeId;
-        }
-      }
-
-      const team = teamRepository.create({
-        gameId,
-        name,
-        code,
-        startNodeId: assignedStartNodeId,
-        logoUrl,
-      });
+      const team = teamService.createTeam(parseResult.data);
       return reply.status(201).send({ team });
     }
   );
@@ -545,6 +503,8 @@ export async function adminRoutes(fastify: FastifyInstance) {
         title: node.title,
         isStart: node.isStart,
         isEnd: node.isEnd,
+        activated: node.activated,
+        adminComment: node.adminComment,
         url: `${baseUrl}/g/${game.publicSlug}/n/${node.nodeKey}`,
       }));
 

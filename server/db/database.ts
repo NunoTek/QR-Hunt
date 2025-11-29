@@ -229,6 +229,20 @@ function getMigrations(): Migration[] {
         ALTER TABLE nodes ADD COLUMN admin_comment TEXT;
       `,
     },
+    {
+      name: "006_add_activated_to_nodes",
+      sql: `
+        -- Add activated column to nodes table (for admin pre-game verification)
+        ALTER TABLE nodes ADD COLUMN activated INTEGER DEFAULT 0;
+      `,
+    },
+    {
+      name: "007_add_current_clue_id_to_teams",
+      sql: `
+        -- Add current_clue_id column to teams table (for random mode clue persistence)
+        ALTER TABLE teams ADD COLUMN current_clue_id TEXT REFERENCES nodes(id) ON DELETE SET NULL;
+      `,
+    },
   ];
 }
 

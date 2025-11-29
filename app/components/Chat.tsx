@@ -21,14 +21,15 @@ interface ChatProps {
   adminCode?: string;
   currentTeamId?: string;
   teams?: Array<{ id: string; name: string }>;
+  embedded?: boolean;
 }
 
-export function Chat({ gameSlug, token, isAdmin = false, gameId, adminCode, currentTeamId, teams = [] }: ChatProps) {
+export function Chat({ gameSlug, token, isAdmin = false, gameId, adminCode, currentTeamId, teams = [], embedded = false }: ChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [recipientType, setRecipientType] = useState<"all" | "team">("all");
   const [recipientId, setRecipientId] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(embedded);
   const [unreadCount, setUnreadCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
@@ -178,6 +179,241 @@ export function Chat({ gameSlug, token, isAdmin = false, gameId, adminCode, curr
       setUnreadCount(0);
     }
   };
+
+  // Embedded mode - render inline without floating button
+  if (embedded) {
+    return (
+      <div className="chat-embedded">
+        <div className="chat-header">
+          <h3>Team Chat</h3>
+        </div>
+
+        <div className="chat-messages">
+          {messages.length === 0 ? (
+            <div className="chat-empty">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              <p>No messages yet</p>
+              <span>Send a message to the organizers</span>
+            </div>
+          ) : (
+            messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={`chat-message ${
+                  msg.senderType === (isAdmin ? "admin" : "team") &&
+                  (isAdmin || msg.senderId === currentTeamId)
+                    ? "chat-message-own"
+                    : "chat-message-other"
+                }`}
+              >
+                <div className="chat-message-sender">{msg.senderName}</div>
+                <div className="chat-message-text">{msg.message}</div>
+                <div className="chat-message-time">
+                  {new Date(msg.createdAt).toLocaleTimeString()}
+                </div>
+              </div>
+            ))
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        <div className="chat-input-container">
+          {isAdmin && teams.length > 0 && (
+            <div className="chat-recipient-selector">
+              <select
+                value={recipientType}
+                onChange={(e) => setRecipientType(e.target.value as "all" | "team")}
+                className="chat-select"
+              >
+                <option value="all">Everyone</option>
+                <option value="team">Specific Team</option>
+              </select>
+              {recipientType === "team" && (
+                <select
+                  value={recipientId}
+                  onChange={(e) => setRecipientId(e.target.value)}
+                  className="chat-select"
+                >
+                  <option value="">Select team...</option>
+                  {teams.map((team) => (
+                    <option key={team.id} value={team.id}>
+                      {team.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
+          <div className="chat-input-row">
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSend()}
+              placeholder="Type a message..."
+              className="chat-input"
+            />
+            <button onClick={handleSend} className="chat-send-btn" disabled={!newMessage.trim()}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <style>{`
+          .chat-embedded {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background: var(--bg-elevated);
+          }
+          .chat-embedded .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+          }
+          .chat-embedded .chat-header h3 {
+            margin: 0;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: var(--text-primary);
+          }
+          .chat-embedded .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.875rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.625rem;
+          }
+          .chat-empty {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            gap: 0.5rem;
+          }
+          .chat-empty p {
+            margin: 0;
+            font-weight: 500;
+          }
+          .chat-empty span {
+            font-size: 0.875rem;
+          }
+          .chat-embedded .chat-message {
+            max-width: 85%;
+            padding: 0.625rem 0.75rem;
+            border-radius: var(--radius);
+            animation: slideIn var(--transition-fast) ease-out;
+          }
+          .chat-embedded .chat-message-own {
+            align-self: flex-end;
+            background: var(--color-primary);
+            color: white;
+          }
+          .chat-embedded .chat-message-other {
+            align-self: flex-start;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+          }
+          .chat-embedded .chat-message-sender {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            opacity: 0.8;
+          }
+          .chat-embedded .chat-message-text {
+            font-size: 0.8125rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+          }
+          .chat-embedded .chat-message-time {
+            font-size: 0.6875rem;
+            margin-top: 0.25rem;
+            opacity: 0.6;
+          }
+          .chat-embedded .chat-input-container {
+            border-top: 1px solid var(--border-color);
+            padding: 0.75rem;
+            background: var(--bg-secondary);
+          }
+          .chat-embedded .chat-recipient-selector {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.625rem;
+          }
+          .chat-embedded .chat-select {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.8125rem;
+            min-height: 2.5rem;
+          }
+          .chat-embedded .chat-input-row {
+            display: flex;
+            gap: 0.5rem;
+          }
+          .chat-embedded .chat-input {
+            flex: 1;
+            padding: 0.625rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.8125rem;
+            min-height: 2.75rem;
+            transition: border-color var(--transition-fast);
+          }
+          .chat-embedded .chat-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+          }
+          .chat-embedded .chat-send-btn {
+            padding: 0.625rem 0.75rem;
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background var(--transition-fast);
+            min-width: 2.75rem;
+          }
+          .chat-embedded .chat-send-btn:hover:not(:disabled) {
+            background: var(--color-primary-dark);
+          }
+          .chat-embedded .chat-send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+          }
+          @keyframes slideIn {
+            from {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
     <>

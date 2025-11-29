@@ -26,6 +26,7 @@ export interface Team {
   code: string;
   name: string;
   startNodeId: string | null;
+  currentClueId: string | null;
   logoUrl: string | null;
   createdAt: string;
 }
@@ -44,6 +45,7 @@ export interface Node {
   isEnd: boolean;
   points: number;
   adminComment: string | null;
+  activated: boolean;
   metadata: Record<string, unknown>;
   createdAt: string;
 }

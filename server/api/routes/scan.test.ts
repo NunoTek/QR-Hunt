@@ -33,7 +33,7 @@ describe("Scan API", () => {
     gameId = game.id;
     gameRepository.update(gameId, { status: "active" });
 
-    // Create nodes
+    // Create nodes (all activated for testing)
     const startNode = nodeRepository.create({
       gameId,
       title: "Start Clue",
@@ -41,6 +41,7 @@ describe("Scan API", () => {
       points: 100,
       content: "Find the next clue near the fountain",
     });
+    nodeRepository.update(startNode.id, { activated: true });
     startNodeKey = startNode.nodeKey;
 
     const middleNode = nodeRepository.create({
@@ -49,6 +50,7 @@ describe("Scan API", () => {
       points: 150,
       content: "Look under the big oak tree",
     });
+    nodeRepository.update(middleNode.id, { activated: true });
     middleNodeKey = middleNode.nodeKey;
 
     const passwordNode = nodeRepository.create({
@@ -58,6 +60,7 @@ describe("Scan API", () => {
       passwordRequired: true,
       passwordHash: authService.hashPassword("secret123"),
     });
+    nodeRepository.update(passwordNode.id, { activated: true });
     passwordNodeKey = passwordNode.nodeKey;
 
     const endNode = nodeRepository.create({
@@ -67,6 +70,7 @@ describe("Scan API", () => {
       points: 250,
       content: "Congratulations!",
     });
+    nodeRepository.update(endNode.id, { activated: true });
     endNodeKey = endNode.nodeKey;
 
     // Create edges: start -> middle -> password -> end
