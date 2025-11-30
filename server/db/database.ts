@@ -243,6 +243,28 @@ function getMigrations(): Migration[] {
         ALTER TABLE teams ADD COLUMN current_clue_id TEXT REFERENCES nodes(id) ON DELETE SET NULL;
       `,
     },
+    {
+      name: "008_add_hints",
+      sql: `
+        -- Add hint column to nodes table
+        ALTER TABLE nodes ADD COLUMN hint TEXT;
+
+        -- Create hint_usages table to track when teams use hints
+        CREATE TABLE hint_usages (
+          id TEXT PRIMARY KEY,
+          game_id TEXT NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+          team_id TEXT NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+          node_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+          points_deducted INTEGER NOT NULL DEFAULT 0,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(team_id, node_id)
+        );
+
+        CREATE INDEX idx_hint_usages_game_id ON hint_usages(game_id);
+        CREATE INDEX idx_hint_usages_team_id ON hint_usages(team_id);
+        CREATE INDEX idx_hint_usages_node_id ON hint_usages(node_id);
+      `,
+    },
   ];
 }
 

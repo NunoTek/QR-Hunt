@@ -1,13 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-  isOnline,
+  addPendingScan,
   cacheGameData,
   getCachedGameData,
   getPendingScans,
-  addPendingScan,
-  removePendingScan,
-  clearPendingScans,
   getToken,
+  isOnline,
+  removePendingScan,
   type CachedGameData,
   type PendingScan,
 } from "~/lib/tokenStorage";
@@ -66,6 +65,7 @@ export function useOfflineMode({ gameSlug, onSyncComplete }: UseOfflineModeOptio
     if (!isOffline && pendingScans.length > 0) {
       syncPendingScans();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only trigger on online/offline change
   }, [isOffline]);
 
   const cacheCurrentState = useCallback((data: Omit<CachedGameData, "cachedAt">) => {

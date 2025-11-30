@@ -2,6 +2,7 @@ import { gameRepository } from "../repositories/GameRepository.js";
 import { nodeRepository } from "../repositories/NodeRepository.js";
 import { scanRepository } from "../repositories/ScanRepository.js";
 import { teamRepository } from "../repositories/TeamRepository.js";
+import { hintUsageRepository } from "../repositories/HintUsageRepository.js";
 import type { Game, GameSettings, GameStatus, LeaderboardEntry, Node, Team } from "../types.js";
 
 /** Data from scan repository for leaderboard calculation */
@@ -122,12 +123,16 @@ export class GameService {
     const isFinished = this.isTeamFinished(data, allNodes);
     const currentClue = this.getCurrentClue(team, data, allNodes);
 
+    // Deduct hint points from total
+    const hintPointsDeducted = hintUsageRepository.getTotalPointsDeductedForTeam(team.id);
+    const adjustedPoints = (data?.totalPoints || 0) - hintPointsDeducted;
+
     return {
       teamId: team.id,
       teamName: team.name,
       teamLogoUrl: team.logoUrl,
       nodesFound: data?.nodesFound || 0,
-      totalPoints: data?.totalPoints || 0,
+      totalPoints: adjustedPoints,
       currentNodeTitle: currentClue,
       lastScanTime: data?.lastScanTime || null,
       isFinished,

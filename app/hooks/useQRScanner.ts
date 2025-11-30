@@ -77,7 +77,7 @@ export function useQRScanner({
   }, []);
 
   /** Extracts node key from QR code URL */
-  const extractNodeKey = useCallback((url: string): string | null => {
+  const _extractNodeKey = useCallback((url: string): string | null => {
     try {
       const urlObj = new URL(url);
       const pathParts = urlObj.pathname.split("/");

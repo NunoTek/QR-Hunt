@@ -240,6 +240,8 @@ export async function adminRoutes(fastify: FastifyInstance) {
           isStart?: boolean;
           isEnd?: boolean;
           points?: number;
+          hint?: string;
+          adminComment?: string;
           metadata?: Record<string, unknown>;
         };
       }>,
@@ -557,6 +559,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
           isStart: node.isStart,
           isEnd: node.isEnd,
           points: node.points,
+          hint: node.hint,
           adminComment: node.adminComment,
           metadata: node.metadata,
         })),
@@ -608,6 +611,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
               isStart?: boolean;
               isEnd?: boolean;
               points?: number;
+              hint?: string | null;
               adminComment?: string | null;
               metadata?: Record<string, unknown>;
             }>;
@@ -691,6 +695,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
           isStart: nodeData.isStart || false,
           isEnd: nodeData.isEnd || false,
           points: nodeData.points ?? 100,
+          hint: nodeData.hint || undefined,
           adminComment: nodeData.adminComment || undefined,
           metadata: nodeData.metadata || {},
         });

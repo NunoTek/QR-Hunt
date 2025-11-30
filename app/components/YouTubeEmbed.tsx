@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Spinner } from "~/components/Loading";
 
 interface YouTubeEmbedProps {
@@ -72,8 +72,41 @@ export function isYouTubeUrl(url: string): boolean {
 export function YouTubeEmbed({ url, title = "Video", audioOnly = false }: YouTubeEmbedProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [origin, setOrigin] = useState("");
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const loadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const videoId = extractYouTubeVideoId(url);
+
+  // Get origin on client side only
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
+
+  // Set a timeout for loading - if iframe doesn't load within 10 seconds, show error
+  useEffect(() => {
+    if (videoId && loading) {
+      loadTimeoutRef.current = setTimeout(() => {
+        if (loading) {
+          setLoading(false);
+          setError(true);
+        }
+      }, 10000);
+    }
+
+    return () => {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
+    };
+  }, [videoId, loading]);
+
+  const handleLoad = () => {
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
+    }
+    setLoading(false);
+  };
 
   if (!videoId) {
     return (
@@ -107,17 +140,14 @@ export function YouTubeEmbed({ url, title = "Video", audioOnly = false }: YouTub
               </div>
             )}
             <iframe
-              src={`https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0`}
+              ref={iframeRef}
+              src={`https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0${origin ? `&origin=${origin}` : ''}`}
               title={title}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               className="w-full h-full rounded"
               style={{ opacity: loading ? 0 : 1 }}
-              onLoad={() => setLoading(false)}
-              onError={() => {
-                setLoading(false);
-                setError(true);
-              }}
+              onLoad={handleLoad}
             />
           </div>
           <p className="text-xs text-muted mt-1">YouTube Audio</p>
@@ -128,43 +158,52 @@ export function YouTubeEmbed({ url, title = "Video", audioOnly = false }: YouTub
 
   // Full video embed
   return (
-    <div className="relative w-full rounded-lg overflow-hidden bg-black" style={{ aspectRatio: "16/9" }}>
-      {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-tertiary">
-          <Spinner size="md" />
-        </div>
-      )}
-      {error ? (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-tertiary text-muted">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-          <span>Failed to load video</span>
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-[var(--color-primary)] hover:underline"
-          >
-            Open on YouTube
-          </a>
-        </div>
-      ) : (
-        <iframe
-          src={`https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0`}
-          title={title}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          className="absolute inset-0 w-full h-full"
-          style={{ opacity: loading ? 0 : 1 }}
-          onLoad={() => setLoading(false)}
-          onError={() => {
-            setLoading(false);
-            setError(true);
-          }}
-        />
+    <div className="flex flex-col gap-2">
+      <div className="relative w-full rounded-lg overflow-hidden bg-black" style={{ aspectRatio: "16/9" }}>
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-tertiary">
+            <Spinner size="md" />
+          </div>
+        )}
+        {error ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-tertiary text-muted">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>Failed to load video</span>
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-[var(--color-primary)] hover:underline"
+            >
+              Open on YouTube
+            </a>
+          </div>
+        ) : (
+          <iframe
+            ref={iframeRef}
+            src={`https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0${origin ? `&origin=${origin}` : ''}`}
+            title={title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="absolute inset-0 w-full h-full"
+            style={{ opacity: loading ? 0 : 1 }}
+            onLoad={handleLoad}
+          />
+        )}
+      </div>
+      {!error && !loading && (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-muted hover:text-secondary text-center"
+        >
+          Video not playing? Watch on YouTube →
+        </a>
       )}
     </div>
   );
