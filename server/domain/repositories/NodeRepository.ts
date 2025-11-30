@@ -15,6 +15,7 @@ interface NodeRow {
   is_start: number;
   is_end: number;
   points: number;
+  hint: string | null;
   admin_comment: string | null;
   activated: number;
   metadata: string;
@@ -35,6 +36,7 @@ function rowToNode(row: NodeRow): Node {
     isStart: row.is_start === 1,
     isEnd: row.is_end === 1,
     points: row.points,
+    hint: row.hint,
     adminComment: row.admin_comment,
     activated: row.activated === 1,
     metadata: JSON.parse(row.metadata) as Record<string, unknown>,
@@ -59,6 +61,7 @@ export class NodeRepository {
     isStart?: boolean;
     isEnd?: boolean;
     points?: number;
+    hint?: string;
     adminComment?: string;
     metadata?: Record<string, unknown>;
   }): Node {
@@ -68,8 +71,8 @@ export class NodeRepository {
 
     db.prepare(
       `INSERT INTO nodes (id, game_id, node_key, title, content, content_type, media_url,
-       password_required, password_hash, is_start, is_end, points, admin_comment, metadata)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       password_required, password_hash, is_start, is_end, points, hint, admin_comment, metadata)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       id,
       data.gameId,
@@ -83,6 +86,7 @@ export class NodeRepository {
       data.isStart ? 1 : 0,
       data.isEnd ? 1 : 0,
       data.points ?? 100,
+      data.hint || null,
       data.adminComment || null,
       JSON.stringify(data.metadata || {})
     );
@@ -151,6 +155,7 @@ export class NodeRepository {
       isStart: boolean;
       isEnd: boolean;
       points: number;
+      hint: string | null;
       adminComment: string | null;
       activated: boolean;
       metadata: Record<string, unknown>;
@@ -202,6 +207,10 @@ export class NodeRepository {
     if (data.points !== undefined) {
       updates.push("points = ?");
       values.push(data.points);
+    }
+    if (data.hint !== undefined) {
+      updates.push("hint = ?");
+      values.push(data.hint);
     }
     if (data.adminComment !== undefined) {
       updates.push("admin_comment = ?");

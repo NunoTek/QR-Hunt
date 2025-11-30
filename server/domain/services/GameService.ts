@@ -2,6 +2,7 @@ import { gameRepository } from "../repositories/GameRepository.js";
 import { nodeRepository } from "../repositories/NodeRepository.js";
 import { scanRepository } from "../repositories/ScanRepository.js";
 import { teamRepository } from "../repositories/TeamRepository.js";
+import { hintUsageRepository } from "../repositories/HintUsageRepository.js";
 import type { Game, GameSettings, GameStatus, LeaderboardEntry, Node, Team } from "../types.js";
 
 /** Data from scan repository for leaderboard calculation */
@@ -122,12 +123,16 @@ export class GameService {
     const isFinished = this.isTeamFinished(data, allNodes);
     const currentClue = this.getCurrentClue(team, data, allNodes);
 
+    // Deduct hint points from total
+    const hintPointsDeducted = hintUsageRepository.getTotalPointsDeductedForTeam(team.id);
+    const adjustedPoints = (data?.totalPoints || 0) - hintPointsDeducted;
+
     return {
       teamId: team.id,
       teamName: team.name,
       teamLogoUrl: team.logoUrl,
       nodesFound: data?.nodesFound || 0,
-      totalPoints: data?.totalPoints || 0,
+      totalPoints: adjustedPoints,
       currentNodeTitle: currentClue,
       lastScanTime: data?.lastScanTime || null,
       isFinished,
@@ -183,7 +188,12 @@ export class GameService {
 
       switch (rankingMode) {
         case "points":
-          return b.totalPoints - a.totalPoints;
+          // Primary: more points wins
+          if (b.totalPoints !== a.totalPoints) {
+            return b.totalPoints - a.totalPoints;
+          }
+          // Tiebreaker: faster team wins (earlier last scan time)
+          return this.compareByTime(a, b);
         case "nodes":
           if (b.nodesFound !== a.nodesFound) {
             return b.nodesFound - a.nodesFound;
@@ -192,7 +202,11 @@ export class GameService {
         case "time":
           return this.compareByTime(a, b);
         default:
-          return b.totalPoints - a.totalPoints;
+          // Same as points mode
+          if (b.totalPoints !== a.totalPoints) {
+            return b.totalPoints - a.totalPoints;
+          }
+          return this.compareByTime(a, b);
       }
     });
   }

@@ -139,6 +139,39 @@ export async function scanRoutes(fastify: FastifyInstance) {
     const game = gameRepository.findById(progress.team.gameId);
     const isRandomMode = game?.settings.randomMode ?? false;
 
+    // Get hint information for next clue
+    let nextClueHint = null;
+    if (progress.nextClue) {
+      const hintUsage = scanService.getHintUsage(request.team!.id, progress.nextClue.id);
+      nextClueHint = {
+        hasHint: !!progress.nextClue.hint,
+        hintUsed: !!hintUsage,
+        hintText: hintUsage ? progress.nextClue.hint : null,
+        pointsDeducted: hintUsage?.pointsDeducted ?? 0,
+        pointsCost: Math.floor(progress.nextClue.points / 2),
+      };
+    }
+
+    // Get hint information for starting clue
+    let startingClueHint = null;
+    if (startingClue && progress.scans.length === 0 && progress.team.startNodeId) {
+      const startNode = nodeRepository.findById(progress.team.startNodeId);
+      if (startNode) {
+        const hintUsage = scanService.getHintUsage(request.team!.id, startNode.id);
+        startingClueHint = {
+          hasHint: !!startNode.hint,
+          hintUsed: !!hintUsage,
+          hintText: hintUsage ? startNode.hint : null,
+          pointsDeducted: hintUsage?.pointsDeducted ?? 0,
+          pointsCost: Math.floor(startNode.points / 2),
+        };
+      }
+    }
+
+    // Get total hint points deducted
+    const hintPointsDeducted = scanService.getTotalHintPointsDeducted(request.team!.id);
+    const adjustedTotalPoints = progress.totalPoints - hintPointsDeducted;
+
     return reply.send({
       team: {
         id: progress.team.id,
@@ -163,12 +196,15 @@ export async function scanRoutes(fastify: FastifyInstance) {
             mediaUrl: progress.nextClue.mediaUrl,
           }
         : null,
+      nextClueHint,
       startingClue,
+      startingClueHint,
       scannedNodes,
       nextNodesCount: progress.nextNodes.length,
       nodesFound: progress.nodesFound,
       totalNodes,
-      totalPoints: progress.totalPoints,
+      totalPoints: adjustedTotalPoints,
+      hintPointsDeducted,
       isFinished: progress.isFinished,
       isWinner: winStatus?.isWinner ?? false,
       scansCount: progress.scans.length,
@@ -187,9 +223,60 @@ export async function scanRoutes(fastify: FastifyInstance) {
       });
     }
 
+    // Get hint information for the new clue
+    let newClueHint = null;
+    if (result.newClue) {
+      const hintUsage = scanService.getHintUsage(request.team!.id, result.newClue.id);
+      newClueHint = {
+        hasHint: !!result.newClue.hint,
+        hintUsed: !!hintUsage,
+        hintText: hintUsage ? result.newClue.hint : null,
+        pointsDeducted: hintUsage?.pointsDeducted ?? 0,
+        pointsCost: Math.floor(result.newClue.points / 2),
+      };
+    }
+
     return reply.send({
       success: true,
       newClue: result.newClue,
+      newClueHint,
     });
   });
+
+  // Request a hint for a specific node
+  fastify.post(
+    "/hint",
+    async (
+      request: FastifyRequest<{
+        Body: { nodeId: string };
+      }>,
+      reply: FastifyReply
+    ) => {
+      const { nodeId } = request.body || {};
+
+      if (!nodeId) {
+        return reply.status(400).send({
+          success: false,
+          message: "nodeId is required",
+        });
+      }
+
+      const result = scanService.requestHint(request.team!.id, nodeId);
+
+      if (!result.success) {
+        return reply.status(400).send({
+          success: false,
+          message: result.message,
+        });
+      }
+
+      return reply.send({
+        success: true,
+        message: result.message,
+        hint: result.hint,
+        pointsDeducted: result.pointsDeducted,
+        alreadyUsed: result.alreadyUsed,
+      });
+    }
+  );
 }

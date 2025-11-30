@@ -8,9 +8,9 @@ import { Spinner } from "~/components/Loading";
 import { QRScanner } from "~/components/QRScanner";
 import { ToastProvider, useToast } from "~/components/Toast";
 import { Version } from "~/components/Version";
-import { getToken, clearAuth, cacheGameData, getCachedGameData } from "~/lib/tokenStorage";
 import { useOfflineMode } from "~/hooks/useOfflineMode";
 import { playCoinSound, playDefeatSound, playSuccessSound, playVictorySound } from "~/lib/sounds";
+import { cacheGameData, clearAuth, getCachedGameData, getToken } from "~/lib/tokenStorage";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   return [
@@ -31,6 +31,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     pendingScan,
     gameName: null as string | null,
   });
+}
+
+interface HintInfo {
+  hasHint: boolean;
+  hintUsed: boolean;
+  hintText: string | null;
+  pointsDeducted: number;
+  pointsCost: number;
 }
 
 interface GameData {
@@ -55,6 +63,7 @@ interface GameData {
     contentType: string;
     mediaUrl: string | null;
   } | null;
+  nextClueHint: HintInfo | null;
   startingClue: {
     id: string;
     title: string;
@@ -62,6 +71,7 @@ interface GameData {
     contentType: string;
     mediaUrl: string | null;
   } | null;
+  startingClueHint: HintInfo | null;
   scannedNodes: Array<{
     id: string;
     title: string;
@@ -75,6 +85,7 @@ interface GameData {
   nodesFound: number;
   totalNodes: number;
   totalPoints: number;
+  hintPointsDeducted: number;
   isFinished: boolean;
   isWinner: boolean;
   isRandomMode: boolean;
@@ -112,6 +123,9 @@ function PlayGameContent() {
   const [activeTab, setActiveTab] = useState<"clue" | "scan" | "progress" | "team" | "chat">("clue");
   const [isShuffling, setIsShuffling] = useState(false);
   const [currentClue, setCurrentClue] = useState<GameData["nextClue"] | null>(null);
+  const [currentHint, setCurrentHint] = useState<HintInfo | null>(null);
+  const [showHintConfirm, setShowHintConfirm] = useState(false);
+  const [isRequestingHint, setIsRequestingHint] = useState(false);
 
   const toast = useToast();
   const soundPlayedRef = useRef(false);
@@ -119,7 +133,7 @@ function PlayGameContent() {
   const dataLoadedRef = useRef(false);
 
   // Offline mode support
-  const { isOffline, pendingCount, isSyncing, cacheCurrentState } = useOfflineMode({
+  const { isOffline, pendingCount, isSyncing, cacheCurrentState: _cacheCurrentState } = useOfflineMode({
     gameSlug: loaderData.gameSlug,
     onSyncComplete: () => {
       toast.success("Synced pending scans!");
@@ -193,11 +207,14 @@ function PlayGameContent() {
           gameLogoUrl: gameData.logoUrl || null,
           currentNode: progressData.currentNode,
           nextClue: progressData.nextClue || null,
+          nextClueHint: progressData.nextClueHint || null,
           startingClue: progressData.startingClue || null,
+          startingClueHint: progressData.startingClueHint || null,
           scannedNodes: progressData.scannedNodes || [],
           nodesFound: progressData.nodesFound,
           totalNodes: progressData.totalNodes,
           totalPoints: progressData.totalPoints,
+          hintPointsDeducted: progressData.hintPointsDeducted || 0,
           isFinished: progressData.isFinished,
           isWinner: progressData.isWinner,
           isRandomMode: progressData.isRandomMode || false,
@@ -205,6 +222,12 @@ function PlayGameContent() {
 
         setData(gameDataObj);
         setCurrentClue(progressData.nextClue || null);
+        // Set hint info based on whether we have a next clue or starting clue
+        if (progressData.nextClue && progressData.nextClueHint) {
+          setCurrentHint(progressData.nextClueHint);
+        } else if (progressData.startingClue && progressData.startingClueHint) {
+          setCurrentHint(progressData.startingClueHint);
+        }
         setIsLoading(false);
 
         // Cache data for offline mode
@@ -262,6 +285,12 @@ function PlayGameContent() {
       const result = await response.json();
       if (result.success && result.newClue) {
         setCurrentClue(result.newClue);
+        // Update hint info for the new clue
+        if (result.newClueHint) {
+          setCurrentHint(result.newClueHint);
+        } else {
+          setCurrentHint(null);
+        }
         toast.success("Got a new clue!");
       } else {
         toast.error(result.message || "Failed to get new clue");
@@ -272,6 +301,54 @@ function PlayGameContent() {
       setIsShuffling(false);
     }
   }, [data?.isRandomMode, isShuffling, token, toast]);
+
+  // Request a hint for the current clue
+  const requestHint = useCallback(async (nodeId: string) => {
+    if (isRequestingHint || !token) return;
+
+    setIsRequestingHint(true);
+    try {
+      const response = await fetch("/api/v1/scan/hint", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ nodeId }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setCurrentHint({
+          hasHint: true,
+          hintUsed: true,
+          hintText: result.hint,
+          pointsDeducted: result.pointsDeducted,
+          pointsCost: result.pointsDeducted,
+        });
+        setShowHintConfirm(false);
+        if (!result.alreadyUsed) {
+          toast.info(`Hint revealed! -${result.pointsDeducted} points`);
+          // Update total points in data
+          if (data) {
+            setData({
+              ...data,
+              totalPoints: data.totalPoints - result.pointsDeducted,
+              hintPointsDeducted: data.hintPointsDeducted + result.pointsDeducted,
+            });
+          }
+        }
+      } else {
+        toast.error(result.message || "Failed to get hint");
+        setShowHintConfirm(false);
+      }
+    } catch {
+      toast.error("Failed to get hint");
+      setShowHintConfirm(false);
+    } finally {
+      setIsRequestingHint(false);
+    }
+  }, [isRequestingHint, token, toast, data]);
 
   // Generate share link
   const shareLink = data ? `${loaderData.baseUrl}/join?game=${loaderData.gameSlug}` : "";
@@ -420,6 +497,12 @@ function PlayGameContent() {
     }
   }, [searchParams, setSearchParams, token, data, toast]);
 
+  // Signout handler - must be before early returns
+  const handleSignout = useCallback(() => {
+    clearAuth();
+    navigate("/join", { replace: true });
+  }, [navigate]);
+
   // Loading state
   if (isLoading || !data || !token) {
     return (
@@ -533,11 +616,11 @@ function PlayGameContent() {
 
   // Tab definitions
   const tabs = [
-    { id: "clue" as const, label: "Clue", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="10" r="3" /><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z" /></svg> },
-    { id: "scan" as const, label: "Scan", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg> },
-    { id: "progress" as const, label: "Progress", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg> },
-    { id: "team" as const, label: "Team", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg> },
-    { id: "chat" as const, label: "Chat", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg> },
+    { id: "clue" as const, label: "Clue", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="10" r="3" /><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z" /></svg> },
+    { id: "scan" as const, label: "Scan", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg> },
+    { id: "progress" as const, label: "Progress", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg> },
+    { id: "team" as const, label: "Team", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg> },
+    { id: "chat" as const, label: "Chat", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg> },
   ];
 
   return (
@@ -600,11 +683,20 @@ function PlayGameContent() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 p-1 bg-secondary rounded-xl mb-6">
+        <div className="flex border-b border-border mb-6">
           {tabs.map((tab) => (
-            <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? "bg-elevated text-primary shadow-sm" : "text-muted hover:text-secondary"}`}>
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 inline-flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-all border-b-2 -mb-px ${
+                activeTab === tab.id
+                  ? "border-[var(--color-primary)] text-[var(--color-primary)]"
+                  : "border-transparent text-muted hover:text-secondary hover:border-border"
+              }`}
+            >
               {tab.icon}
-              <span className="hidden sm:inline">{tab.label}</span>
+              <span>{tab.label}</span>
             </button>
           ))}
         </div>
@@ -624,8 +716,8 @@ function PlayGameContent() {
                       )}
                     </div>
                     <div className="flex-1">
-                      <h2 className="text-xl font-bold text-primary m-0">{data.scannedNodes.length === 0 ? "Your Starting Clue" : "Next Clue"}</h2>
-                      <p className="text-muted text-sm m-0">{currentClue.title}</p>
+                      <h2 className="text-xl font-bold text-primary m-0">{currentClue.title}</h2>
+                      <p className="text-muted text-sm m-0">{data.scannedNodes.length === 0 ? "Starting Clue" : "Next Clue"}</p>
                     </div>
                     {data.isRandomMode && data.totalNodes - data.nodesFound > 1 && (
                       <button type="button" onClick={shuffleClue} disabled={isShuffling} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-secondary bg-tertiary hover:bg-secondary border border-border rounded-lg transition-colors disabled:opacity-50" title="Get a different random clue">
@@ -635,6 +727,38 @@ function PlayGameContent() {
                     )}
                   </div>
                   <ClueDisplay node={currentClue} hideTitle />
+
+                  {/* Hint Section */}
+                  {currentHint?.hasHint && (
+                    <div className="mt-4 pt-4 border-t border-border">
+                      {currentHint.hintUsed && currentHint.hintText ? (
+                        <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                          <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-semibold mb-2">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10" />
+                              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                              <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
+                            <span>Hint (-{currentHint.pointsDeducted} points)</span>
+                          </div>
+                          <p className="text-amber-800 dark:text-amber-300">{currentHint.hintText}</p>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setShowHintConfirm(true)}
+                          className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-lg transition-colors"
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                          </svg>
+                          <span>Need a hint? (-{currentHint.pointsCost} points)</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Button to go to Scan tab */}
@@ -785,18 +909,31 @@ function PlayGameContent() {
         {activeTab === "team" && (
           <>
             <div className="p-6 bg-elevated rounded-lg border shadow-sm mb-6">
-              <div className="flex items-center gap-4 mb-4">
+              <div className="flex items-center gap-4">
                 {data.teamLogoUrl ? (
-                  <img src={data.teamLogoUrl} alt={`${data.teamName} logo`} className="w-16 h-16 rounded-xl object-cover" />
+                  <img src={data.teamLogoUrl} alt={`${data.teamName} logo`} className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover flex-shrink-0" />
                 ) : (
-                  <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] flex items-center justify-center text-white text-2xl font-bold">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] flex items-center justify-center text-white text-xl sm:text-2xl font-bold flex-shrink-0">
                     {data.teamName.charAt(0).toUpperCase()}
                   </div>
                 )}
-                <div>
-                  <h2 className="text-xl font-bold text-primary">{data.teamName}</h2>
-                  <p className="text-muted text-sm">Team Code: <span className="font-mono font-bold">{data.teamCode}</span></p>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-lg sm:text-xl font-bold text-primary truncate">{data.teamName}</h2>
+                  <p className="text-muted text-sm">Code: <span className="font-mono font-bold">{data.teamCode}</span></p>
                 </div>
+                <button
+                  type="button"
+                  onClick={handleSignout}
+                  className="flex-shrink-0 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm text-[var(--color-error)] border border-[var(--color-error)]/30 hover:bg-[var(--color-error)]/10 rounded-lg transition-colors"
+                  title="Sign Out"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                  <span>Sign Out</span>
+                </button>
               </div>
             </div>
 
@@ -863,6 +1000,63 @@ function PlayGameContent() {
       </div>
 
       {showFeedback && <FeedbackModal {...{ feedbackRating, setFeedbackRating, feedbackComment, setFeedbackComment, isSubmittingFeedback, feedbackSubmitted, submitFeedback, setShowFeedback }} />}
+
+      {/* Hint Confirmation Modal */}
+      {showHintConfirm && currentHint && (currentClue || data?.startingClue) && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-[var(--bg-elevated)] rounded-xl shadow-2xl max-w-md w-full p-6 animate-fade-in border border-[var(--border-color)]">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-primary">Request Hint?</h3>
+                <p className="text-sm text-muted">This action cannot be undone</p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg mb-4">
+              <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-semibold mb-1">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <span>Points Penalty</span>
+              </div>
+              <p className="text-amber-800 dark:text-amber-300">
+                Using this hint will cost you <strong>{currentHint.pointsCost} points</strong> (half of this clue's value).
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowHintConfirm(false)}
+                disabled={isRequestingHint}
+                className="flex-1 px-4 py-2.5 border rounded-lg text-secondary hover:border-strong transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const nodeId = currentClue?.id || data?.startingClue?.id;
+                  if (nodeId) requestHint(nodeId);
+                }}
+                disabled={isRequestingHint}
+                className="flex-1 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+              >
+                {isRequestingHint ? "Loading..." : "Reveal Hint"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -879,8 +1073,8 @@ function FeedbackModal({ feedbackRating, setFeedbackRating, feedbackComment, set
   setShowFeedback: (v: boolean) => void;
 }) {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-elevated rounded-lg shadow-xl max-w-md w-full p-6 animate-fade-in">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+      <div className="bg-[var(--bg-elevated)] rounded-xl shadow-2xl max-w-md w-full p-6 animate-fade-in border border-[var(--border-color)]">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-bold text-primary">Rate Your Experience</h3>
           <button type="button" onClick={() => setShowFeedback(false)} className="text-muted hover:text-primary transition-colors">

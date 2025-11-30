@@ -4,7 +4,8 @@ import { teamRepository } from "../repositories/TeamRepository.js";
 import { nodeRepository } from "../repositories/NodeRepository.js";
 import { edgeRepository } from "../repositories/EdgeRepository.js";
 import { scanRepository } from "../repositories/ScanRepository.js";
-import type { Scan, Node, TeamProgress } from "../types.js";
+import { hintUsageRepository } from "../repositories/HintUsageRepository.js";
+import type { Scan, Node, TeamProgress, HintUsage } from "../types.js";
 import { GAME } from "../../config/constants.js";
 
 export interface ScanResult {
@@ -15,6 +16,14 @@ export interface ScanResult {
   isGameComplete?: boolean;
   pointsAwarded?: number;
   scan?: Scan;
+}
+
+export interface HintResult {
+  success: boolean;
+  message: string;
+  hint?: string;
+  pointsDeducted?: number;
+  alreadyUsed?: boolean;
 }
 
 export class ScanService {
@@ -30,7 +39,7 @@ export class ScanService {
     if (!entityValidation.valid) {
       return { success: false, message: entityValidation.message };
     }
-    const { team, game } = entityValidation;
+    const { team, game: _game } = entityValidation;
 
     // Find and validate node
     const node = nodeRepository.findByNodeKey(team!.gameId, data.nodeKey);
@@ -411,6 +420,77 @@ export class ScanService {
     teamRepository.update(teamId, { currentClueId: newClue.id });
 
     return { success: true, newClue: this.sanitizeNode(newClue) };
+  }
+
+  // Request a hint for a specific node
+  requestHint(teamId: string, nodeId: string): HintResult {
+    const team = teamRepository.findById(teamId);
+    if (!team) {
+      return { success: false, message: "Team not found" };
+    }
+
+    const game = gameRepository.findById(team.gameId);
+    if (!game) {
+      return { success: false, message: "Game not found" };
+    }
+
+    if (game.status !== "active") {
+      return { success: false, message: "Game is not active" };
+    }
+
+    const node = nodeRepository.findById(nodeId);
+    if (!node) {
+      return { success: false, message: "Node not found" };
+    }
+
+    if (node.gameId !== team.gameId) {
+      return { success: false, message: "Node does not belong to this game" };
+    }
+
+    if (!node.hint) {
+      return { success: false, message: "No hint available for this clue" };
+    }
+
+    // Check if team has already used this hint
+    const existingUsage = hintUsageRepository.findByTeamAndNode(teamId, nodeId);
+    if (existingUsage) {
+      return {
+        success: true,
+        message: "Hint already used",
+        hint: node.hint,
+        pointsDeducted: existingUsage.pointsDeducted,
+        alreadyUsed: true,
+      };
+    }
+
+    // Calculate points deduction (half of node points)
+    const pointsDeducted = Math.floor(node.points / 2);
+
+    // Record hint usage
+    hintUsageRepository.create({
+      gameId: team.gameId,
+      teamId,
+      nodeId,
+      pointsDeducted,
+    });
+
+    return {
+      success: true,
+      message: `Hint revealed! ${pointsDeducted} points will be deducted from this clue.`,
+      hint: node.hint,
+      pointsDeducted,
+      alreadyUsed: false,
+    };
+  }
+
+  // Get hint usage for a specific team and node
+  getHintUsage(teamId: string, nodeId: string): HintUsage | null {
+    return hintUsageRepository.findByTeamAndNode(teamId, nodeId);
+  }
+
+  // Get total points deducted for hints for a team
+  getTotalHintPointsDeducted(teamId: string): number {
+    return hintUsageRepository.getTotalPointsDeductedForTeam(teamId);
   }
 
   checkIfWinner(teamId: string): { isWinner: boolean; winnerTeamId?: string } {

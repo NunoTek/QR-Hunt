@@ -2,8 +2,8 @@ import jsQR from "jsqr";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Spinner } from "~/components/Loading";
 import { useToast } from "~/components/Toast";
-import { playCoinSound, playErrorSound, playSuccessSound } from "~/lib/sounds";
 import { QR_SCANNER } from "~/config/constants";
+import { playCoinSound, playErrorSound, playSuccessSound } from "~/lib/sounds";
 
 interface QRScannerProps {
   gameSlug: string;
@@ -452,9 +452,9 @@ export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false, onSca
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full flex flex-col items-center">
       {(error || cameraError) && (
-        <div className="flex items-center gap-3 p-4 mb-4 bg-error/10 text-error border border-error/20 rounded-lg">
+        <div className="flex items-center gap-3 p-4 mb-4 bg-error/10 text-error border border-error/20 rounded-lg w-full max-w-md">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
             <circle cx="12" cy="12" r="10" />
             <line x1="12" y1="8" x2="12" y2="12" />
@@ -465,7 +465,7 @@ export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false, onSca
       )}
 
       {isScanning ? (
-        <div className="animate-fade-in space-y-3 sm:space-y-4">
+        <div className="animate-fade-in space-y-3 sm:space-y-4 w-full max-w-md">
           {/* Camera Feed - Full width, responsive */}
           <div className="relative w-full aspect-square max-w-md mx-auto bg-black rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl ring-2 sm:ring-4 ring-[var(--color-primary)]/20">
             <video
@@ -531,19 +531,21 @@ export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false, onSca
           {/* Stop Button */}
           <button
             onClick={stopCamera}
-            className="w-full inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-white bg-error rounded-lg hover:bg-error-dark transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed min-h-[3rem] sm:min-h-[3.5rem]"
+            className="w-full mt-2 inline-flex items-center justify-center gap-2.5 px-5 sm:px-6 py-3 sm:py-3.5 text-base font-semibold text-white bg-[var(--color-error)] hover:bg-red-700 rounded-xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isProcessing}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" className="sm:w-5 sm:h-5">
-              <rect x="6" y="6" width="12" height="12" rx="1" />
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="sm:w-6 sm:h-6">
+              <path d="M1 1l22 22" />
+              <path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34" />
+              <path d="M15 11a3 3 0 1 0-5.5 1.5" />
             </svg>
-            Stop Scanner
+            Close Camera
           </button>
         </div>
       ) : (
         <button
           onClick={startCamera}
-          className="w-full inline-flex items-center justify-center gap-2.5 sm:gap-3 px-5 sm:px-6 py-3 sm:py-4 text-base sm:text-lg font-semibold text-white bg-gradient-to-r from-primary to-primary-dark rounded-lg hover:shadow-lg hover:scale-[1.02] transition-all min-h-[3.5rem] sm:min-h-[4rem]"
+          className="w-full max-w-md inline-flex items-center justify-center gap-2.5 sm:gap-3 px-5 sm:px-6 py-3 sm:py-4 text-base sm:text-lg font-semibold text-white bg-gradient-to-r from-primary to-primary-dark rounded-lg hover:shadow-lg hover:scale-[1.02] transition-all min-h-[3.5rem] sm:min-h-[4rem]"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="sm:w-7 sm:h-7">
             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
@@ -554,7 +556,7 @@ export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false, onSca
       )}
 
       {/* Manual entry fallback */}
-      <details className="mt-4">
+      <details className="mt-4 w-full max-w-md">
         <summary className="text-muted cursor-pointer text-sm hover:text-primary transition-colors">
           Can't scan? Enter code manually
         </summary>

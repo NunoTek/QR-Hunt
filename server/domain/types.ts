@@ -44,6 +44,7 @@ export interface Node {
   isStart: boolean;
   isEnd: boolean;
   points: number;
+  hint: string | null;
   adminComment: string | null;
   activated: boolean;
   metadata: Record<string, unknown>;
@@ -126,5 +127,14 @@ export interface Feedback {
   teamName: string;
   rating: number;
   comment: string | null;
+  createdAt: string;
+}
+
+export interface HintUsage {
+  id: string;
+  gameId: string;
+  teamId: string;
+  nodeId: string;
+  pointsDeducted: number;
   createdAt: string;
 }

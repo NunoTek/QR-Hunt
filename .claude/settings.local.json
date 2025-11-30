@@ -8,8 +8,7 @@
       "Bash(npm test:*)",
       "Bash(find:*)",
       "Bash(npm run lint)",
-      "Bash(npm run lint:*)",
-      "Bash(npm install:*)"
+      "Bash(npm run lint:*)"
     ],
     "deny": [],
     "ask": []

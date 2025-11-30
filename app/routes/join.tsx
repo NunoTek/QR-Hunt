@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Spinner } from "~/components/Loading";
 import { useToast } from "~/components/Toast";
 import { Version } from "~/components/Version";
-import { setToken, setGameSlug } from "~/lib/tokenStorage";
+import { clearAuth, getGameSlug, getToken, setGameSlug, setToken } from "~/lib/tokenStorage";
 
 export const meta: MetaFunction = () => {
   return [
@@ -124,8 +124,79 @@ export default function JoinGame() {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ gameSlug?: string; teamCode?: string }>({});
 
+  // Existing session state
+  const [existingSession, setExistingSession] = useState<{
+    teamName: string;
+    gameSlug: string;
+    gameName: string;
+  } | null>(null);
+  const [checkingSession, setCheckingSession] = useState(true);
+
   const submitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const sessionCheckedRef = useRef(false);
   const toast = useToast();
+
+  // Check for existing session on mount
+  useEffect(() => {
+    if (sessionCheckedRef.current) return;
+    sessionCheckedRef.current = true;
+
+    const checkExistingSession = async () => {
+      const token = getToken();
+      const storedGameSlug = getGameSlug();
+
+      if (!token || !storedGameSlug) {
+        setCheckingSession(false);
+        return;
+      }
+
+      try {
+        // Validate the token
+        const [meRes, gameRes] = await Promise.all([
+          fetch("/api/v1/auth/me", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetch(`/api/v1/game/${storedGameSlug}`),
+        ]);
+
+        if (meRes.ok && gameRes.ok) {
+          const [meData, gameData] = await Promise.all([
+            meRes.json(),
+            gameRes.json(),
+          ]);
+
+          setExistingSession({
+            teamName: meData.team.name,
+            gameSlug: storedGameSlug,
+            gameName: gameData.name,
+          });
+        } else {
+          // Invalid session, clear it
+          clearAuth();
+        }
+      } catch {
+        // Network error, keep session data but don't show prompt
+        clearAuth();
+      }
+      setCheckingSession(false);
+    };
+
+    checkExistingSession();
+  }, []);
+
+  const handleResumeGame = useCallback(() => {
+    if (existingSession) {
+      const playUrl = pendingScan
+        ? `/play/${existingSession.gameSlug}?scan=${pendingScan}`
+        : `/play/${existingSession.gameSlug}`;
+      navigate(playUrl);
+    }
+  }, [existingSession, navigate, pendingScan]);
+
+  const handleJoinDifferent = useCallback(() => {
+    clearAuth();
+    setExistingSession(null);
+  }, []);
 
   // Handle form submission - client-side API call
   // codeOverride allows passing the code directly to avoid stale closure issues
@@ -201,6 +272,84 @@ export default function JoinGame() {
       }
     };
   }, []);
+
+  // Loading state while checking session
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-bg-primary via-bg-secondary to-bg-primary">
+        <div className="flex flex-col items-center gap-4">
+          <Spinner size="lg" />
+          <p className="text-muted">Checking session...</p>
+        </div>
+        <Version />
+      </div>
+    );
+  }
+
+  // Existing session prompt
+  if (existingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-bg-primary via-bg-secondary to-bg-primary">
+        <div className="w-full max-w-md bg-elevated rounded-2xl shadow-2xl p-6 sm:p-8 border animate-fade-in">
+          {/* Header */}
+          <div className="text-center mb-6 sm:mb-8">
+            <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
+              <span className="text-4xl sm:text-5xl" aria-label="Target">🎯</span>
+              <span className="text-2xl sm:text-3xl font-bold text-primary">QR Hunt</span>
+            </div>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary mb-2">Welcome Back!</h1>
+            <p className="text-tertiary text-sm sm:text-base">You're already logged into a game</p>
+          </div>
+
+          {/* Current Session Card */}
+          <div className="p-5 bg-gradient-to-br from-[var(--color-primary)]/10 to-[var(--color-primary)]/5 rounded-xl border border-[var(--color-primary)]/20 mb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
+                {existingSession.teamName.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-primary text-lg truncate">{existingSession.teamName}</h3>
+                <p className="text-sm text-secondary truncate">{existingSession.gameName}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={handleResumeGame}
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 sm:py-4 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white font-semibold rounded-xl hover:opacity-90 transition-all shadow-lg"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+              Resume Game
+            </button>
+
+            <button
+              type="button"
+              onClick={handleJoinDifferent}
+              className="w-full mt-4 flex items-center justify-center gap-2 px-6 py-3 text-secondary border hover:border-strong rounded-xl transition-colors"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                <polyline points="10 17 15 12 10 7" />
+                <line x1="15" y1="12" x2="3" y2="12" />
+              </svg>
+              Join a Different Game
+            </button>
+          </div>
+
+          {/* Info text */}
+          <p className="mt-6 text-xs text-muted text-center">
+            Joining a different game will sign you out of your current session
+          </p>
+        </div>
+        <Version />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-bg-primary via-bg-secondary to-bg-primary">

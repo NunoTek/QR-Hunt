@@ -26,6 +26,7 @@ interface Node {
   isStart: boolean;
   isEnd: boolean;
   points: number;
+  hint: string | null;
   adminComment: string | null;
   activated: boolean;
 }
@@ -164,6 +165,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
             isStart: formData.get("isStart") === "on",
             isEnd: formData.get("isEnd") === "on",
             points: parseInt(formData.get("points")?.toString() || "100", 10),
+            hint: formData.get("hint") || undefined,
             adminComment: formData.get("adminComment") || undefined,
           }),
         });
@@ -198,6 +200,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
             isStart: formData.get("isStart") === "on",
             isEnd: formData.get("isEnd") === "on",
             points: parseInt(formData.get("points")?.toString() || "100", 10),
+            hint: formData.get("hint") || null,
             adminComment: formData.get("adminComment") || null,
           }),
         });
@@ -883,6 +886,11 @@ function AdminGameDetailContent() {
                           <span className="font-medium">{node.title}</span>
                           {node.isStart && <NodeBadge type="start" />}
                           {node.isEnd && <NodeBadge type="end" />}
+                          {node.hint && (
+                            <span className="ml-2 inline-flex px-2 py-0.5 rounded text-xs font-medium bg-[var(--color-info)]/15 text-[var(--color-info)]" title={node.hint}>
+                              Hint
+                            </span>
+                          )}
                         </div>
                         {node.adminComment && (
                           <p className="text-xs text-muted mt-0.5 italic">📝 {node.adminComment}</p>
@@ -978,6 +986,14 @@ function AdminGameDetailContent() {
               <div>
                 <label className="block text-sm font-medium text-secondary mb-1">Points</label>
                 <input type="number" name="points" className={inputClasses} defaultValue={editingNode?.points || 100} key={`points-${editingNode?.id || "new"}`} />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-secondary mb-1">
+                  Hint
+                  <span className="ml-2 text-xs text-muted font-normal">(optional, costs half points)</span>
+                </label>
+                <textarea name="hint" className={inputClasses} rows={2} placeholder="A hint players can request for half the points..." defaultValue={editingNode?.hint || ""} key={`hint-${editingNode?.id || "new"}`} />
               </div>
 
               <div>
@@ -1725,6 +1741,13 @@ function AdminGameDetailContent() {
                     <span>🔒</span>
                     Password required to unlock this clue
                   </p>
+                </div>
+              )}
+
+              {previewNode.hint && (
+                <div className="bg-[var(--color-info)]/10 border border-[var(--color-info)]/30 rounded-lg p-3 mb-4">
+                  <p className="text-xs text-[var(--color-info)] font-medium mb-1">Hint Available (costs {Math.floor(previewNode.points / 2)} pts):</p>
+                  <p className="text-sm text-secondary">{previewNode.hint}</p>
                 </div>
               )}
 

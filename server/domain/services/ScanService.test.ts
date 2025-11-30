@@ -5,6 +5,7 @@ import { gameRepository } from "../repositories/GameRepository.js";
 import { nodeRepository } from "../repositories/NodeRepository.js";
 import { edgeRepository } from "../repositories/EdgeRepository.js";
 import { teamRepository } from "../repositories/TeamRepository.js";
+import { hintUsageRepository as _hintUsageRepository } from "../repositories/HintUsageRepository.js";
 
 describe("ScanService", () => {
   let gameId: string;
@@ -66,6 +67,7 @@ describe("ScanService", () => {
 
   afterEach(() => {
     const db = getDatabase();
+    db.exec("DELETE FROM hint_usages");
     db.exec("DELETE FROM scans");
     db.exec("DELETE FROM team_sessions");
     db.exec("DELETE FROM edges");
@@ -294,7 +296,7 @@ describe("ScanService", () => {
       const endNode = nodeRepository.findById(endNodeId)!;
 
       // Create a non-activated middle node
-      const middleNode = nodeRepository.create({
+      const _middleNode = nodeRepository.create({
         gameId,
         title: "Middle Node",
         points: 150,
@@ -344,6 +346,195 @@ describe("ScanService", () => {
 
       // Message should say "1 more to find" (only the activated end node)
       expect(result.message).toContain("1 more");
+    });
+  });
+
+  describe("requestHint", () => {
+    let nodeWithHint: string;
+    let nodeWithoutHint: string;
+
+    beforeEach(() => {
+      // Create a node with a hint
+      const hintNode = nodeRepository.create({
+        gameId,
+        title: "Node With Hint",
+        hint: "This is the hint text",
+        points: 100,
+      });
+      nodeRepository.update(hintNode.id, { activated: true });
+      nodeWithHint = hintNode.id;
+
+      // Create a node without a hint
+      const noHintNode = nodeRepository.create({
+        gameId,
+        title: "Node Without Hint",
+        points: 80,
+      });
+      nodeRepository.update(noHintNode.id, { activated: true });
+      nodeWithoutHint = noHintNode.id;
+    });
+
+    it("should return hint and deduct half points", () => {
+      const result = scanService.requestHint(teamId, nodeWithHint);
+
+      expect(result.success).toBe(true);
+      expect(result.hint).toBe("This is the hint text");
+      expect(result.pointsDeducted).toBe(50); // half of 100
+      expect(result.alreadyUsed).toBe(false);
+    });
+
+    it("should return alreadyUsed true on second request", () => {
+      // First request
+      scanService.requestHint(teamId, nodeWithHint);
+
+      // Second request
+      const result = scanService.requestHint(teamId, nodeWithHint);
+
+      expect(result.success).toBe(true);
+      expect(result.hint).toBe("This is the hint text");
+      expect(result.pointsDeducted).toBe(50);
+      expect(result.alreadyUsed).toBe(true);
+    });
+
+    it("should fail when node has no hint", () => {
+      const result = scanService.requestHint(teamId, nodeWithoutHint);
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain("No hint available");
+    });
+
+    it("should fail for non-existent team", () => {
+      const result = scanService.requestHint("non-existent-team", nodeWithHint);
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain("Team not found");
+    });
+
+    it("should fail for non-existent node", () => {
+      const result = scanService.requestHint(teamId, "non-existent-node");
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain("Node not found");
+    });
+
+    it("should fail when game is not active", () => {
+      gameRepository.update(gameId, { status: "draft" });
+
+      const result = scanService.requestHint(teamId, nodeWithHint);
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain("not active");
+    });
+
+    it("should fail when node belongs to different game", () => {
+      // Create another game
+      const otherGame = gameRepository.create({
+        name: "Other Game",
+        publicSlug: "other-game",
+      });
+      gameRepository.update(otherGame.id, { status: "active" });
+
+      // Create node in other game
+      const otherNode = nodeRepository.create({
+        gameId: otherGame.id,
+        title: "Other Node",
+        hint: "Other hint",
+        points: 100,
+      });
+
+      const result = scanService.requestHint(teamId, otherNode.id);
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain("does not belong");
+    });
+
+    it("should calculate points correctly for different point values", () => {
+      // Create node with odd points
+      const oddNode = nodeRepository.create({
+        gameId,
+        title: "Odd Points Node",
+        hint: "Odd hint",
+        points: 75, // Half is 37.5, should floor to 37
+      });
+
+      const result = scanService.requestHint(teamId, oddNode.id);
+
+      expect(result.success).toBe(true);
+      expect(result.pointsDeducted).toBe(37);
+    });
+  });
+
+  describe("getHintUsage", () => {
+    let nodeWithHint: string;
+
+    beforeEach(() => {
+      const hintNode = nodeRepository.create({
+        gameId,
+        title: "Hint Node",
+        hint: "Test hint",
+        points: 100,
+      });
+      nodeWithHint = hintNode.id;
+    });
+
+    it("should return null when no hint used", () => {
+      const usage = scanService.getHintUsage(teamId, nodeWithHint);
+      expect(usage).toBeNull();
+    });
+
+    it("should return hint usage after requesting hint", () => {
+      scanService.requestHint(teamId, nodeWithHint);
+
+      const usage = scanService.getHintUsage(teamId, nodeWithHint);
+
+      expect(usage).not.toBeNull();
+      expect(usage?.teamId).toBe(teamId);
+      expect(usage?.nodeId).toBe(nodeWithHint);
+      expect(usage?.pointsDeducted).toBe(50);
+    });
+  });
+
+  describe("getTotalHintPointsDeducted", () => {
+    let node1: string;
+    let node2: string;
+
+    beforeEach(() => {
+      const hintNode1 = nodeRepository.create({
+        gameId,
+        title: "Hint Node 1",
+        hint: "Hint 1",
+        points: 100,
+      });
+      node1 = hintNode1.id;
+
+      const hintNode2 = nodeRepository.create({
+        gameId,
+        title: "Hint Node 2",
+        hint: "Hint 2",
+        points: 50,
+      });
+      node2 = hintNode2.id;
+    });
+
+    it("should return 0 when no hints used", () => {
+      const total = scanService.getTotalHintPointsDeducted(teamId);
+      expect(total).toBe(0);
+    });
+
+    it("should return total points deducted for all hints used", () => {
+      scanService.requestHint(teamId, node1); // 50 points
+      scanService.requestHint(teamId, node2); // 25 points
+
+      const total = scanService.getTotalHintPointsDeducted(teamId);
+      expect(total).toBe(75);
+    });
+
+    it("should not double count repeated hint requests", () => {
+      scanService.requestHint(teamId, node1);
+      scanService.requestHint(teamId, node1); // Request again
+
+      const total = scanService.getTotalHintPointsDeducted(teamId);
+      expect(total).toBe(50); // Only counted once
     });
   });
 });
