@@ -183,7 +183,12 @@ export class GameService {
 
       switch (rankingMode) {
         case "points":
-          return b.totalPoints - a.totalPoints;
+          // Primary: more points wins
+          if (b.totalPoints !== a.totalPoints) {
+            return b.totalPoints - a.totalPoints;
+          }
+          // Tiebreaker: faster team wins (earlier last scan time)
+          return this.compareByTime(a, b);
         case "nodes":
           if (b.nodesFound !== a.nodesFound) {
             return b.nodesFound - a.nodesFound;
@@ -192,7 +197,11 @@ export class GameService {
         case "time":
           return this.compareByTime(a, b);
         default:
-          return b.totalPoints - a.totalPoints;
+          // Same as points mode
+          if (b.totalPoints !== a.totalPoints) {
+            return b.totalPoints - a.totalPoints;
+          }
+          return this.compareByTime(a, b);
       }
     });
   }

@@ -1,11 +1,11 @@
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useLoaderData, Link } from "@remix-run/react";
-import { useEffect, useState, useCallback, useRef } from "react";
-import { getApiUrl } from "~/lib/api";
+import { useLoaderData, useNavigate } from "@remix-run/react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Spinner } from "~/components/Loading";
 import { useToast } from "~/components/Toast";
-import { playNotificationSound, playRankUpSound, playRankDownSound } from "~/lib/sounds";
+import { getApiUrl } from "~/lib/api";
+import { playNotificationSound, playRankDownSound, playRankUpSound } from "~/lib/sounds";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   return [
@@ -100,6 +100,16 @@ export default function Leaderboard() {
   const feedbackLoadedRef = useRef(false);
   const previousRanksRef = useRef<Map<string, number>>(new Map());
   const toast = useToast();
+  const navigate = useNavigate();
+
+  // Handle back navigation - go back in history if available, otherwise go home
+  const handleBack = useCallback(() => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/");
+    }
+  }, [navigate]);
 
   // Initialize previous ranks on mount only
   useEffect(() => {
@@ -156,9 +166,9 @@ export default function Leaderboard() {
     setData(newData);
   }, []);
 
-  // Load feedback when game is completed
+  // Load feedback for active and completed games
   useEffect(() => {
-    if (!feedbackLoadedRef.current && data.game.status === "completed") {
+    if (!feedbackLoadedRef.current) {
       feedbackLoadedRef.current = true;
       fetch(`/api/v1/feedback/game/${data.game.slug}`)
         .then((res) => res.json())
@@ -173,7 +183,7 @@ export default function Leaderboard() {
           // Ignore errors
         });
     }
-  }, [data.game.slug, data.game.status]);
+  }, [data.game.slug]);
 
   const connectSSE = useCallback(() => {
     if (data.game.status !== "active") return;
@@ -405,7 +415,7 @@ export default function Leaderboard() {
                 </div>
 
                 <div className="team-stats">
-                  <div className="stat-box">
+                  <div className="stat-box clues">
                     <span className="stat-num">{entry.nodesFound}</span>
                     <span className="stat-lbl">clues</span>
                   </div>
@@ -419,8 +429,8 @@ export default function Leaderboard() {
           </div>
         )}
 
-        {/* Feedback Section - Only show for completed games */}
-        {data.game.status === "completed" && feedbackData && feedbackData.count > 0 && (
+        {/* Feedback Section - Show for active and completed games */}
+        {feedbackData && feedbackData.count > 0 && (
           <div className="mt-8">
             <button
               type="button"
@@ -507,13 +517,13 @@ export default function Leaderboard() {
           </div>
 
           <div className="text-center mt-4">
-            <Link to="/" className="back-link">
+            <button type="button" onClick={handleBack} className="back-link">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="19" y1="12" x2="5" y2="12" />
                 <polyline points="12 19 5 12 12 5" />
               </svg>
-              Back to home
-            </Link>
+              Back
+            </button>
           </div>
         </div>
       </div>
@@ -688,6 +698,9 @@ export default function Leaderboard() {
           flex-direction: column;
           align-items: center;
           min-width: 2.75rem;
+        }
+        .stat-box.clues {
+          margin-top: 0.5rem;
         }
         .stat-box.points {
           background: var(--bg-tertiary);

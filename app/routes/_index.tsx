@@ -19,7 +19,7 @@ export default function Index() {
           style={{ backgroundImage: "url('/hero-bg.png')" }}
         />
         {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-primary)]/70 via-[var(--color-primary-dark)]/70 to-indigo-800/70" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-primary)]/50 via-[var(--color-primary-dark)]/60 to-indigo-800/50" />
 
         {/* Content */}
         <div className="relative text-center max-w-4xl mx-auto text-white px-4">
@@ -70,7 +70,7 @@ export default function Index() {
 
       {/* The Player Experience Section */}
       <section className="py-12 sm:py-16 lg:py-20 xl:py-24 px-4 sm:px-6 lg:px-8 bg-primary">
-        <div className="max-w-5xl mx-auto">
+        <div className="mx-auto">
           <div className="text-center mb-8 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-primary mb-3 sm:mb-4">
               The Player Experience
@@ -97,13 +97,6 @@ export default function Index() {
                 </p>
               </div>
 
-              {/* Arrow (mobile only - hidden when grid becomes 2 columns) */}
-              <div className="flex justify-center sm:hidden text-[var(--color-primary)] -my-1">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 5v14M19 12l-7 7-7-7" />
-                </svg>
-              </div>
-
               {/* Step 2: Read Clue */}
               <div className="bg-elevated p-5 sm:p-6 rounded-2xl border-2 border-[var(--color-primary)]/30 hover:border-[var(--color-primary)] transition-all text-center group">
                 <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] flex items-center justify-center mx-auto mb-4 text-white text-2xl sm:text-3xl group-hover:scale-110 transition-transform">
@@ -115,13 +108,6 @@ export default function Index() {
                 </p>
               </div>
 
-              {/* Arrow (mobile only - hidden when grid becomes 2 columns) */}
-              <div className="flex justify-center sm:hidden text-[var(--color-primary)] -my-1">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 5v14M19 12l-7 7-7-7" />
-                </svg>
-              </div>
-
               {/* Step 3: Hunt */}
               <div className="bg-elevated p-5 sm:p-6 rounded-2xl border-2 border-[var(--color-primary)]/30 hover:border-[var(--color-primary)] transition-all text-center group">
                 <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] flex items-center justify-center mx-auto mb-4 text-white text-2xl sm:text-3xl group-hover:scale-110 transition-transform">
@@ -131,13 +117,6 @@ export default function Index() {
                 <p className="text-secondary text-sm">
                   Work together, explore the area, and find the hidden QR code!
                 </p>
-              </div>
-
-              {/* Arrow (mobile only - hidden when grid becomes 2 columns) */}
-              <div className="flex justify-center sm:hidden text-[var(--color-primary)] -my-1">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 5v14M19 12l-7 7-7-7" />
-                </svg>
               </div>
 
               {/* Step 4: Scan & Score */}

@@ -10,6 +10,7 @@ interface Game {
   publicSlug: string;
   status: string;
   createdAt: string;
+  logoUrl?: string | null;
 }
 
 interface LoaderData {
@@ -45,6 +46,17 @@ export default function AdminGames() {
   const data = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const [isImporting, setIsImporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter games
+  const filteredGames = data.games.filter((game) => {
+    const matchesStatus = statusFilter === "all" || game.status === statusFilter;
+    const matchesSearch = game.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          game.publicSlug.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
 
   const handleImport = async (file: File) => {
     setIsImporting(true);
@@ -92,6 +104,28 @@ export default function AdminGames() {
     setIsImporting(false);
   };
 
+  const handleDelete = async (game: Game) => {
+    if (!confirm(`Are you sure you want to delete "${game.name}"? This action cannot be undone.`)) {
+      return;
+    }
+    setIsDeleting(game.id);
+    try {
+      const response = await fetch(`${data.baseUrl}/api/v1/admin/games/${game.id}`, {
+        method: "DELETE",
+        headers: { "x-admin-code": data.adminCode },
+      });
+      if (response.ok) {
+        window.location.reload();
+      } else {
+        const result = await response.json();
+        alert(`Delete failed: ${result.error}`);
+      }
+    } catch {
+      alert("Failed to delete game");
+    }
+    setIsDeleting(null);
+  };
+
   const StatusBadge = ({ status }: { status: string }) => (
     <span
       className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
@@ -109,16 +143,23 @@ export default function AdminGames() {
   return (
     <div>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-primary text-center sm:text-left">Games</h1>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-primary">Games</h1>
         <div className="flex gap-2">
+          <Link to="/admin/games/new" className="btn btn-primary">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Create Game
+          </Link>
           <label className={`btn btn-secondary cursor-pointer ${isImporting ? "opacity-50 pointer-events-none" : ""}`}>
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
-            {isImporting ? "Importing..." : "Import Game"}
+            {isImporting ? "Importing..." : "Import"}
             <input
               type="file"
               accept=".json"
@@ -126,62 +167,84 @@ export default function AdminGames() {
               disabled={isImporting}
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) {
-                  handleImport(file);
-                }
+                if (file) handleImport(file);
                 e.target.value = "";
               }}
             />
           </label>
-          <Link
-            to="/admin/games/new"
-            className="btn btn-primary"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Create Game
-          </Link>
         </div>
       </div>
 
-      {data.games.length === 0 ? (
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="flex-1">
+          <input
+            type="text"
+            placeholder="Search by name or slug..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-2 bg-secondary border rounded-lg text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-4 py-2 bg-secondary border rounded-lg text-primary focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+        >
+          <option value="all">All Status</option>
+          <option value="draft">Draft</option>
+          <option value="active">Active</option>
+          <option value="completed">Completed</option>
+        </select>
+      </div>
+
+      {filteredGames.length === 0 ? (
         <div className="bg-elevated rounded-xl border p-8 text-center shadow-sm">
-          <p className="text-muted mb-4">No games yet.</p>
-          <Link
-            to="/admin/games/new"
-            className="btn btn-secondary"
-          >
-            Create your first game
-          </Link>
+          <p className="text-muted mb-4">
+            {data.games.length === 0 ? "No games yet." : "No games match your filters."}
+          </p>
+          {data.games.length === 0 && (
+            <Link to="/admin/games/new" className="btn btn-secondary">
+              Create your first game
+            </Link>
+          )}
         </div>
       ) : (
-        <>
-          {/* Desktop Table View */}
-          <div className="hidden md:block bg-elevated rounded-xl border overflow-hidden shadow-sm">
+        <div className="bg-elevated rounded-xl border overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider">Name</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider">Slug</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider">Status</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider">Created</th>
-                  <th className="px-6 py-3"></th>
+                  <th className="text-left px-4 sm:px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider">Name</th>
+                  <th className="text-left px-4 sm:px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden sm:table-cell">Slug</th>
+                  <th className="text-left px-4 sm:px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider">Status</th>
+                  <th className="text-left px-4 sm:px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden md:table-cell">Created</th>
+                  <th className="px-4 sm:px-6 py-3"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {data.games.map((game) => (
+                {filteredGames.map((game) => (
                   <tr key={game.id} className="hover:bg-secondary transition-colors">
-                    <td className="px-6 py-4 text-primary font-medium">{game.name}</td>
-                    <td className="px-6 py-4 text-secondary">{game.publicSlug}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 sm:px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        {game.logoUrl ? (
+                          <img src={game.logoUrl} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                            {game.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <span className="text-primary font-medium">{game.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 sm:px-6 py-4 text-secondary hidden sm:table-cell">{game.publicSlug}</td>
+                    <td className="px-4 sm:px-6 py-4">
                       <StatusBadge status={game.status} />
                     </td>
-                    <td className="px-6 py-4 text-secondary">
+                    <td className="px-4 sm:px-6 py-4 text-secondary hidden md:table-cell">
                       {new Date(game.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 sm:px-6 py-4">
                       <div className="flex gap-2 justify-end">
                         <Link
                           to={`/admin/games/${game.id}`}
@@ -192,10 +255,24 @@ export default function AdminGames() {
                         <Link
                           to={`/leaderboard/${game.publicSlug}`}
                           target="_blank"
-                          className="px-3 py-1.5 text-sm text-secondary hover:text-primary border hover:border-strong rounded-lg transition-colors"
+                          className="px-3 py-1.5 text-sm text-secondary hover:text-primary border hover:border-strong rounded-lg transition-colors hidden sm:inline-flex"
                         >
                           Leaderboard
                         </Link>
+                        {(game.status === "draft" || game.status === "completed") && (
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(game)}
+                            disabled={isDeleting === game.id}
+                            className="px-2 py-1.5 text-sm text-[var(--color-error)] border border-[var(--color-error)]/30 hover:bg-[var(--color-error)]/10 rounded-lg transition-colors disabled:opacity-50"
+                            title="Delete game"
+                          >
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            </svg>
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -203,38 +280,7 @@ export default function AdminGames() {
               </tbody>
             </table>
           </div>
-
-          {/* Mobile Card View */}
-          <div className="md:hidden space-y-4">
-            {data.games.map((game) => (
-              <div key={game.id} className="bg-elevated rounded-xl border p-4 shadow-sm">
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="text-lg font-semibold text-primary">{game.name}</h3>
-                  <StatusBadge status={game.status} />
-                </div>
-                <div className="flex flex-col sm:flex-row sm:gap-4 gap-1 mb-4 text-sm text-secondary">
-                  <span>{game.publicSlug}</span>
-                  <span>{new Date(game.createdAt).toLocaleDateString()}</span>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Link
-                    to={`/admin/games/${game.id}`}
-                    className="flex-1 text-center px-4 py-2 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white font-medium rounded-lg hover:opacity-90 transition-all"
-                  >
-                    Manage
-                  </Link>
-                  <Link
-                    to={`/leaderboard/${game.publicSlug}`}
-                    target="_blank"
-                    className="flex-1 text-center px-4 py-2 text-secondary border hover:border-strong rounded-lg transition-colors"
-                  >
-                    Leaderboard
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
+        </div>
       )}
     </div>
   );

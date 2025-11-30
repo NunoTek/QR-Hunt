@@ -8,9 +8,9 @@ import { Spinner } from "~/components/Loading";
 import { QRScanner } from "~/components/QRScanner";
 import { ToastProvider, useToast } from "~/components/Toast";
 import { Version } from "~/components/Version";
-import { getToken, clearAuth, cacheGameData, getCachedGameData } from "~/lib/tokenStorage";
 import { useOfflineMode } from "~/hooks/useOfflineMode";
 import { playCoinSound, playDefeatSound, playSuccessSound, playVictorySound } from "~/lib/sounds";
+import { cacheGameData, clearAuth, getCachedGameData, getToken } from "~/lib/tokenStorage";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   return [
@@ -420,6 +420,12 @@ function PlayGameContent() {
     }
   }, [searchParams, setSearchParams, token, data, toast]);
 
+  // Signout handler - must be before early returns
+  const handleSignout = useCallback(() => {
+    clearAuth();
+    navigate("/join", { replace: true });
+  }, [navigate]);
+
   // Loading state
   if (isLoading || !data || !token) {
     return (
@@ -533,11 +539,11 @@ function PlayGameContent() {
 
   // Tab definitions
   const tabs = [
-    { id: "clue" as const, label: "Clue", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="10" r="3" /><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z" /></svg> },
-    { id: "scan" as const, label: "Scan", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg> },
-    { id: "progress" as const, label: "Progress", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg> },
-    { id: "team" as const, label: "Team", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg> },
-    { id: "chat" as const, label: "Chat", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg> },
+    { id: "clue" as const, label: "Clue", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="10" r="3" /><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z" /></svg> },
+    { id: "scan" as const, label: "Scan", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg> },
+    { id: "progress" as const, label: "Progress", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg> },
+    { id: "team" as const, label: "Team", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg> },
+    { id: "chat" as const, label: "Chat", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg> },
   ];
 
   return (
@@ -600,11 +606,20 @@ function PlayGameContent() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 p-1 bg-secondary rounded-xl mb-6">
+        <div className="flex border-b border-border mb-6">
           {tabs.map((tab) => (
-            <button key={tab.id} type="button" onClick={() => setActiveTab(tab.id)} className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? "bg-elevated text-primary shadow-sm" : "text-muted hover:text-secondary"}`}>
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 inline-flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-all border-b-2 -mb-px ${
+                activeTab === tab.id
+                  ? "border-[var(--color-primary)] text-[var(--color-primary)]"
+                  : "border-transparent text-muted hover:text-secondary hover:border-border"
+              }`}
+            >
               {tab.icon}
-              <span className="hidden sm:inline">{tab.label}</span>
+              <span>{tab.label}</span>
             </button>
           ))}
         </div>
@@ -624,8 +639,8 @@ function PlayGameContent() {
                       )}
                     </div>
                     <div className="flex-1">
-                      <h2 className="text-xl font-bold text-primary m-0">{data.scannedNodes.length === 0 ? "Your Starting Clue" : "Next Clue"}</h2>
-                      <p className="text-muted text-sm m-0">{currentClue.title}</p>
+                      <h2 className="text-xl font-bold text-primary m-0">{currentClue.title}</h2>
+                      <p className="text-muted text-sm m-0">{data.scannedNodes.length === 0 ? "Starting Clue" : "Next Clue"}</p>
                     </div>
                     {data.isRandomMode && data.totalNodes - data.nodesFound > 1 && (
                       <button type="button" onClick={shuffleClue} disabled={isShuffling} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-secondary bg-tertiary hover:bg-secondary border border-border rounded-lg transition-colors disabled:opacity-50" title="Get a different random clue">
@@ -785,18 +800,31 @@ function PlayGameContent() {
         {activeTab === "team" && (
           <>
             <div className="p-6 bg-elevated rounded-lg border shadow-sm mb-6">
-              <div className="flex items-center gap-4 mb-4">
+              <div className="flex items-center gap-4">
                 {data.teamLogoUrl ? (
-                  <img src={data.teamLogoUrl} alt={`${data.teamName} logo`} className="w-16 h-16 rounded-xl object-cover" />
+                  <img src={data.teamLogoUrl} alt={`${data.teamName} logo`} className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover flex-shrink-0" />
                 ) : (
-                  <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] flex items-center justify-center text-white text-2xl font-bold">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] flex items-center justify-center text-white text-xl sm:text-2xl font-bold flex-shrink-0">
                     {data.teamName.charAt(0).toUpperCase()}
                   </div>
                 )}
-                <div>
-                  <h2 className="text-xl font-bold text-primary">{data.teamName}</h2>
-                  <p className="text-muted text-sm">Team Code: <span className="font-mono font-bold">{data.teamCode}</span></p>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-lg sm:text-xl font-bold text-primary truncate">{data.teamName}</h2>
+                  <p className="text-muted text-sm">Code: <span className="font-mono font-bold">{data.teamCode}</span></p>
                 </div>
+                <button
+                  type="button"
+                  onClick={handleSignout}
+                  className="flex-shrink-0 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm text-[var(--color-error)] border border-[var(--color-error)]/30 hover:bg-[var(--color-error)]/10 rounded-lg transition-colors"
+                  title="Sign Out"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                  <span>Sign Out</span>
+                </button>
               </div>
             </div>
 
@@ -879,8 +907,8 @@ function FeedbackModal({ feedbackRating, setFeedbackRating, feedbackComment, set
   setShowFeedback: (v: boolean) => void;
 }) {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-elevated rounded-lg shadow-xl max-w-md w-full p-6 animate-fade-in">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+      <div className="bg-[var(--bg-elevated)] rounded-xl shadow-2xl max-w-md w-full p-6 animate-fade-in border border-[var(--border-color)]">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-bold text-primary">Rate Your Experience</h3>
           <button type="button" onClick={() => setShowFeedback(false)} className="text-muted hover:text-primary transition-colors">

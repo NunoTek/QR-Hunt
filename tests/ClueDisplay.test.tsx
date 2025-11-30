@@ -294,4 +294,122 @@ describe("ClueDisplay Component", () => {
       expect(endNode.isEnd).toBe(true);
     });
   });
+
+  describe("YouTube Media Integration", () => {
+    it("should identify YouTube URLs for video content type", async () => {
+      const { isYouTubeUrl } = await import("../app/components/YouTubeEmbed");
+
+      const youtubeNode = {
+        id: "yt-node",
+        title: "YouTube Video Clue",
+        content: "Watch this video",
+        contentType: "video",
+        mediaUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      };
+
+      expect(isYouTubeUrl(youtubeNode.mediaUrl)).toBe(true);
+    });
+
+    it("should identify YouTube URLs for audio content type", async () => {
+      const { isYouTubeUrl } = await import("../app/components/YouTubeEmbed");
+
+      const youtubeAudioNode = {
+        id: "yt-audio-node",
+        title: "YouTube Audio Clue",
+        content: "Listen to this",
+        contentType: "audio",
+        mediaUrl: "https://youtu.be/dQw4w9WgXcQ",
+      };
+
+      expect(isYouTubeUrl(youtubeAudioNode.mediaUrl)).toBe(true);
+    });
+
+    it("should identify YouTube URLs for link content type", async () => {
+      const { isYouTubeUrl } = await import("../app/components/YouTubeEmbed");
+
+      const youtubeLinkNode = {
+        id: "yt-link-node",
+        title: "YouTube Link Clue",
+        content: "Check this link",
+        contentType: "link",
+        mediaUrl: "https://www.youtube.com/watch?v=abc123XYZ",
+      };
+
+      expect(isYouTubeUrl(youtubeLinkNode.mediaUrl)).toBe(true);
+    });
+
+    it("should correctly identify non-YouTube video URLs", async () => {
+      const { isYouTubeUrl } = await import("../app/components/YouTubeEmbed");
+
+      const regularVideoNode = {
+        id: "regular-video-node",
+        title: "Regular Video Clue",
+        content: "Watch this video",
+        contentType: "video",
+        mediaUrl: "https://example.com/video.mp4",
+      };
+
+      expect(isYouTubeUrl(regularVideoNode.mediaUrl)).toBe(false);
+    });
+
+    it("should correctly identify non-YouTube audio URLs", async () => {
+      const { isYouTubeUrl } = await import("../app/components/YouTubeEmbed");
+
+      const regularAudioNode = {
+        id: "regular-audio-node",
+        title: "Regular Audio Clue",
+        content: "Listen to this",
+        contentType: "audio",
+        mediaUrl: "https://example.com/audio.mp3",
+      };
+
+      expect(isYouTubeUrl(regularAudioNode.mediaUrl)).toBe(false);
+    });
+
+    it("should correctly identify non-YouTube link URLs", async () => {
+      const { isYouTubeUrl } = await import("../app/components/YouTubeEmbed");
+
+      const regularLinkNode = {
+        id: "regular-link-node",
+        title: "Regular Link Clue",
+        content: "Visit this link",
+        contentType: "link",
+        mediaUrl: "https://example.com/page",
+      };
+
+      expect(isYouTubeUrl(regularLinkNode.mediaUrl)).toBe(false);
+    });
+
+    it("should handle various YouTube URL formats for video", async () => {
+      const { isYouTubeUrl } = await import("../app/components/YouTubeEmbed");
+
+      const youtubeUrls = [
+        "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "https://youtu.be/dQw4w9WgXcQ",
+        "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        "https://www.youtube.com/shorts/dQw4w9WgXcQ",
+        "https://music.youtube.com/watch?v=dQw4w9WgXcQ",
+      ];
+
+      youtubeUrls.forEach((url) => {
+        expect(isYouTubeUrl(url)).toBe(true);
+      });
+    });
+
+    it("should extract video ID from YouTube URLs", async () => {
+      const { extractYouTubeVideoId } = await import("../app/components/YouTubeEmbed");
+
+      expect(extractYouTubeVideoId("https://www.youtube.com/watch?v=dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
+      expect(extractYouTubeVideoId("https://youtu.be/dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
+      expect(extractYouTubeVideoId("https://www.youtube.com/embed/dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
+    });
+
+    it("should return null for non-YouTube URLs when extracting video ID", async () => {
+      const { extractYouTubeVideoId } = await import("../app/components/YouTubeEmbed");
+
+      expect(extractYouTubeVideoId("https://vimeo.com/123456789")).toBe(null);
+      expect(extractYouTubeVideoId("https://example.com/video.mp4")).toBe(null);
+      expect(extractYouTubeVideoId("")).toBe(null);
+    });
+  });
 });

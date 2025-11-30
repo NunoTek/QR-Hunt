@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Spinner } from "~/components/Loading";
+import { YouTubeEmbed, isYouTubeUrl } from "~/components/YouTubeEmbed";
 
 interface ClueNode {
   id: string;
@@ -22,6 +23,8 @@ export function ClueDisplay({ node, hideTitle = false, headerText = "Next Clue" 
 
   const renderMedia = () => {
     if (!node.mediaUrl) return null;
+
+    const isYouTube = isYouTubeUrl(node.mediaUrl);
 
     switch (node.contentType) {
       case "image":
@@ -57,6 +60,15 @@ export function ClueDisplay({ node, hideTitle = false, headerText = "Next Clue" 
         );
 
       case "video":
+        // Check if it's a YouTube video
+        if (isYouTube) {
+          return (
+            <div className="mb-4">
+              <YouTubeEmbed url={node.mediaUrl} title={node.title} />
+            </div>
+          );
+        }
+        // Regular video file
         return (
           <div className="mb-4">
             <video
@@ -68,6 +80,15 @@ export function ClueDisplay({ node, hideTitle = false, headerText = "Next Clue" 
         );
 
       case "audio":
+        // Check if it's a YouTube link (audio only mode)
+        if (isYouTube) {
+          return (
+            <div className="mb-4">
+              <YouTubeEmbed url={node.mediaUrl} title={node.title} audioOnly />
+            </div>
+          );
+        }
+        // Regular audio file
         return (
           <div className="mb-4">
             <div className="flex items-center gap-4 p-4 bg-tertiary rounded-lg">
@@ -84,6 +105,15 @@ export function ClueDisplay({ node, hideTitle = false, headerText = "Next Clue" 
         );
 
       case "link":
+        // Check if it's a YouTube link - show as video
+        if (isYouTube) {
+          return (
+            <div className="mb-4">
+              <YouTubeEmbed url={node.mediaUrl} title={node.title} />
+            </div>
+          );
+        }
+        // Regular external link
         return (
           <div className="mb-4">
             <a
@@ -120,9 +150,9 @@ export function ClueDisplay({ node, hideTitle = false, headerText = "Next Clue" 
           </div>
           <div className="flex-1 flex items-center justify-between flex-wrap gap-2">
             <div>
-              <h2 className="text-lg sm:text-xl font-bold text-primary m-0">{headerText}</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-primary m-0">{node.title}</h2>
               <p className="text-sm text-secondary mt-1">
-                {node.title}
+                {headerText}
               </p>
             </div>
             {node.isEnd && (
