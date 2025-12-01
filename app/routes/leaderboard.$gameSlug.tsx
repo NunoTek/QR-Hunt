@@ -91,6 +91,24 @@ interface RankChange {
   positions: number;
 }
 
+interface PerformanceData {
+  game: { id: string; name: string; slug: string };
+  nodes: Array<{ id: string; title: string }>;
+  teams: Array<{
+    teamId: string;
+    teamName: string;
+    teamLogoUrl: string | null;
+    clueTimings: Array<{
+      nodeId: string;
+      nodeTitle: string;
+      timestamp: string;
+      timeFromStart: number;
+      timeFromPrevious: number;
+    }>;
+    totalTime: number;
+  }>;
+}
+
 export default function Leaderboard() {
   const loaderData = useLoaderData<typeof loader>();
   const [data, setData] = useState<LeaderboardData>(loaderData);
@@ -100,8 +118,12 @@ export default function Leaderboard() {
   const [feedbackData, setFeedbackData] = useState<FeedbackData | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [rankChanges, setRankChanges] = useState<Map<string, RankChange>>(new Map());
+  const [activeTab, setActiveTab] = useState<"leaderboard" | "performance">("leaderboard");
+  const [performanceData, setPerformanceData] = useState<PerformanceData | null>(null);
+  const [isLoadingPerformance, setIsLoadingPerformance] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
   const feedbackLoadedRef = useRef(false);
+  const performanceLoadedRef = useRef(false);
   const previousRanksRef = useRef<Map<string, number>>(new Map());
   const toast = useToast();
   const navigate = useNavigate();
@@ -195,6 +217,32 @@ export default function Leaderboard() {
         });
     }
   }, [data.game.slug]);
+
+  // Load performance data when tab is switched
+  useEffect(() => {
+    if (activeTab === "performance" && !performanceLoadedRef.current) {
+      performanceLoadedRef.current = true;
+      setIsLoadingPerformance(true);
+      fetch(`/api/v1/game/${data.game.slug}/performance`)
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+          }
+          return res.json();
+        })
+        .then((result) => {
+          if (result && result.teams) {
+            setPerformanceData(result);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to load performance data:", err);
+        })
+        .finally(() => {
+          setIsLoadingPerformance(false);
+        });
+    }
+  }, [activeTab, data.game.slug]);
 
   const connectSSE = useCallback(() => {
     if (data.game.status !== "active") return;
@@ -415,8 +463,40 @@ export default function Leaderboard() {
           </div>
         )}
 
-        {/* Leaderboard */}
-        {data.leaderboard.length === 0 ? (
+        {/* Tabs */}
+        <div className="flex border-b border-border mb-4">
+          <button
+            type="button"
+            onClick={() => setActiveTab("leaderboard")}
+            className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-all border-b-2 -mb-px ${
+              activeTab === "leaderboard"
+                ? "border-[var(--color-primary)] text-[var(--color-primary)]"
+                : "border-transparent text-muted hover:text-secondary hover:border-border"
+            }`}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M8 21V11M16 21V3M4 21h16M12 21V7" />
+            </svg>
+            <span>{t("pages.leaderboard.title")}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("performance")}
+            className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-all border-b-2 -mb-px ${
+              activeTab === "performance"
+                ? "border-[var(--color-primary)] text-[var(--color-primary)]"
+                : "border-transparent text-muted hover:text-secondary hover:border-border"
+            }`}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 20V10M18 20V4M6 20v-4" />
+            </svg>
+            <span>{t("pages.leaderboard.performance")}</span>
+          </button>
+        </div>
+
+        {/* Leaderboard Tab */}
+        {activeTab === "leaderboard" && data.leaderboard.length === 0 ? (
           <div className="card empty-state">
             <div className="empty-state-icon">🏁</div>
             <h3 className="empty-state-title">{t("pages.leaderboard.noTeams")}</h3>
@@ -424,7 +504,7 @@ export default function Leaderboard() {
               {t("pages.leaderboard.noTeamsDescription")}
             </p>
           </div>
-        ) : (
+        ) : activeTab === "leaderboard" ? (
           <div className="leaderboard-list">
             {data.leaderboard.map((entry, index) => (
               <div
@@ -472,9 +552,219 @@ export default function Leaderboard() {
               </div>
             ))}
           </div>
-        )}
+        ) : (
+          /* Performance Tab */
+          <div className="performance-tab">
+            {isLoadingPerformance ? (
+              <div className="flex items-center justify-center py-12">
+                <Spinner size="lg" />
+              </div>
+            ) : !performanceData || performanceData.teams.length === 0 ? (
+              <div className="card empty-state">
+                <div className="empty-state-icon">📊</div>
+                <h3 className="empty-state-title">{t("pages.leaderboard.noPerformanceData")}</h3>
+                <p className="empty-state-description">{t("pages.leaderboard.noPerformanceDataDescription")}</p>
+              </div>
+            ) : (() => {
+              // Check if any team has scan data
+              const teamsWithScans = performanceData.teams.filter((t) => t.clueTimings.length > 0);
+              const hasAnyScans = teamsWithScans.length > 0;
 
-        {/* Feedback Section - Show for active and completed games */}
+              // Team colors - consistent across charts
+              const teamColors = performanceData.teams.map((_, idx) =>
+                `hsl(${(idx * 137.5) % 360}, 65%, 55%)`
+              );
+
+              return (
+                <div className="space-y-4">
+                  {/* Chart Legend */}
+                  <div className="flex flex-wrap gap-2 sm:gap-3 p-3 sm:p-4 bg-elevated rounded-lg border">
+                    {performanceData.teams.map((team, idx) => (
+                      <div key={team.teamId} className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: teamColors[idx] }}
+                        />
+                        <span className="text-xs sm:text-sm text-secondary">{team.teamName}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {!hasAnyScans ? (
+                    <div className="bg-elevated rounded-lg border p-6 text-center">
+                      <div className="text-3xl mb-2">⏳</div>
+                      <p className="text-muted">{t("pages.leaderboard.noScansYet")}</p>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Time per Clue Chart */}
+                      <div className="bg-elevated rounded-lg border p-3 sm:p-4">
+                        <h3 className="text-base sm:text-lg font-semibold text-primary mb-3 sm:mb-4 flex items-center gap-2">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                          </svg>
+                          {t("pages.leaderboard.timePerClue")}
+                        </h3>
+                        {performanceData.nodes.length === 0 ? (
+                          <p className="text-muted text-sm text-center py-4">{t("pages.leaderboard.noCluesFound")}</p>
+                        ) : (
+                          <div className="space-y-4">
+                            {performanceData.nodes.map((node) => {
+                              const teamsWithTiming = performanceData.teams
+                                .map((team, idx) => ({
+                                  ...team,
+                                  colorIdx: idx,
+                                  timing: team.clueTimings.find((c) => c.nodeId === node.id),
+                                }))
+                                .filter((t) => t.timing);
+
+                              if (teamsWithTiming.length === 0) return null;
+
+                              const maxTime = Math.max(...teamsWithTiming.map((t) => t.timing?.timeFromPrevious || 0));
+
+                              return (
+                                <div key={node.id} className="space-y-2">
+                                  <div className="text-xs sm:text-sm font-medium text-primary">{node.title}</div>
+                                  <div className="space-y-1.5">
+                                    {teamsWithTiming
+                                      .sort((a, b) => (a.timing?.timeFromPrevious || 0) - (b.timing?.timeFromPrevious || 0))
+                                      .map((team, rankIdx) => {
+                                        const time = team.timing?.timeFromPrevious || 0;
+                                        const width = maxTime > 0 ? (time / maxTime) * 100 : 0;
+
+                                        return (
+                                          <div key={team.teamId} className="flex items-center gap-2">
+                                            <div className="w-14 sm:w-20 text-xs text-muted truncate flex items-center gap-1">
+                                              {rankIdx === 0 && <span>🥇</span>}
+                                              {rankIdx === 1 && <span>🥈</span>}
+                                              {rankIdx === 2 && <span>🥉</span>}
+                                              <span className="truncate">{team.teamName}</span>
+                                            </div>
+                                            <div className="flex-1 h-6 bg-tertiary rounded-md overflow-hidden">
+                                              <div
+                                                className="h-full rounded-md transition-all duration-500 flex items-center px-2"
+                                                style={{
+                                                  width: `${Math.max(width, 15)}%`,
+                                                  backgroundColor: teamColors[team.colorIdx],
+                                                }}
+                                              >
+                                                <span className="text-xs font-semibold text-white drop-shadow-sm whitespace-nowrap">
+                                                  {time >= 60 ? `${Math.floor(time / 60)}m ${time % 60}s` : `${time}s`}
+                                                </span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Total Time Comparison */}
+                      <div className="bg-elevated rounded-lg border p-3 sm:p-4">
+                        <h3 className="text-base sm:text-lg font-semibold text-primary mb-3 sm:mb-4 flex items-center gap-2">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                          </svg>
+                          {t("pages.leaderboard.totalTime")}
+                        </h3>
+                        {teamsWithScans.length === 0 ? (
+                          <p className="text-muted text-sm text-center py-4">{t("pages.leaderboard.noTimesRecorded")}</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {teamsWithScans
+                              .sort((a, b) => a.totalTime - b.totalTime)
+                              .map((team, rankIdx) => {
+                                const originalIdx = performanceData.teams.findIndex((t) => t.teamId === team.teamId);
+                                const maxTime = Math.max(...teamsWithScans.map((t) => t.totalTime));
+                                const width = maxTime > 0 ? (team.totalTime / maxTime) * 100 : 0;
+                                const minutes = Math.floor(team.totalTime / 60);
+                                const seconds = team.totalTime % 60;
+
+                                return (
+                                  <div key={team.teamId} className="flex items-center gap-2 sm:gap-3">
+                                    <div className="w-6 sm:w-8 text-center flex-shrink-0">
+                                      {rankIdx === 0 && <span className="text-lg">🥇</span>}
+                                      {rankIdx === 1 && <span className="text-lg">🥈</span>}
+                                      {rankIdx === 2 && <span className="text-lg">🥉</span>}
+                                      {rankIdx > 2 && <span className="text-sm font-bold text-muted">#{rankIdx + 1}</span>}
+                                    </div>
+                                    <div className="w-16 sm:w-24 text-xs sm:text-sm font-medium text-secondary truncate">{team.teamName}</div>
+                                    <div className="flex-1 h-7 sm:h-8 bg-tertiary rounded-md overflow-hidden">
+                                      <div
+                                        className="h-full rounded-md transition-all duration-500 flex items-center px-2"
+                                        style={{
+                                          width: `${Math.max(width, 15)}%`,
+                                          backgroundColor: rankIdx === 0 ? "var(--color-success)" : teamColors[originalIdx],
+                                        }}
+                                      >
+                                        <span className="text-xs sm:text-sm font-bold text-white drop-shadow-sm whitespace-nowrap">
+                                          {minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        )}       
+
+        {/* Footer */}
+        <div className="leaderboard-footer mt-6">
+          <p className="text-muted text-center" style={{ fontSize: "0.875rem" }}>
+            {t("pages.leaderboard.lastUpdated")}: {new Date(data.updatedAt).toLocaleTimeString()}
+            {isConnected && ` (${t("pages.leaderboard.realTime")})`}
+          </p>
+
+          <div className="flex justify-center gap-3 mt-4">
+            <button
+              onClick={handleRefresh}
+              className="btn btn-secondary"
+              disabled={isRefreshing}
+            >
+              {isRefreshing ? (
+                <>
+                  <Spinner size="sm" />
+                  <span>{t("pages.leaderboard.refreshing")}</span>
+                </>
+              ) : (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M23 4v6h-6" />
+                    <path d="M1 20v-6h6" />
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                  </svg>
+                  {t("pages.leaderboard.refresh")}
+                </>
+              )}
+            </button>
+          </div>
+
+          <div className="text-center mt-4">
+            <button type="button" onClick={handleBack} className="back-link">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+              </svg>
+              {t("common.back")}
+            </button>
+          </div>
+        </div>
+
+         {/* Feedback Section - Show for active and completed games */}
         {feedbackData && feedbackData.count > 0 && (
           <div className="mt-8">
             <button
@@ -529,48 +819,6 @@ export default function Leaderboard() {
             )}
           </div>
         )}
-
-        {/* Footer */}
-        <div className="leaderboard-footer mt-6">
-          <p className="text-muted text-center" style={{ fontSize: "0.875rem" }}>
-            {t("pages.leaderboard.lastUpdated")}: {new Date(data.updatedAt).toLocaleTimeString()}
-            {isConnected && ` (${t("pages.leaderboard.realTime")})`}
-          </p>
-
-          <div className="flex justify-center gap-3 mt-4">
-            <button
-              onClick={handleRefresh}
-              className="btn btn-secondary"
-              disabled={isRefreshing}
-            >
-              {isRefreshing ? (
-                <>
-                  <Spinner size="sm" />
-                  <span>{t("pages.leaderboard.refreshing")}</span>
-                </>
-              ) : (
-                <>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M23 4v6h-6" />
-                    <path d="M1 20v-6h6" />
-                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-                  </svg>
-                  {t("pages.leaderboard.refresh")}
-                </>
-              )}
-            </button>
-          </div>
-
-          <div className="text-center mt-4">
-            <button type="button" onClick={handleBack} className="back-link">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="19" y1="12" x2="5" y2="12" />
-                <polyline points="12 19 5 12 12 5" />
-              </svg>
-              {t("common.back")}
-            </button>
-          </div>
-        </div>
       </div>
 
       <style>{`
@@ -831,19 +1079,45 @@ export default function Leaderboard() {
         /* Mobile adjustments for team stats */
         @media (max-width: 639px) {
           .leaderboard-item {
-            flex-wrap: wrap;
+            padding: 0.75rem;
+            gap: 0.5rem;
+          }
+          .rank-badge {
+            width: 2rem;
+            height: 2rem;
+            font-size: 0.7rem;
           }
           .team-info {
-            flex: 1 1 calc(100% - 3.5rem);
-            order: 1;
+            flex: 1;
+            min-width: 0;
+          }
+          .team-name-lb {
+            font-size: 0.875rem;
           }
           .team-stats {
-            order: 2;
-            width: 100%;
-            justify-content: flex-end;
-            margin-top: 0.5rem;
-            padding-top: 0.5rem;
-            border-top: 1px solid var(--border-color);
+            gap: 0.5rem;
+          }
+          .stat-box {
+            min-width: 2.25rem;
+          }
+          .stat-box.points {
+            padding: 0.375rem 0.5rem;
+          }
+          .stat-num {
+            font-size: 0.9375rem;
+          }
+          .stat-lbl {
+            font-size: 0.5625rem;
+          }
+          .stat-box.clues {
+            margin-top: 0.25rem;
+          }
+          .current-clue {
+            font-size: 0.6875rem;
+          }
+          .team-status .badge {
+            font-size: 0.625rem;
+            padding: 0.125rem 0.375rem;
           }
         }
       `}</style>

@@ -2,8 +2,8 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Link, useLoaderData, useNavigate } from "@remix-run/react";
 import { useState } from "react";
-import { getApiUrl } from "~/lib/api";
 import { useTranslation } from "~/i18n/I18nContext";
+import { getApiUrl } from "~/lib/api";
 
 interface Game {
   id: string;
@@ -254,13 +254,7 @@ export default function AdminGames() {
                         >
                           {t("pages.admin.gamesList.actions.manage")}
                         </Link>
-                        <Link
-                          to={`/leaderboard/${game.publicSlug}`}
-                          target="_blank"
-                          className="px-3 py-1.5 text-sm text-secondary hover:text-primary border hover:border-strong rounded-lg transition-colors hidden sm:inline-flex"
-                        >
-                          {t("pages.admin.gamesList.actions.leaderboard")}
-                        </Link>
+
                         {(game.status === "draft" || game.status === "completed") && (
                           <button
                             type="button"

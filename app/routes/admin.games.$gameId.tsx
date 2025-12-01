@@ -901,7 +901,7 @@ function AdminGameDetailContent() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {filteredNodes.map((node) => (
-                    <tr key={node.id} className="hover:bg-secondary">
+                    <tr key={node.id} className="hover:bg-secondary group">
                       <td className="px-4 py-3 text-primary">
                         <div>
                           <span className="font-medium">{node.title}</span>
@@ -946,7 +946,7 @@ function AdminGameDetailContent() {
                           </button>
                         </Form>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 sticky right-0 bg-elevated group-hover:bg-secondary">
                         <div className="flex gap-1 justify-end">
                           <button onClick={() => setPreviewNode(node)} className={`${btnSecondary} ${btnSmall}`} title={t("pages.admin.gameEditor.nodes.buttons.preview")}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1360,7 +1360,7 @@ function AdminGameDetailContent() {
                           } catch {
                             toast.error("Failed to copy URL");
                           }
-                        }} className={`${btnSecondary} hidden sm:inline-flex`}>Copy URL</button>
+                        }} className={`${btnSecondary} hidden sm:flex`}>Copy URL</button>
                       </div>
                     </td>
                   </tr>
@@ -1569,7 +1569,7 @@ function AdminGameDetailContent() {
 
           {/* Ranking Mode Setting */}
           <div className="mt-4 bg-elevated rounded-xl border p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-primary mb-2">{t("pages.admin.newGame.rankingMode")}</h3>
+            <h3 className="text-lg font-semibold text-primary mb-2">{t("pages.admin.newGame.form.rankingMode")}</h3>
             <p className="text-secondary text-sm mb-4">{t("pages.admin.gameEditor.settings.rankingModeDescription")}</p>
 
             <Form method="post" className="space-y-4">
@@ -1593,7 +1593,7 @@ function AdminGameDetailContent() {
                       className="text-[var(--color-primary)]"
                     />
                     <div>
-                      <span className="font-medium text-primary">{t(`pages.admin.newGame.rankingModes.${mode}`)}</span>
+                      <span className="font-medium text-primary">{t(`pages.admin.newGame.form.rankingModes.${mode}`)}</span>
                     </div>
                   </label>
                 ))}

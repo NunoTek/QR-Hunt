@@ -148,7 +148,7 @@ function AdminLayout() {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 text-primary font-bold text-lg hover:text-[var(--color-primary)] transition-colors">
               <span className="text-2xl" aria-label="Target">🎯</span>
-              <span className="hidden sm:inline">{t("common.appName")}</span>
+              <span className="hidden sm:flex">{t("common.appName")}</span>
             </Link>
 
             {/* Navigation */}
@@ -187,7 +187,7 @@ function AdminLayout() {
                   <polyline points="16 17 21 12 16 7" />
                   <line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
-                <span className="hidden">{t("pages.admin.nav.signOut")}</span>
+                <span className="hidden sm:inline-flex">{t("pages.admin.nav.signOut")}</span>
               </button>
             </Form>
           </div>
