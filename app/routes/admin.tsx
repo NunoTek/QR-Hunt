@@ -143,7 +143,8 @@ function AdminLayout() {
       {/* Top Navigation */}
       <header className="bg-[var(--bg-elevated)] border-b border-[var(--border-color)] sticky top-0 z-50 shadow-sm">
         <div className="mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 flex-wrap gap-y-2">
+          {/* Top row: Logo and Logout */}
+          <div className="flex items-center justify-between h-14 sm:h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 text-primary font-bold text-lg hover:text-[var(--color-primary)] transition-colors">
               <span className="text-2xl" aria-label="Target">🎯</span>
@@ -151,7 +152,7 @@ function AdminLayout() {
             </Link>
 
             {/* Navigation */}
-            <nav className="flex items-center gap-1 order-3 sm:order-none w-full sm:w-auto justify-center sm:justify-start border-t sm:border-0 border-border pt-2 sm:pt-0 mt-2 sm:mt-0">
+            <nav className="items-center gap-1">
               {navItems.map((item) => {
                 const isActive = item.exact
                   ? location.pathname === item.path
@@ -161,7 +162,7 @@ function AdminLayout() {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`px-3 py-2 sm:px-4 rounded-lg text-sm font-medium transition-all ${
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                       isActive
                         ? 'bg-[var(--color-primary)]/15 text-[var(--color-primary)]'
                         : 'text-tertiary hover:text-primary hover:bg-secondary'

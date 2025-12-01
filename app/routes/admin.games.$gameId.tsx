@@ -243,6 +243,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
         break;
       }
 
+      case "updateRankingMode": {
+        const rankingMode = formData.get("rankingMode")?.toString();
+        if (rankingMode && ["points", "nodes", "time"].includes(rankingMode)) {
+          const response = await fetch(`${baseUrl}/api/v1/admin/games/${gameId}`, {
+            method: "PATCH",
+            headers,
+            body: JSON.stringify({ settings: { rankingMode } }),
+          });
+          if (!response.ok) {
+            const data = await response.json();
+            return json({ error: data.error || "Failed to update ranking mode" });
+          }
+        }
+        break;
+      }
+
       case "toggleActivated": {
         const nodeId = formData.get("nodeId");
         const activated = formData.get("activated") === "true";
@@ -673,6 +689,9 @@ function AdminGameDetailContent() {
           break;
         case "updateRandomMode":
           toast.success(t("pages.admin.gameEditor.toasts.randomModeUpdated"));
+          break;
+        case "updateRankingMode":
+          toast.success(t("pages.admin.gameEditor.toasts.rankingModeUpdated"));
           break;
         case "toggleActivated":
           toast.success(t("pages.admin.gameEditor.toasts.nodeActivationUpdated"));
@@ -1546,6 +1565,44 @@ function AdminGameDetailContent() {
                 Complete the setup checklist above before activating the game.
               </p>
             )}
+          </div>
+
+          {/* Ranking Mode Setting */}
+          <div className="mt-4 bg-elevated rounded-xl border p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-primary mb-2">{t("pages.admin.newGame.rankingMode")}</h3>
+            <p className="text-secondary text-sm mb-4">{t("pages.admin.gameEditor.settings.rankingModeDescription")}</p>
+
+            <Form method="post" className="space-y-4">
+              <input type="hidden" name="_action" value="updateRankingMode" />
+
+              <div className="space-y-2">
+                {(["points", "nodes", "time"] as const).map((mode) => (
+                  <label
+                    key={mode}
+                    className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all ${
+                      data.game.settings.rankingMode === mode
+                        ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
+                        : "border-border bg-secondary hover:border-[var(--color-primary)]/50"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="rankingMode"
+                      value={mode}
+                      defaultChecked={data.game.settings.rankingMode === mode}
+                      className="text-[var(--color-primary)]"
+                    />
+                    <div>
+                      <span className="font-medium text-primary">{t(`pages.admin.newGame.rankingModes.${mode}`)}</span>
+                    </div>
+                  </label>
+                ))}
+              </div>
+
+              <button type="submit" className={btnPrimary} disabled={isSubmitting}>
+                {isSubmitting ? t("common.saving") : t("common.save")}
+              </button>
+            </Form>
           </div>
 
           {/* Random Mode Setting */}

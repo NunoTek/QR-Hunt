@@ -618,6 +618,7 @@
           "deleteFailed": "Failed to delete feedback"
         },
         "settings": {
+          "rankingModeDescription": "Choose how teams are ranked on the leaderboard.",
           "gameStatus": {
             "title": "Game Status",
             "description": "Control the current status of your game.",
@@ -705,6 +706,7 @@
           "teamCreated": "Team created",
           "teamUpdated": "Team updated",
           "randomModeUpdated": "Random mode updated",
+          "rankingModeUpdated": "Ranking mode updated",
           "shareInfoCopied": "Share info for \"{{teamName}}\" copied!",
           "copyFailed": "Failed to copy",
           "deleteFailed": "Failed to delete {{type}}",

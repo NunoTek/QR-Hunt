@@ -139,8 +139,7 @@ export function LanguageSelector({ variant = "dropdown", showLabel = false }: La
         aria-haspopup="listbox"
         aria-label={t("components.languageSelector.title")}
       >
-        <span className="language-flag">{languageFlags[language]}</span>
-        <span className="language-name">{languages[language]}</span>
+        <span className="language-code">{language.toUpperCase()}</span>
         <svg
           className={`language-chevron ${isOpen ? "open" : ""}`}
           width="12"
@@ -150,7 +149,7 @@ export function LanguageSelector({ variant = "dropdown", showLabel = false }: La
           stroke="currentColor"
           strokeWidth="2"
         >
-          <polyline points="6 9 12 15 18 9" />
+          <polyline points="6 15 12 9 18 15" />
         </svg>
       </button>
 
@@ -187,20 +186,23 @@ export function LanguageSelector({ variant = "dropdown", showLabel = false }: La
 
       <style>{`
         .language-selector {
-          position: relative;
-          display: inline-block;
+          position: fixed;
+          bottom: 1rem;
+          left: 1rem;
+          z-index: 100;
         }
 
         .language-trigger {
           display: flex;
           align-items: center;
-          gap: 0.5rem;
-          padding: 0.5rem 0.75rem;
+          gap: 0.375rem;
+          padding: 0.5rem 0.625rem;
           border: 1px solid var(--border-color);
           border-radius: var(--radius);
           background: var(--bg-secondary);
           color: var(--text-primary);
-          font-size: 0.875rem;
+          font-size: 0.75rem;
+          font-weight: 600;
           cursor: pointer;
           transition: all var(--transition-fast);
         }
@@ -209,12 +211,8 @@ export function LanguageSelector({ variant = "dropdown", showLabel = false }: La
           border-color: var(--color-primary);
         }
 
-        .language-flag {
-          font-size: 1rem;
-        }
-
-        .language-name {
-          font-weight: 500;
+        .language-code {
+          font-weight: 600;
         }
 
         .language-chevron {
@@ -228,9 +226,9 @@ export function LanguageSelector({ variant = "dropdown", showLabel = false }: La
 
         .language-dropdown {
           position: absolute;
-          top: 100%;
-          right: 0;
-          margin-top: 0.25rem;
+          bottom: 100%;
+          left: 0;
+          margin-bottom: 0.25rem;
           min-width: 150px;
           padding: 0.25rem;
           background: var(--bg-elevated);
@@ -238,13 +236,13 @@ export function LanguageSelector({ variant = "dropdown", showLabel = false }: La
           border-radius: var(--radius);
           box-shadow: var(--shadow-md);
           z-index: 1000;
-          animation: dropdown-fade-in 0.15s ease-out;
+          animation: dropdown-fade-up 0.15s ease-out;
         }
 
-        @keyframes dropdown-fade-in {
+        @keyframes dropdown-fade-up {
           from {
             opacity: 0;
-            transform: translateY(-4px);
+            transform: translateY(4px);
           }
           to {
             opacity: 1;
@@ -279,6 +277,10 @@ export function LanguageSelector({ variant = "dropdown", showLabel = false }: La
 
         .language-option .language-name {
           flex: 1;
+        }
+
+        .language-flag {
+          font-size: 1rem;
         }
 
         .language-check {
