@@ -124,10 +124,12 @@
         "list": [
           "Clue-based navigation guides teams to each QR code",
           "Real-time leaderboards with live updates",
+          "Performance analytics with team timing charts",
+          "Waiting room with live team presence detection",
           "Built-in chat between teams and organizers",
           "QR code generator with custom logos",
           "Media clues (images, videos, audio)",
-          "Works on any device - no app needed",
+          "Installable PWA - works on any device",
           "Self-hosted - your data stays private"
         ],
         "mockup": {

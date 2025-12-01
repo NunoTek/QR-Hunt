@@ -46,9 +46,12 @@ QR Hunt is an interactive treasure hunt game where teams race to find hidden QR 
 
 - **Zero friction for players** — Join with a 6-digit code, scan with your camera, no app needed
 - **Works offline** — Cached clues, pending scans sync when back online
+- **Installable PWA** — Add to home screen for native app experience
 - **GDPR compliant** — Cookie-free authentication using localStorage
 - **Real-time everything** — Live leaderboards, instant chat, immediate feedback
+- **Team presence** — See who's online in waiting room before the game starts
 - **Self-hosted** — Your data, your server, one Docker command
+- **Multilingual** — Built-in support for English, French, and Portuguese
 - **Flexible gameplay** — Linear paths, random exploration, or collect-them-all modes
 
 ## Features
@@ -61,6 +64,7 @@ QR Hunt is an interactive treasure hunt game where teams race to find hidden QR 
 | Clue Navigation | Each scan reveals the next clue |
 | Progress Tracking | See X/Y codes found, points always visible |
 | Offline Mode | Cached clues visible without network, syncs when back online |
+| Waiting Room | See other teams, connection status before game starts |
 | Team Chat | Message organizers for hints |
 | Dark/Light Theme | User preference |
 
@@ -71,6 +75,8 @@ QR Hunt is an interactive treasure hunt game where teams race to find hidden QR 
 | Multi-game Support | Run multiple hunts simultaneously |
 | QR Generator | Built-in with logo embedding and error correction |
 | Real-time Monitor | Watch team progress live |
+| Performance Charts | Analyze team timing per clue |
+| Team Presence | See which teams are online in waiting room |
 | Broadcast Chat | Message all teams or individuals |
 | Undo Delete | 20-second recovery window |
 
@@ -79,12 +85,20 @@ QR Hunt is an interactive treasure hunt game where teams race to find hidden QR 
 - **Random** — Any order after the starting clue, shuffle for variety
 - **Collect All** — Find every QR code to complete the hunt
 
+### Ranking Modes
+- **Points** — Rank teams by total points earned
+- **Clues Found** — Rank by number of clues discovered
+- **Time** — Fastest team to complete wins
+
 ### Technical
 - **SSE Leaderboards** — Instant updates without polling
+- **Heartbeat System** — Real-time team presence detection with 15s timeout
 - **Cookie-free Auth** — localStorage + Bearer tokens for GDPR compliance
 - **Offline Support** — Cached game data, pending scan queue
+- **PWA Ready** — Installable progressive web app
 - **SQLite** — No external database needed
 - **Docker + Caddy** — One-command deploy with auto HTTPS
+- **i18n Support** — English, French, Portuguese translations
 - **414 tests** — Comprehensive test coverage
 
 ## Quick Start

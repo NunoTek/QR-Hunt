@@ -204,14 +204,19 @@ export async function leaderboardRoutes(fastify: FastifyInstance) {
       reply.raw.write(`event: status\n`);
       reply.raw.write(`data: ${JSON.stringify({ status: game.status, timestamp: new Date().toISOString() })}\n\n`);
 
-      // Send current teams list
+      // Send current teams list with connection status
       const teams = teamRepository.findByGameId(game.id);
-      const teamsData = teams.map((t) => ({
-        id: t.id,
-        name: t.name,
-        logoUrl: t.logoUrl,
-        joinedAt: t.createdAt,
-      }));
+      const connections = gameEvents.getTeamConnections(slug);
+      const teamsData = teams.map((t) => {
+        const connection = connections.find((c) => c.teamId === t.id);
+        return {
+          id: t.id,
+          name: t.name,
+          logoUrl: t.logoUrl,
+          joinedAt: t.createdAt,
+          isConnected: connection?.isConnected ?? false,
+        };
+      });
       reply.raw.write(`event: teams\n`);
       reply.raw.write(`data: ${JSON.stringify({ teams: teamsData })}\n\n`);
 
@@ -232,18 +237,55 @@ export async function leaderboardRoutes(fastify: FastifyInstance) {
         reply.raw.write(`data: ${JSON.stringify(data)}\n\n`);
       };
 
+      // Listen for team connection status changes
+      const onTeamConnection = (data: { teamId: string; teamName: string; isConnected: boolean; timestamp: string }) => {
+        reply.raw.write(`event: team_connection\n`);
+        reply.raw.write(`data: ${JSON.stringify(data)}\n\n`);
+      };
+
       gameEvents.onGameStatus(slug, onGameStatus);
       gameEvents.onTeamJoined(slug, onTeamJoined);
+      gameEvents.onTeamConnectionStatus(slug, onTeamConnection);
 
       // Clean up on close
       request.raw.on("close", () => {
         clearInterval(keepAliveInterval);
         gameEvents.offGameStatus(slug, onGameStatus);
         gameEvents.offTeamJoined(slug, onTeamJoined);
+        gameEvents.offTeamConnectionStatus(slug, onTeamConnection);
       });
 
       // Don't end the response - keep it open for SSE
       return reply;
+    }
+  );
+
+  // Team heartbeat endpoint for connection tracking
+  fastify.post(
+    "/:slug/heartbeat",
+    async (
+      request: FastifyRequest<{
+        Params: { slug: string };
+        Body: { teamId: string; teamName: string };
+      }>,
+      reply: FastifyReply
+    ) => {
+      const { slug } = request.params;
+      const { teamId, teamName } = request.body || {};
+
+      if (!teamId || !teamName) {
+        return reply.status(400).send({ error: "teamId and teamName are required" });
+      }
+
+      const game = gameRepository.findBySlug(slug);
+      if (!game) {
+        return reply.status(404).send({ error: "Game not found" });
+      }
+
+      // Record the heartbeat
+      gameEvents.teamHeartbeat(slug, teamId, teamName);
+
+      return reply.send({ ok: true });
     }
   );
 
