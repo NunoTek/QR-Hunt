@@ -121,36 +121,48 @@ export function YouTubeEmbed({ url, title = "Video", audioOnly = false }: YouTub
     );
   }
 
-  // For audio-only mode, we hide the video visually but still load it
-  // YouTube doesn't have an official audio-only embed, so we minimize the player
+  // For audio-only mode, show a compact but usable YouTube player
+  // YouTube doesn't have an official audio-only embed, so we show a minimal video player
   if (audioOnly) {
     return (
-      <div className="flex items-center gap-4 p-4 bg-tertiary rounded-lg">
-        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[#FF0000] text-white flex-shrink-0">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
-          </svg>
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-primary truncate mb-2">{title}</p>
-          <div className="relative w-full" style={{ height: "54px" }}>
-            {loading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-secondary rounded">
-                <Spinner size="sm" />
-              </div>
-            )}
-            <iframe
-              ref={iframeRef}
-              src={`https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0${origin ? `&origin=${origin}` : ''}`}
-              title={title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full rounded"
-              style={{ opacity: loading ? 0 : 1 }}
-              onLoad={handleLoad}
-            />
+      <div className="bg-tertiary rounded-lg overflow-hidden">
+        <div className="flex items-center gap-3 p-3 border-b border-border">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#FF0000] text-white flex-shrink-0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
+            </svg>
           </div>
-          <p className="text-xs text-muted mt-1">YouTube Audio</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-primary truncate">{title}</p>
+            <p className="text-xs text-muted">YouTube Audio</p>
+          </div>
+        </div>
+        <div className="relative w-full" style={{ aspectRatio: "16/9", maxHeight: "200px" }}>
+          {loading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+              <Spinner size="md" />
+            </div>
+          )}
+          <iframe
+            ref={iframeRef}
+            src={`https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0&playsinline=1${origin ? `&origin=${origin}` : ''}`}
+            title={title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            className="w-full h-full"
+            style={{ opacity: loading ? 0 : 1 }}
+            onLoad={handleLoad}
+          />
+        </div>
+        <div className="p-2 text-center">
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-muted hover:text-secondary"
+          >
+            Audio not playing? Open on YouTube →
+          </a>
         </div>
       </div>
     );

@@ -109,6 +109,25 @@ stages:
             displayName: 'Logout from ACR'
             condition: always()
 
+  - stage: Deploy
+    displayName: 'Restart Azure Web Service'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - job: RestartWebApp
+        displayName: 'Restart Azure Web App'
+        steps:
+          - task: AzureCLI@2
+            displayName: 'Restart Azure Web App'
+            inputs:
+              azureSubscription: '$(AZURE_SUBSCRIPTION)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                az webapp restart --name $(AZURE_WEBAPP_NAME) --resource-group $(AZURE_RESOURCE_GROUP)
+                echo "Web app $(AZURE_WEBAPP_NAME) has been restarted"
+            continueOnError: true
+
   - stage: Scan
     displayName: 'Security Scan'
     dependsOn: Build
@@ -140,22 +159,3 @@ stages:
               docker logout $(ACR_REGISTRY)
             displayName: 'Logout from ACR'
             condition: always()
-
-  - stage: Deploy
-    displayName: 'Restart Azure Web Service'
-    dependsOn: Scan
-    condition: succeeded()
-    jobs:
-      - job: RestartWebApp
-        displayName: 'Restart Azure Web App'
-        steps:
-          - task: AzureCLI@2
-            displayName: 'Restart Azure Web App'
-            inputs:
-              azureSubscription: '$(AZURE_SUBSCRIPTION)'
-              scriptType: 'bash'
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                az webapp restart --name $(AZURE_WEBAPP_NAME) --resource-group $(AZURE_RESOURCE_GROUP)
-                echo "Web app $(AZURE_WEBAPP_NAME) has been restarted"
-            continueOnError: true

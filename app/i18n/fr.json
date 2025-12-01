@@ -323,7 +323,15 @@
       "sendFeedback": "Envoyer",
       "feedbackSent": "Merci pour votre retour !",
       "rankUp": "Montée au classement !",
-      "rankDown": "Descente au classement"
+      "rankDown": "Descente au classement",
+      "performance": "Performance",
+      "noPerformanceData": "Pas encore de données",
+      "noPerformanceDataDescription": "Les graphiques de performance apparaîtront une fois que les équipes commenceront à scanner les indices.",
+      "timePerClue": "Temps par indice",
+      "totalTime": "Temps total",
+      "noScansYet": "Aucun scan enregistré. Les graphiques apparaîtront une fois que les équipes commenceront à scanner.",
+      "noCluesFound": "Aucun indice n'a encore été trouvé.",
+      "noTimesRecorded": "Aucun temps enregistré."
     },
     "admin": {
       "meta": {

@@ -730,20 +730,21 @@ function PlayGameContent() {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-border mb-6">
+        <div className="flex border-b border-border mb-4 sm:mb-6">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 inline-flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-all border-b-2 -mb-px ${
+              className={`flex-1 inline-flex items-center justify-center gap-1.5 px-1 sm:px-3 py-2 text-xs sm:text-sm font-medium transition-all border-b-2 -mb-px ${
                 activeTab === tab.id
                   ? "border-[var(--color-primary)] text-[var(--color-primary)]"
                   : "border-transparent text-muted hover:text-secondary hover:border-border"
               }`}
+              title={tab.label}
             >
               {tab.icon}
-              <span>{tab.label}</span>
+              <span className="hidden sm:flex">{tab.label}</span>
             </button>
           ))}
         </div>
@@ -769,7 +770,7 @@ function PlayGameContent() {
                     {data.isRandomMode && data.totalNodes - data.nodesFound > 1 && (
                       <button type="button" onClick={shuffleClue} disabled={isShuffling} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-secondary bg-tertiary hover:bg-secondary border border-border rounded-lg transition-colors disabled:opacity-50" title="Get a different random clue">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={isShuffling ? "animate-spin" : ""}><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
-                        {isShuffling ? "..." : t("pages.play.clueTab.tryAnother")}
+                        <span className="hidden sm:flex">{isShuffling ? "..." : t("pages.play.clueTab.tryAnother")}</span>
                       </button>
                     )}
                   </div>

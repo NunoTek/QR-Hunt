@@ -2,6 +2,8 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { gameService } from "../../domain/services/GameService.js";
 import { gameRepository } from "../../domain/repositories/GameRepository.js";
 import { teamRepository } from "../../domain/repositories/TeamRepository.js";
+import { nodeRepository } from "../../domain/repositories/NodeRepository.js";
+import { scanRepository } from "../../domain/repositories/ScanRepository.js";
 import { gameEvents } from "../../lib/eventEmitter.js";
 import { LEADERBOARD_CACHE, SSE } from "../../config/constants.js";
 
@@ -245,7 +247,96 @@ export async function leaderboardRoutes(fastify: FastifyInstance) {
     }
   );
 
+  // Get team performance data for charts
+  // NOTE: This route must be defined BEFORE /:slug to ensure proper route matching
+  fastify.get(
+    "/:slug/performance",
+    async (
+      request: FastifyRequest<{
+        Params: { slug: string };
+      }>,
+      reply: FastifyReply
+    ) => {
+      const { slug } = request.params;
+      const game = gameRepository.findBySlug(slug);
+
+      if (!game) {
+        return reply.status(404).send({ error: "Game not found" });
+      }
+
+      const teams = teamRepository.findByGameId(game.id);
+      const allScans = scanRepository.findByGameId(game.id);
+      const nodes = nodeRepository.findByGameId(game.id);
+
+      // Create node map for quick lookup
+      const nodeMap = new Map(nodes.map(n => [n.id, n]));
+
+      // Group scans by team and calculate time per clue
+      const teamPerformance = teams.map(team => {
+        const teamScans = allScans
+          .filter(s => s.teamId === team.id)
+          .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+        const clueTimings: Array<{
+          nodeId: string;
+          nodeTitle: string;
+          timestamp: string;
+          timeFromStart: number; // seconds from first scan
+          timeFromPrevious: number; // seconds from previous scan
+        }> = [];
+
+        const firstScanTime = teamScans.length > 0 ? new Date(teamScans[0].timestamp).getTime() : 0;
+
+        teamScans.forEach((scan, index) => {
+          const node = nodeMap.get(scan.nodeId);
+          const scanTime = new Date(scan.timestamp).getTime();
+          const prevScanTime = index > 0 ? new Date(teamScans[index - 1].timestamp).getTime() : scanTime;
+
+          clueTimings.push({
+            nodeId: scan.nodeId,
+            nodeTitle: node?.title || "Unknown",
+            timestamp: scan.timestamp,
+            timeFromStart: Math.round((scanTime - firstScanTime) / 1000),
+            timeFromPrevious: Math.round((scanTime - prevScanTime) / 1000),
+          });
+        });
+
+        return {
+          teamId: team.id,
+          teamName: team.name,
+          teamLogoUrl: team.logoUrl,
+          clueTimings,
+          totalTime: clueTimings.length > 0 ? clueTimings[clueTimings.length - 1].timeFromStart : 0,
+        };
+      });
+
+      // Get ordered list of nodes for consistent chart display
+      const orderedNodes = nodes
+        .filter(n => !n.isStart)
+        .sort((a, b) => {
+          // Sort by most common scan order
+          const aFirstScan = allScans.find(s => s.nodeId === a.id);
+          const bFirstScan = allScans.find(s => s.nodeId === b.id);
+          if (!aFirstScan) return 1;
+          if (!bFirstScan) return -1;
+          return new Date(aFirstScan.timestamp).getTime() - new Date(bFirstScan.timestamp).getTime();
+        })
+        .map(n => ({ id: n.id, title: n.title }));
+
+      return reply.send({
+        game: {
+          id: game.id,
+          name: game.name,
+          slug: game.publicSlug,
+        },
+        nodes: orderedNodes,
+        teams: teamPerformance,
+      });
+    }
+  );
+
   // Get game info (public)
+  // NOTE: This catch-all route must be defined LAST to not interfere with more specific routes
   fastify.get(
     "/:slug",
     async (

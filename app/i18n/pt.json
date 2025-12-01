@@ -323,7 +323,15 @@
       "sendFeedback": "Enviar feedback",
       "feedbackSent": "Obrigado pelo seu feedback!",
       "rankUp": "Subiu no ranking!",
-      "rankDown": "Desceu no ranking"
+      "rankDown": "Desceu no ranking",
+      "performance": "Desempenho",
+      "noPerformanceData": "Ainda sem dados",
+      "noPerformanceDataDescription": "Os gráficos de desempenho aparecerão quando as equipas começarem a escanear pistas.",
+      "timePerClue": "Tempo por pista",
+      "totalTime": "Tempo total",
+      "noScansYet": "Nenhum scan registado. Os gráficos aparecerão quando as equipas começarem a escanear.",
+      "noCluesFound": "Nenhuma pista foi encontrada ainda.",
+      "noTimesRecorded": "Nenhum tempo registado."
     },
     "admin": {
       "meta": {

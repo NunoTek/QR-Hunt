@@ -323,7 +323,15 @@
       "sendFeedback": "Send Feedback",
       "feedbackSent": "Thanks for your feedback!",
       "rankUp": "Rank up!",
-      "rankDown": "Rank down"
+      "rankDown": "Rank down",
+      "performance": "Performance",
+      "noPerformanceData": "No performance data yet",
+      "noPerformanceDataDescription": "Performance charts will appear once teams start scanning clues.",
+      "timePerClue": "Time per Clue",
+      "totalTime": "Total Time",
+      "noScansYet": "No scans recorded yet. Charts will appear once teams start scanning clues.",
+      "noCluesFound": "No clues have been found yet.",
+      "noTimesRecorded": "No times recorded yet."
     },
     "admin": {
       "meta": {
