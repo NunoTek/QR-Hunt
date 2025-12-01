@@ -6,6 +6,7 @@ interface WaitingTeam {
   name: string;
   logoUrl: string | null;
   joinedAt: string;
+  isConnected?: boolean;
 }
 
 interface WaitingRoomProps {
@@ -79,10 +80,21 @@ export function WaitingRoom({
         setTeams((prev) => {
           // Avoid duplicates
           if (prev.some((t) => t.id === newTeam.id)) return prev;
-          return [...prev, newTeam];
+          return [...prev, { ...newTeam, isConnected: true }];
         });
       } catch (e) {
         console.error("Failed to parse team_joined event", e);
+      }
+    });
+
+    eventSource.addEventListener("team_connection", (event) => {
+      try {
+        const data = JSON.parse(event.data) as { teamId: string; isConnected: boolean };
+        setTeams((prev) =>
+          prev.map((t) => (t.id === data.teamId ? { ...t, isConnected: data.isConnected } : t))
+        );
+      } catch (e) {
+        console.error("Failed to parse team_connection event", e);
       }
     });
 
@@ -187,9 +199,12 @@ export function WaitingRoom({
               teams.map((team, index) => (
                 <div
                   key={team.id}
-                  className="waiting-team-item animate-pop-in"
+                  className={`waiting-team-item animate-pop-in ${team.isConnected === false ? "disconnected" : ""}`}
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
+                  <div className="waiting-team-status-dot">
+                    <span className={`status-dot ${team.isConnected !== false ? "online" : "offline"}`} />
+                  </div>
                   <div className="waiting-team-avatar">
                     {team.logoUrl ? (
                       <img src={team.logoUrl} alt={team.name} />
@@ -476,6 +491,42 @@ export function WaitingRoom({
           padding: 0.5rem 0.75rem;
           background: var(--bg-tertiary);
           border-radius: var(--radius);
+          transition: opacity 0.3s, background 0.3s;
+        }
+
+        .waiting-team-item.disconnected {
+          opacity: 0.5;
+          background: var(--bg-secondary);
+        }
+
+        .waiting-team-status-dot {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 12px;
+          height: 12px;
+        }
+
+        .status-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          transition: background 0.3s;
+        }
+
+        .status-dot.online {
+          background: var(--color-success);
+          box-shadow: 0 0 4px var(--color-success);
+          animation: pulse-online 2s ease-in-out infinite;
+        }
+
+        .status-dot.offline {
+          background: var(--color-gray-400);
+        }
+
+        @keyframes pulse-online {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.6; }
         }
 
         .waiting-team-avatar {

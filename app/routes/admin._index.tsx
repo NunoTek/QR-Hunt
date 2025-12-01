@@ -2,8 +2,8 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Link, useLoaderData, useNavigate } from "@remix-run/react";
 import { useState } from "react";
-import { getApiUrl } from "~/lib/api";
 import { useTranslation } from "~/i18n/I18nContext";
+import { getApiUrl } from "~/lib/api";
 
 interface Game {
   id: string;
@@ -177,7 +177,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
+      <div className="grid grid-cols-4 xs:grid-cols-3 gap-4 xs:gap-2 mb-8">
         <div className="bg-elevated rounded-xl p-5 border shadow-sm">
           <p className="text-muted text-sm mb-1">{t("pages.admin.dashboard.stats.totalGames")}</p>
           <p className="text-3xl sm:text-4xl font-bold text-primary">{data.stats.totalGames}</p>

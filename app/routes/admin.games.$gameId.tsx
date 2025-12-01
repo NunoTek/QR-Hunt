@@ -891,7 +891,7 @@ function AdminGameDetailContent() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">{t("pages.admin.gameEditor.nodes.tableHeaders.title")}</th>
+                    <th className="min-w-[200px] text-left px-4 py-3 text-xs font-medium text-muted uppercase">{t("pages.admin.gameEditor.nodes.tableHeaders.title")}</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">{t("pages.admin.gameEditor.nodes.tableHeaders.key")}</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">{t("pages.admin.gameEditor.nodes.tableHeaders.type")}</th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">{t("pages.admin.gameEditor.nodes.tableHeaders.pts")}</th>
@@ -902,7 +902,7 @@ function AdminGameDetailContent() {
                 <tbody className="divide-y divide-border">
                   {filteredNodes.map((node) => (
                     <tr key={node.id} className="hover:bg-secondary group">
-                      <td className="px-4 py-3 text-primary">
+                      <td className="min-w-[200px] px-4 py-3 text-primary">
                         <div>
                           <span className="font-medium">{node.title}</span>
                           {node.isStart && <NodeBadge type="start" t={t} />}
@@ -946,7 +946,7 @@ function AdminGameDetailContent() {
                           </button>
                         </Form>
                       </td>
-                      <td className="px-4 py-3 sticky right-0 bg-elevated group-hover:bg-secondary">
+                      <td className="px-4 py-3 bg-elevated group-hover:bg-secondary">
                         <div className="flex gap-1 justify-end">
                           <button onClick={() => setPreviewNode(node)} className={`${btnSecondary} ${btnSmall}`} title={t("pages.admin.gameEditor.nodes.buttons.preview")}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1134,6 +1134,148 @@ function AdminGameDetailContent() {
         </div>
       )}
 
+            {/* QR Codes Tab */}
+      {activeTab === "qrcodes" && (
+        <div className="bg-elevated rounded-xl border overflow-hidden shadow-sm">
+          <div className="p-4 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-semibold text-primary">QR Codes</h3>
+              <p className="text-secondary text-sm mt-1">Generate, customize, and download QR codes for each node.</p>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={downloadAllQRCodes}
+                disabled={downloadingQRCodes || data.qrCodes.length === 0}
+                className={`${btnPrimary} inline-flex items-center gap-2`}
+              >
+                {downloadingQRCodes ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    {downloadProgress.current}/{downloadProgress.total}
+                  </>
+                ) : (
+                  <>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Download All (ZIP)
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => setShowQRIdentifyScanner(true)}
+                className={`${btnSecondary} inline-flex items-center gap-2`}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+                Scan to Identify / Activate
+              </button>
+            </div>
+          </div>
+          {/* Filters */}
+          <div className="p-4 border-b border-border flex flex-col sm:flex-row gap-3">
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder="Filter by title..."
+                value={qrFilter.title}
+                onChange={(e) => setQrFilter({ ...qrFilter, title: e.target.value })}
+                className="w-full px-3 py-2 text-sm bg-secondary text-primary border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+            <div>
+              <select
+                value={qrFilter.activated}
+                onChange={(e) => setQrFilter({ ...qrFilter, activated: e.target.value as "all" | "activated" | "not-activated" })}
+                className="w-full px-3 py-2 text-sm bg-secondary text-primary border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              >
+                <option value="all">All Status</option>
+                <option value="activated">Activated</option>
+                <option value="not-activated">Not Activated</option>
+              </select>
+            </div>
+            <div className="text-sm text-muted self-center">
+              {filteredQRCodes.length} / {data.qrCodes.length} QR codes
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">Node</th>
+                  <th className="min-w-[200px] text-left px-4 py-3 text-xs font-medium text-muted uppercase">URL</th>
+                  <th className="text-center px-4 py-3 text-xs font-medium text-muted uppercase">Activated</th>
+                  <th className="px-4 py-3"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredQRCodes.map((qr) => (
+                  <tr key={qr.nodeId} className="hover:bg-secondary">
+                    <td className="px-4 py-3 text-primary">
+                      {qr.title}
+                      {qr.isStart && <NodeBadge type="start" t={t} />}
+                      {qr.isEnd && <NodeBadge type="end" t={t} />}
+                    </td>
+                    <td className="min-w-[200px] px-4 py-3">
+                      <code className="text-xs text-secondary break-all">{qr.url}</code>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <Form method="post" className="inline">
+                        <input type="hidden" name="_action" value="toggleActivated" />
+                        <input type="hidden" name="nodeId" value={qr.nodeId} />
+                        <input type="hidden" name="activated" value={(!qr.activated).toString()} />
+                        <button
+                          type="submit"
+                          className={`inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
+                            qr.activated
+                              ? "bg-success/20 text-success hover:bg-success/30"
+                              : "bg-muted/20 text-muted hover:bg-muted/30"
+                          }`}
+                          title={qr.activated ? "Click to deactivate" : "Click to activate"}
+                        >
+                          {qr.activated ? (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M20 6L9 17l-5-5" />
+                            </svg>
+                          ) : (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10" />
+                            </svg>
+                          )}
+                        </button>
+                      </Form>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2 justify-end">
+                        <button onClick={() => setSelectedQR({ url: qr.url, title: qr.title })} className={btnPrimary}>Generate QR</button>
+                        <button onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(qr.url);
+                            toast.success("URL copied to clipboard!");
+                          } catch {
+                            toast.error("Failed to copy URL");
+                          }
+                        }} className={`${btnSecondary} hidden sm:flex`}>Copy URL</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filteredQRCodes.length === 0 && (
+                  <tr><td colSpan={4} className="px-4 py-8 text-center text-muted">No QR codes match the current filters.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Teams Tab */}
       {activeTab === "teams" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1228,148 +1370,6 @@ function AdminGameDetailContent() {
                 {editingTeam && <button type="button" className={btnSecondary} onClick={() => { setEditingTeam(null); setTeamLogoUrl(""); }}>Cancel</button>}
               </div>
             </Form>
-          </div>
-        </div>
-      )}
-
-      {/* QR Codes Tab */}
-      {activeTab === "qrcodes" && (
-        <div className="bg-elevated rounded-xl border overflow-hidden shadow-sm">
-          <div className="p-4 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h3 className="text-lg font-semibold text-primary">QR Codes</h3>
-              <p className="text-secondary text-sm mt-1">Generate, customize, and download QR codes for each node.</p>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              <button
-                onClick={downloadAllQRCodes}
-                disabled={downloadingQRCodes || data.qrCodes.length === 0}
-                className={`${btnPrimary} inline-flex items-center gap-2`}
-              >
-                {downloadingQRCodes ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    {downloadProgress.current}/{downloadProgress.total}
-                  </>
-                ) : (
-                  <>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="7 10 12 15 17 10" />
-                      <line x1="12" y1="15" x2="12" y2="3" />
-                    </svg>
-                    Download All (ZIP)
-                  </>
-                )}
-              </button>
-              <button
-                onClick={() => setShowQRIdentifyScanner(true)}
-                className={`${btnSecondary} inline-flex items-center gap-2`}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                  <circle cx="12" cy="13" r="4" />
-                </svg>
-                Scan to Identify / Activate
-              </button>
-            </div>
-          </div>
-          {/* Filters */}
-          <div className="p-4 border-b border-border flex flex-col sm:flex-row gap-3">
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder="Filter by title..."
-                value={qrFilter.title}
-                onChange={(e) => setQrFilter({ ...qrFilter, title: e.target.value })}
-                className="w-full px-3 py-2 text-sm bg-secondary text-primary border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-            </div>
-            <div>
-              <select
-                value={qrFilter.activated}
-                onChange={(e) => setQrFilter({ ...qrFilter, activated: e.target.value as "all" | "activated" | "not-activated" })}
-                className="w-full px-3 py-2 text-sm bg-secondary text-primary border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              >
-                <option value="all">All Status</option>
-                <option value="activated">Activated</option>
-                <option value="not-activated">Not Activated</option>
-              </select>
-            </div>
-            <div className="text-sm text-muted self-center">
-              {filteredQRCodes.length} / {data.qrCodes.length} QR codes
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">Node</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">URL</th>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-muted uppercase">Activated</th>
-                  <th className="px-4 py-3"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filteredQRCodes.map((qr) => (
-                  <tr key={qr.nodeId} className="hover:bg-secondary">
-                    <td className="px-4 py-3 text-primary">
-                      {qr.title}
-                      {qr.isStart && <NodeBadge type="start" t={t} />}
-                      {qr.isEnd && <NodeBadge type="end" t={t} />}
-                    </td>
-                    <td className="px-4 py-3">
-                      <code className="text-xs text-secondary break-all">{qr.url}</code>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <Form method="post" className="inline">
-                        <input type="hidden" name="_action" value="toggleActivated" />
-                        <input type="hidden" name="nodeId" value={qr.nodeId} />
-                        <input type="hidden" name="activated" value={(!qr.activated).toString()} />
-                        <button
-                          type="submit"
-                          className={`inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors ${
-                            qr.activated
-                              ? "bg-success/20 text-success hover:bg-success/30"
-                              : "bg-muted/20 text-muted hover:bg-muted/30"
-                          }`}
-                          title={qr.activated ? "Click to deactivate" : "Click to activate"}
-                        >
-                          {qr.activated ? (
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M20 6L9 17l-5-5" />
-                            </svg>
-                          ) : (
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <circle cx="12" cy="12" r="10" />
-                            </svg>
-                          )}
-                        </button>
-                      </Form>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2 justify-end">
-                        <button onClick={() => setSelectedQR({ url: qr.url, title: qr.title })} className={btnPrimary}>Generate QR</button>
-                        <button onClick={async () => {
-                          try {
-                            await navigator.clipboard.writeText(qr.url);
-                            toast.success("URL copied to clipboard!");
-                          } catch {
-                            toast.error("Failed to copy URL");
-                          }
-                        }} className={`${btnSecondary} hidden sm:flex`}>Copy URL</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {filteredQRCodes.length === 0 && (
-                  <tr><td colSpan={4} className="px-4 py-8 text-center text-muted">No QR codes match the current filters.</td></tr>
-                )}
-              </tbody>
-            </table>
           </div>
         </div>
       )}

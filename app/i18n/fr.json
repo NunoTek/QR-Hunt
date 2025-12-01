@@ -124,10 +124,12 @@
         "list": [
           "Navigation par indices guidant les équipes vers chaque code QR",
           "Classements en temps réel avec mises à jour en direct",
+          "Analyses de performance avec graphiques de timing par équipe",
+          "Salle d'attente avec détection de présence en direct",
           "Chat intégré entre équipes et organisateurs",
           "Générateur de codes QR avec logos personnalisés",
           "Indices multimédia (images, vidéos, audio)",
-          "Fonctionne sur tout appareil - pas d'application nécessaire",
+          "PWA installable - fonctionne sur tout appareil",
           "Auto-hébergé - vos données restent privées"
         ],
         "mockup": {

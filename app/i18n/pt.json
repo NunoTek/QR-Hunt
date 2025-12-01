@@ -124,10 +124,12 @@
         "list": [
           "Navegação por pistas guiando equipas até cada código QR",
           "Rankings em tempo real com atualizações ao vivo",
+          "Análises de performance com gráficos de tempo por equipa",
+          "Sala de espera com deteção de presença em direto",
           "Chat integrado entre equipas e organizadores",
           "Gerador de códigos QR com logótipos personalizados",
           "Pistas multimédia (imagens, vídeos, áudio)",
-          "Funciona em qualquer dispositivo - sem app necessária",
+          "PWA instalável - funciona em qualquer dispositivo",
           "Auto-hospedado - os seus dados ficam privados"
         ],
         "mockup": {

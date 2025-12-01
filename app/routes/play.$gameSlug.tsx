@@ -288,6 +288,34 @@ function PlayGameContent() {
     }
   }, [data?.nextClue]);
 
+  // Send heartbeat when in waiting room
+  useEffect(() => {
+    if (gamePhase !== "waiting" || !data) return;
+
+    const sendHeartbeat = async () => {
+      try {
+        await fetch(`/api/v1/game/${loaderData.gameSlug}/heartbeat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            teamId: data.teamId,
+            teamName: data.teamName,
+          }),
+        });
+      } catch {
+        // Silently fail - heartbeat is best-effort
+      }
+    };
+
+    // Send initial heartbeat
+    sendHeartbeat();
+
+    // Send heartbeat every 10 seconds
+    const interval = setInterval(sendHeartbeat, 10000);
+
+    return () => clearInterval(interval);
+  }, [gamePhase, data, loaderData.gameSlug]);
+
   // Shuffle to get a new random clue
   const shuffleClue = useCallback(async () => {
     if (!data?.isRandomMode || isShuffling || !token) return;
