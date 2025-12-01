@@ -3,6 +3,7 @@ import { nodeRepository } from "../repositories/NodeRepository.js";
 import { scanRepository } from "../repositories/ScanRepository.js";
 import { teamRepository } from "../repositories/TeamRepository.js";
 import { hintUsageRepository } from "../repositories/HintUsageRepository.js";
+import { gameEvents } from "../../lib/eventEmitter.js";
 import type { Game, GameSettings, GameStatus, LeaderboardEntry, Node, Team } from "../types.js";
 
 /** Data from scan repository for leaderboard calculation */
@@ -84,11 +85,22 @@ export class GameService {
       throw new Error("Cannot activate game without at least one end node");
     }
 
-    return gameRepository.update(id, { status: "active" });
+    const updatedGame = gameRepository.update(id, { status: "active" });
+    if (updatedGame) {
+      // Emit game status change event for waiting rooms
+      gameEvents.emitGameStatus(game.publicSlug, "active");
+    }
+    return updatedGame;
   }
 
   completeGame(id: string): Game | null {
-    return gameRepository.update(id, { status: "completed" });
+    const game = gameRepository.findById(id);
+    const updatedGame = gameRepository.update(id, { status: "completed" });
+    if (updatedGame && game) {
+      // Emit game status change event
+      gameEvents.emitGameStatus(game.publicSlug, "completed");
+    }
+    return updatedGame;
   }
 
   deleteGame(id: string): boolean {

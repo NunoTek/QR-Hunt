@@ -1,0 +1,782 @@
+{
+  "common": {
+    "appName": "QR Hunt",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "back": "Retour",
+    "next": "Suivant",
+    "submit": "Soumettre",
+    "close": "Fermer",
+    "yes": "Oui",
+    "no": "Non",
+    "ok": "OK",
+    "retry": "Réessayer",
+    "points": "pts",
+    "team": "Équipe",
+    "teams": "Équipes",
+    "game": "Jeu",
+    "player": "Joueur",
+    "admin": "Admin",
+    "status": {
+      "draft": "Brouillon",
+      "active": "Actif",
+      "completed": "Terminé"
+    },
+    "footer": {
+      "selfHostable": "Auto-hébergé",
+      "openSource": "Open source",
+      "privacyFocused": "Respect de la vie privée"
+    }
+  },
+  "pages": {
+    "home": {
+      "meta": {
+        "title": "QR Hunt - Plateforme de chasse au trésor QR",
+        "description": "Créez des chasses au trésor QR passionnantes pour le team building, les événements et les fêtes. Classements en temps réel, scores instantanés et configuration facile."
+      },
+      "hero": {
+        "title": "Transformez n'importe quel espace en",
+        "titleHighlight": "Aventure",
+        "subtitle": "Créez des chasses au trésor QR passionnantes pour le team building, les événements, les fêtes et l'éducation. Regardez les équipes s'affronter en temps réel avec des scores instantanés et des classements en direct.",
+        "joinGame": "Rejoindre un jeu",
+        "createHunt": "Créer une chasse"
+      },
+      "playerExperience": {
+        "title": "L'expérience joueur",
+        "subtitle": "Les équipes cherchent les codes QR cachés dans un lieu. Chaque scan révèle un indice menant à l'emplacement suivant. La première équipe à trouver tous les codes gagne !",
+        "steps": {
+          "join": {
+            "title": "1. Rejoindre le jeu",
+            "description": "Ouvrez le lien, entrez votre code d'équipe à 6 caractères, et vous êtes prêt à jouer !"
+          },
+          "clue": {
+            "title": "2. Lire l'indice",
+            "description": "\"Trouvez le vieux chêne près de la fontaine sur la place principale...\""
+          },
+          "hunt": {
+            "title": "3. Chercher & Découvrir",
+            "description": "Travaillez ensemble, explorez la zone et trouvez le code QR caché !"
+          },
+          "scan": {
+            "title": "4. Scanner & Marquer !",
+            "description": "Scannez le code QR, gagnez des points et révélez le prochain indice !"
+          }
+        },
+        "repeat": "Répétez jusqu'à la victoire !"
+      },
+      "howItWorks": {
+        "title": "Comment ça marche",
+        "steps": {
+          "create": {
+            "title": "1. Créer les codes QR",
+            "description": "Concevez votre chasse avec des indices, des énigmes et des défis. Générez des codes QR uniques pour chaque point de contrôle."
+          },
+          "invite": {
+            "title": "2. Inviter les équipes",
+            "description": "Créez des équipes et partagez des codes uniques. Les joueurs rejoignent instantanément sur leur téléphone - pas besoin de télécharger d'application."
+          },
+          "hunt": {
+            "title": "3. Chercher & Scanner",
+            "description": "Les équipes suivent les indices pour trouver les codes QR. Chaque scan révèle l'indice suivant, les guidant vers le prochain emplacement."
+          },
+          "leaderboard": {
+            "title": "4. Classement en direct",
+            "description": "Suivez la compétition en temps réel. Mises à jour instantanées quand les équipes trouvent des indices et gagnent des points."
+          }
+        }
+      },
+      "perfectFor": {
+        "title": "Parfait pour",
+        "items": {
+          "teamBuilding": {
+            "title": "Team Building",
+            "description": "Engagez les employés avec des défis interactifs"
+          },
+          "parties": {
+            "title": "Fêtes & Événements",
+            "description": "Rendez toute célébration plus mémorable"
+          },
+          "education": {
+            "title": "Éducation",
+            "description": "Gamifiez l'apprentissage avec des quêtes interactives"
+          },
+          "camps": {
+            "title": "Camps & Retraites",
+            "description": "Explorez les espaces extérieurs avec des chasses guidées"
+          },
+          "museums": {
+            "title": "Musées & Visites",
+            "description": "Créez des expériences autoguidées engageantes"
+          },
+          "weddings": {
+            "title": "Mariages",
+            "description": "Activités amusantes pour les invités"
+          }
+        }
+      },
+      "features": {
+        "title": "Tout ce dont vous avez besoin",
+        "list": [
+          "Navigation par indices guidant les équipes vers chaque code QR",
+          "Classements en temps réel avec mises à jour en direct",
+          "Chat intégré entre équipes et organisateurs",
+          "Générateur de codes QR avec logos personnalisés",
+          "Indices multimédia (images, vidéos, audio)",
+          "Fonctionne sur tout appareil - pas d'application nécessaire",
+          "Auto-hébergé - vos données restent privées"
+        ],
+        "mockup": {
+          "teamName": "Équipe Alpha",
+          "nextClue": "Prochain indice",
+          "clueTitle": "Le Jardin Caché",
+          "clueHint": "Trouvez où les roses fleurissent à l'ombre...",
+          "adminHint": "Admin : Besoin d'un indice ?",
+          "scanButton": "Scanner le code QR"
+        }
+      },
+      "cta": {
+        "title": "Prêt à commencer votre chasse ?",
+        "subtitle": "Créez votre première chasse au trésor en quelques minutes. Pas de carte de crédit requise."
+      }
+    },
+    "join": {
+      "meta": {
+        "title": "Rejoindre un jeu - QR Hunt"
+      },
+      "title": "Rejoindre un jeu",
+      "subtitle": "Entrez l'identifiant du jeu et le code de votre équipe pour commencer",
+      "checkingSession": "Vérification de la session...",
+      "welcomeBack": "Bon retour !",
+      "alreadyLoggedIn": "Vous êtes déjà connecté à un jeu",
+      "resumeGame": "Reprendre le jeu",
+      "joinDifferent": "Rejoindre un autre jeu",
+      "joinDifferentWarning": "Rejoindre un autre jeu vous déconnectera de votre session actuelle",
+      "form": {
+        "gameId": "Identifiant du jeu",
+        "gameIdPlaceholder": "ex: chasse-ete-2024",
+        "teamCode": "Code d'équipe",
+        "teamCodeHint": "Votre code d'équipe a été fourni par l'organisateur du jeu",
+        "joinButton": "Rejoindre le jeu",
+        "joining": "Connexion..."
+      },
+      "errors": {
+        "gameIdRequired": "L'identifiant du jeu est requis",
+        "teamCodeLength": "Le code d'équipe doit contenir 6 caractères",
+        "connectionFailed": "Échec de connexion au serveur",
+        "joinFailed": "Échec de connexion au jeu"
+      },
+      "backToHome": "Retour à l'accueil"
+    },
+    "play": {
+      "meta": {
+        "title": "Jouer - {{gameName}}"
+      },
+      "loading": "Chargement du jeu...",
+      "processingQR": "Traitement du code QR...",
+      "tabs": {
+        "clue": "Indice",
+        "scan": "Scanner",
+        "progress": "Progression",
+        "team": "Équipe",
+        "chat": "Chat"
+      },
+      "victory": {
+        "title": "Victoire !",
+        "congratulations": "Félicitations, {{teamName}} !",
+        "finishedFirst": "Vous avez terminé premier !",
+        "qrCodes": "Codes QR",
+        "totalPoints": "Points totaux"
+      },
+      "gameComplete": {
+        "title": "Jeu terminé",
+        "wellPlayed": "Bien joué, {{teamName}} !"
+      },
+      "viewLeaderboard": "Voir le classement",
+      "feedback": {
+        "leave": "Donner un avis",
+        "update": "Modifier l'avis",
+        "title": "Évaluez votre expérience",
+        "placeholder": "Partagez vos impressions (optionnel)",
+        "submitting": "Envoi...",
+        "updateBtn": "Modifier",
+        "submitBtn": "Envoyer",
+        "thanks": "Merci pour votre avis !",
+        "updated": "Avis mis à jour !",
+        "selectRating": "Veuillez sélectionner une note",
+        "failed": "Échec de l'envoi de l'avis",
+        "helpUs": "Aidez-nous à améliorer l'expérience de jeu"
+      },
+      "offline": {
+        "indicator": "Vous êtes hors ligne - affichage des données en cache",
+        "pending": "{{count}} en attente",
+        "syncing": "Synchronisation des scans en attente...",
+        "cached": "Vous êtes hors ligne. Affichage des données en cache."
+      },
+      "points": "points",
+      "clueTab": {
+        "startingClue": "Indice de départ",
+        "nextClue": "Prochain indice",
+        "tryAnother": "Essayer un autre",
+        "scanQRCode": "Scanner le code QR",
+        "pointAtCamera": "Pointez votre caméra vers le code QR",
+        "readyToBegin": "Prêt à commencer ?",
+        "scanFirstQR": "Scannez votre premier code QR pour commencer la chasse !",
+        "openScanner": "Ouvrir le scanner",
+        "qrCodesFound": "Codes QR trouvés",
+        "moreToFind": "{{count}} de plus à trouver !",
+        "allFoundFinish": "Tous trouvés ! Scannez un point de fin pour terminer !",
+        "gotNewClue": "Nouvel indice obtenu !",
+        "failedNewClue": "Échec de l'obtention d'un nouvel indice"
+      },
+      "hints": {
+        "needHint": "Besoin d'aide ?",
+        "pointsCost": "-{{points}} points",
+        "hintRevealed": "Aide révélée ! -{{points}} points",
+        "failedHint": "Échec de l'obtention de l'aide",
+        "requestTitle": "Demander une aide ?",
+        "cannotUndo": "Cette action ne peut pas être annulée",
+        "pointsPenalty": "Pénalité de points",
+        "costExplanation": "Utiliser cette aide vous coûtera {{points}} points (la moitié de la valeur de cet indice).",
+        "revealHint": "Révéler l'aide"
+      },
+      "progressTab": {
+        "yourProgress": "Votre progression",
+        "qrCodesFound": "Codes QR trouvés",
+        "moreToFind": "{{count}} de plus à trouver !",
+        "allFoundFinish": "Tous trouvés ! Scannez un point de fin pour terminer !",
+        "yourJourney": "Votre parcours",
+        "noQRCodesYet": "Aucun code QR scanné pour l'instant",
+        "startHunt": "Commencez votre chasse en scannant votre premier code QR !"
+      },
+      "teamTab": {
+        "inviteTeammates": "Inviter des coéquipiers",
+        "shareDetails": "Partagez ces détails pour que vos coéquipiers puissent rejoindre votre équipe",
+        "gameId": "Identifiant du jeu",
+        "teamCode": "Code d'équipe",
+        "shareInviteLink": "Partager le lien d'invitation",
+        "copyLink": "Copier le lien",
+        "copied": "Copié !",
+        "signOut": "Déconnexion",
+        "feedback": "Commentaires",
+        "feedbackDescription": "Aidez-nous à améliorer l'expérience de jeu"
+      },
+      "viewCurrentClue": "Voir l'indice actuel",
+      "scanQRCode": "Scanner le code QR",
+      "clue": "Indice",
+      "noClue": "Aucun indice disponible",
+      "nextClue": "Prochain indice",
+      "completed": "Terminé !",
+      "allNodesFound": "Vous avez trouvé tous les points de contrôle !",
+      "score": "Score",
+      "progress": "Progression",
+      "found": "trouvé(s)",
+      "hint": "Aide",
+      "showHint": "Afficher l'aide",
+      "hintUsed": "Aide utilisée",
+      "noHintAvailable": "Pas d'aide disponible pour cet indice",
+      "alreadyScanned": "Déjà scanné !",
+      "invalidQRCode": "Code QR invalide",
+      "wrongNode": "Mauvais point de contrôle - continuez à chercher !",
+      "nodeFound": "Point de contrôle trouvé !",
+      "pointsEarned": "+{{points}} points",
+      "gameNotActive": "Ce jeu n'est pas encore actif",
+      "gameCompleted": "Ce jeu est terminé",
+      "notAuthenticated": "Veuillez d'abord rejoindre le jeu",
+      "copiedToClipboard": "Copié dans le presse-papiers !",
+      "failedToCopy": "Échec de la copie",
+      "syncedScans": "Scans en attente synchronisés !",
+      "gameNotFound": "Jeu non trouvé",
+      "failedToLoad": "Échec du chargement des données du jeu"
+    },
+    "leaderboard": {
+      "meta": {
+        "title": "Classement - {{gameName}}"
+      },
+      "title": "Classement",
+      "noTeams": "Aucune équipe encore",
+      "noTeamsDescription": "Les équipes apparaîtront ici dès qu'elles commenceront à scanner des codes QR.",
+      "rank": "Rang",
+      "teamName": "Équipe",
+      "score": "Score",
+      "progress": "Progression",
+      "lastScan": "Dernier scan",
+      "you": "Vous",
+      "live": "Mises à jour en direct",
+      "finished": "Terminé !",
+      "notStarted": "Pas encore commencé",
+      "clues": "indices",
+      "teamFeedback": "Avis des équipes",
+      "average": "moyenne",
+      "review": "avis",
+      "reviews": "avis",
+      "lastUpdated": "Dernière mise à jour",
+      "realTime": "temps réel",
+      "refreshing": "Actualisation...",
+      "refresh": "Actualiser",
+      "feedbackTitle": "Comment était votre expérience ?",
+      "feedbackPlaceholder": "Partagez vos impressions...",
+      "sendFeedback": "Envoyer",
+      "feedbackSent": "Merci pour votre retour !",
+      "rankUp": "Montée au classement !",
+      "rankDown": "Descente au classement"
+    },
+    "admin": {
+      "meta": {
+        "title": "Tableau de bord Admin - QR Hunt"
+      },
+      "title": "Tableau de bord Admin",
+      "login": {
+        "title": "Connexion Admin",
+        "subtitle": "Entrez votre code admin pour continuer",
+        "label": "Code Admin",
+        "placeholder": "Entrez le code admin",
+        "signingIn": "Connexion...",
+        "signIn": "Se connecter",
+        "backToHome": "← Retour à l'accueil"
+      },
+      "nav": {
+        "dashboard": "Tableau de bord",
+        "games": "Jeux",
+        "signOut": "Déconnexion"
+      },
+      "dashboard": {
+        "title": "Tableau de bord",
+        "createGame": "Créer un jeu",
+        "importing": "Importation...",
+        "import": "Importer",
+        "stats": {
+          "totalGames": "Total des jeux",
+          "activeGames": "Jeux actifs",
+          "completed": "Terminés"
+        },
+        "recentGames": "Jeux récents",
+        "noGamesYet": "Pas encore de jeux. Créez votre premier jeu pour commencer !",
+        "table": {
+          "name": "Nom",
+          "slug": "Identifiant",
+          "status": "Statut",
+          "created": "Créé le"
+        },
+        "manage": "Gérer",
+        "viewAllGames": "Voir tous les jeux →",
+        "confirmDelete": "Êtes-vous sûr de vouloir supprimer \"{{name}}\" ? Cette action ne peut pas être annulée.",
+        "confirmOverwrite": "Un jeu avec l'identifiant \"{{slug}}\" existe déjà. Voulez-vous le remplacer ?",
+        "confirmImport": "Importer le jeu \"{{name}}\" avec l'identifiant \"{{slug}}\" ?",
+        "importFailed": "Échec de l'importation : {{error}}",
+        "deleteFailed": "Échec de la suppression : {{error}}",
+        "failedToRead": "Échec de la lecture du fichier : {{error}}"
+      },
+      "games": {
+        "title": "Jeux",
+        "create": "Créer un jeu",
+        "noGames": "Pas encore de jeux. Créez votre première chasse !",
+        "manage": "Gérer",
+        "viewLeaderboard": "Voir le classement",
+        "teamsCount": "{{count}} équipes",
+        "nodesCount": "{{count}} points de contrôle"
+      },
+      "gamesList": {
+        "title": "Jeux",
+        "createGame": "Créer un jeu",
+        "importing": "Importation...",
+        "import": "Importer",
+        "searchPlaceholder": "Rechercher par nom ou identifiant...",
+        "filters": {
+          "allStatus": "Tous les statuts",
+          "draft": "Brouillon",
+          "active": "Actif",
+          "completed": "Terminé"
+        },
+        "empty": {
+          "noGames": "Pas encore de jeux.",
+          "noMatches": "Aucun jeu ne correspond à vos filtres.",
+          "createFirst": "Créer votre premier jeu"
+        },
+        "table": {
+          "name": "Nom",
+          "slug": "Identifiant",
+          "status": "Statut",
+          "created": "Créé le"
+        },
+        "actions": {
+          "manage": "Gérer",
+          "leaderboard": "Classement",
+          "delete": "Supprimer le jeu"
+        },
+        "confirm": {
+          "overwrite": "Un jeu avec l'identifiant \"{{slug}}\" existe déjà. Voulez-vous le remplacer ?",
+          "import": "Importer le jeu \"{{name}}\" avec l'identifiant \"{{slug}}\" ?",
+          "delete": "Êtes-vous sûr de vouloir supprimer \"{{name}}\" ? Cette action ne peut pas être annulée."
+        },
+        "errors": {
+          "importFailed": "Échec de l'importation : {{error}}",
+          "deleteFailed": "Échec de la suppression : {{error}}",
+          "readFailed": "Échec de la lecture du fichier : {{error}}"
+        }
+      },
+      "newGame": {
+        "meta": {
+          "title": "Créer un jeu - QR Hunt Admin"
+        },
+        "backToGames": "← Retour aux jeux",
+        "title": "Créer un nouveau jeu",
+        "form": {
+          "gameName": "Nom du jeu",
+          "gameNamePlaceholder": "ex: Chasse au trésor d'été",
+          "urlSlug": "Identifiant URL",
+          "urlSlugPlaceholder": "ex: ete-2024",
+          "urlSlugHelp": "Lettres minuscules, chiffres et tirets uniquement. Utilisé dans les URLs.",
+          "rankingMode": "Mode de classement",
+          "rankingModes": {
+            "points": "Par points (les équipes les plus rapides gagnent plus de points)",
+            "nodes": "Par indices trouvés (le plus d'indices gagne)",
+            "time": "Par temps (le temps total le plus court gagne)"
+          },
+          "logoUrl": "URL du logo du jeu",
+          "logoUrlOptional": "(optionnel)",
+          "logoUrlPlaceholder": "https://exemple.com/logo.png",
+          "logoUrlHelp": "Le logo sera utilisé par défaut pour les codes QR. Peut être modifié plus tard."
+        },
+        "buttons": {
+          "creating": "Création...",
+          "createGame": "Créer le jeu",
+          "cancel": "Annuler"
+        },
+        "errors": {
+          "nameRequired": "Le nom est obligatoire",
+          "slugRequired": "L'identifiant est obligatoire",
+          "createFailed": "Échec de la création du jeu",
+          "connectionFailed": "Échec de la connexion au serveur"
+        }
+      },
+      "gameEditor": {
+        "title": "Modifier le jeu",
+        "backToGames": "← Retour aux jeux",
+        "activateGame": "Activer le jeu",
+        "completeGame": "Terminer le jeu",
+        "viewLeaderboard": "Voir le classement",
+        "activationWarning": {
+          "title": "Le jeu ne peut pas encore être activé. Veuillez vous assurer que :",
+          "needsNodes": "Au moins un nœud existe",
+          "needsStartNode": "Au moins un nœud est marqué comme nœud de Départ",
+          "needsEndNode": "Au moins un nœud est marqué comme nœud de Fin"
+        },
+        "tabs": {
+          "nodes": "Nœuds",
+          "edges": "Liens",
+          "teams": "Équipes",
+          "qrcodes": "Codes QR",
+          "feedback": "Avis",
+          "settings": "Paramètres"
+        },
+        "nodeBadges": {
+          "start": "Départ",
+          "end": "Fin",
+          "hint": "Aide"
+        },
+        "filters": {
+          "filterByTitle": "Filtrer par titre...",
+          "allStatus": "Tous les statuts",
+          "activated": "Activé",
+          "notActivated": "Non activé",
+          "nodesCount": "{{filtered}} / {{total}} nœuds",
+          "qrCodesCount": "{{filtered}} / {{total}} codes QR"
+        },
+        "nodes": {
+          "title": "Points de contrôle",
+          "tableHeaders": {
+            "title": "Titre",
+            "key": "Clé",
+            "type": "Type",
+            "pts": "Pts",
+            "activated": "Activé"
+          },
+          "noNodes": "Pas encore de nœuds. Ajoutez votre premier nœud.",
+          "addNode": "Ajouter un nœud",
+          "editNode": "Modifier le nœud",
+          "form": {
+            "title": "Titre",
+            "content": "Contenu",
+            "contentType": "Type de contenu",
+            "contentTypes": {
+              "text": "Texte",
+              "image": "Image",
+              "video": "Vidéo",
+              "audio": "Audio",
+              "link": "Lien"
+            },
+            "mediaUrl": "URL du média",
+            "mediaUrlOptional": "(optionnel)",
+            "points": "Points",
+            "hint": "Aide",
+            "hintHelp": "(optionnel, coûte la moitié des points)",
+            "hintPlaceholder": "Une aide que les joueurs peuvent demander contre la moitié des points...",
+            "adminComment": "Commentaire admin",
+            "adminCommentHelp": "(visible uniquement par les admins)",
+            "adminCommentPlaceholder": "Notes internes sur ce nœud...",
+            "passwordRequired": "Mot de passe requis",
+            "password": "Mot de passe",
+            "passwordPlaceholder": "(laisser vide pour conserver l'actuel)",
+            "startNode": "Nœud de départ",
+            "endNode": "Nœud de fin"
+          },
+          "buttons": {
+            "preview": "Aperçu",
+            "edit": "Modifier",
+            "delete": "Supprimer",
+            "addNode": "Ajouter le nœud",
+            "updateNode": "Mettre à jour",
+            "cancel": "Annuler",
+            "clear": "Effacer"
+          }
+        },
+        "edges": {
+          "tableHeaders": {
+            "from": "De",
+            "to": "Vers"
+          },
+          "noEdges": "Pas encore de liens. Connectez vos nœuds.",
+          "addEdge": "Ajouter un lien",
+          "editEdge": "Modifier le lien",
+          "randomModeInfo": "Le mode aléatoire est activé pour ce jeu. Les liens ne sont pas utilisés en mode aléatoire - chaque équipe reçoit un indice aléatoire parmi les nœuds non visités.",
+          "form": {
+            "fromNode": "Depuis le nœud",
+            "toNode": "Vers le nœud",
+            "select": "Sélectionner..."
+          },
+          "buttons": {
+            "addEdge": "Ajouter le lien",
+            "updateEdge": "Mettre à jour",
+            "cancel": "Annuler",
+            "clear": "Effacer"
+          }
+        },
+        "teams": {
+          "title": "Équipes",
+          "tableHeaders": {
+            "team": "Équipe",
+            "code": "Code",
+            "startNode": "Nœud de départ"
+          },
+          "noTeams": "Pas encore d'équipes. Créez des codes d'équipe.",
+          "default": "Par défaut",
+          "defaultOption": "Par défaut (n'importe quel nœud de départ)",
+          "addTeam": "Ajouter une équipe",
+          "editTeam": "Modifier l'équipe",
+          "form": {
+            "teamName": "Nom de l'équipe",
+            "startNode": "Nœud de départ",
+            "logoUrl": "URL du logo",
+            "logoPlaceholder": "https://exemple.com/logo.png"
+          },
+          "buttons": {
+            "share": "Partager",
+            "edit": "Modifier",
+            "delete": "Supprimer",
+            "addTeam": "Ajouter l'équipe",
+            "updateTeam": "Mettre à jour",
+            "cancel": "Annuler"
+          }
+        },
+        "qrcodes": {
+          "title": "Codes QR",
+          "description": "Générez, personnalisez et téléchargez les codes QR pour chaque nœud.",
+          "downloadAll": "Tout télécharger (ZIP)",
+          "scanToIdentify": "Scanner pour identifier / activer",
+          "tableHeaders": {
+            "node": "Nœud",
+            "url": "URL",
+            "activated": "Activé"
+          },
+          "noQRCodes": "Aucun code QR ne correspond aux filtres actuels.",
+          "buttons": {
+            "generateQR": "Générer QR",
+            "copyUrl": "Copier l'URL"
+          },
+          "messages": {
+            "urlCopied": "URL copiée dans le presse-papiers !",
+            "copyFailed": "Échec de la copie de l'URL",
+            "downloaded": "{{count}} codes QR téléchargés",
+            "downloadFailed": "Échec du téléchargement des codes QR",
+            "noQRToDownload": "Aucun code QR à télécharger"
+          }
+        },
+        "feedback": {
+          "title": "Avis des équipes",
+          "description": "Consultez les avis soumis par les équipes pendant ou après le jeu.",
+          "loading": "Chargement des avis...",
+          "noFeedback": "Pas encore d'avis.",
+          "noFeedbackHelp": "Les équipes peuvent soumettre des avis pendant ou après le jeu.",
+          "review": "avis",
+          "reviews": "avis",
+          "deleted": "Avis de \"{{teamName}}\" supprimé",
+          "deleteFailed": "Échec de la suppression de l'avis"
+        },
+        "settings": {
+          "gameStatus": {
+            "title": "Statut du jeu",
+            "description": "Contrôlez le statut actuel de votre jeu.",
+            "changeStatus": "Changer le statut du jeu :",
+            "completeSetup": "Complétez la checklist de configuration ci-dessus avant d'activer le jeu.",
+            "draft": {
+              "label": "Brouillon",
+              "description": "Le jeu est en cours de configuration et n'est pas encore jouable."
+            },
+            "active": {
+              "label": "Actif",
+              "description": "Le jeu est en direct ! Les équipes peuvent rejoindre et jouer."
+            },
+            "completed": {
+              "label": "Terminé",
+              "description": "Le jeu est terminé. Les résultats sont définitifs."
+            }
+          },
+          "clueOrder": {
+            "title": "Mode d'ordre des indices",
+            "description": "Contrôlez comment les équipes reçoivent leur prochain indice après avoir scanné un code QR.",
+            "randomMode": "Mode aléatoire",
+            "randomModeDescription": "Lorsqu'il est activé, chaque équipe reçoit un indice aléatoire parmi les nœuds non visités au lieu de suivre des liens prédéfinis. Cela crée un parcours unique pour chaque équipe.",
+            "saveSetting": "Enregistrer",
+            "saving": "Enregistrement..."
+          },
+          "gameLogo": {
+            "title": "Logo du jeu",
+            "description": "Définissez un logo pour votre jeu. Il sera utilisé comme logo par défaut pour les codes QR.",
+            "logoUrl": "URL du logo",
+            "saveLogo": "Enregistrer le logo"
+          },
+          "exportImport": {
+            "title": "Exporter / Importer",
+            "description": "Exportez les données de votre jeu dans un fichier JSON, ou importez depuis une exportation précédente pour écraser les paramètres, nœuds, liens et équipes.",
+            "exportGame": "Exporter le jeu",
+            "importOverwrite": "Importer et écraser",
+            "confirmOverwrite": "Cela va écraser tous les nœuds, liens et équipes avec les données de \"{{name}}\". Continuer ?",
+            "importSuccess": "Importation réussie ! La page va se rafraîchir.",
+            "importFailed": "Échec de l'importation : {{error}}",
+            "readFailed": "Échec de la lecture du fichier : {{error}}"
+          },
+          "dangerZone": {
+            "title": "Zone de danger",
+            "description": "La suppression de ce jeu supprimera définitivement tous les nœuds, liens, équipes et données de scan. Cette action ne peut pas être annulée.",
+            "deleteGame": "Supprimer le jeu"
+          }
+        },
+        "preview": {
+          "title": "Aperçu de l'indice",
+          "clueContent": "Contenu de l'indice",
+          "points": "+{{points}} points",
+          "passwordRequired": "Mot de passe requis pour déverrouiller cet indice",
+          "hintAvailable": "Aide disponible (coûte {{points}} pts) :",
+          "adminNote": "Note admin :",
+          "close": "Fermer",
+          "editNode": "Modifier le nœud"
+        },
+        "deleteModal": {
+          "title": "Supprimer le jeu",
+          "subtitle": "Cette action ne peut pas être annulée",
+          "description": "Cela supprimera définitivement {{name}} et toutes les données associées, notamment :",
+          "items": {
+            "nodes": "Tous les {{count}} nœuds et codes QR",
+            "edges": "Tous les {{count}} liens",
+            "teams": "Toutes les {{count}} équipes et leur progression",
+            "history": "Tout l'historique des scans et messages de chat"
+          },
+          "confirmLabel": "Tapez {{name}} pour confirmer :",
+          "confirmPlaceholder": "Entrez le nom du jeu",
+          "cancel": "Annuler",
+          "deleteForever": "Supprimer définitivement",
+          "deleting": "Suppression..."
+        },
+        "toasts": {
+          "gameLogoUpdated": "Logo du jeu mis à jour",
+          "gameStatusUpdated": "Statut du jeu mis à jour",
+          "gameActivated": "Jeu activé avec succès",
+          "gameCompleted": "Jeu marqué comme terminé",
+          "nodeCreated": "Nœud créé",
+          "nodeUpdated": "Nœud mis à jour",
+          "nodeActivationUpdated": "Activation du nœud mise à jour",
+          "edgeCreated": "Lien créé",
+          "edgeUpdated": "Lien mis à jour",
+          "teamCreated": "Équipe créée",
+          "teamUpdated": "Équipe mise à jour",
+          "randomModeUpdated": "Mode aléatoire mis à jour",
+          "shareInfoCopied": "Informations de partage pour \"{{teamName}}\" copiées !",
+          "copyFailed": "Échec de la copie",
+          "deleteFailed": "Échec de la suppression de {{type}}",
+          "deleteScheduled": "{{type}} \"{{name}}\" sera supprimé dans 20s",
+          "deleteCancelled": "Suppression de {{type}} annulée"
+        }
+      }
+    }
+  },
+  "components": {
+    "waitingRoom": {
+      "waitingForGame": "En attente du début du jeu",
+      "yourTeam": "Votre équipe",
+      "ready": "Prêt",
+      "teamsReady": "Équipes prêtes",
+      "noTeamsYet": "Aucune équipe n'a encore rejoint",
+      "you": "Vous",
+      "connected": "Connecté",
+      "connecting": "Connexion..."
+    },
+    "gameCountdown": {
+      "go": "GO !"
+    },
+    "chat": {
+      "title": "Chat",
+      "teamChat": "Chat d'équipe",
+      "noMessages": "Pas encore de messages",
+      "sendMessage": "Envoyez un message aux organisateurs",
+      "placeholder": "Tapez un message...",
+      "everyone": "Tout le monde",
+      "specificTeam": "Équipe spécifique",
+      "selectTeam": "Sélectionner une équipe...",
+      "newMessage": "Nouveau message de {{sender}}",
+      "sendFailed": "Échec de l'envoi du message",
+      "notConfigured": "Le chat n'est pas correctement configuré"
+    },
+    "installPrompt": {
+      "title": "Installer QR Hunt",
+      "addToHomeScreen": "Ajoutez à votre écran d'accueil pour un accès rapide",
+      "iosInstructions": "Appuyez sur {{icon}} puis \"Ajouter à l'écran d'accueil\"",
+      "install": "Installer"
+    },
+    "qrScanner": {
+      "title": "Scanner le code QR",
+      "instruction": "Pointez votre caméra vers un code QR",
+      "permissionDenied": "Permission de caméra refusée",
+      "noCameraFound": "Aucune caméra trouvée",
+      "scanning": "Scan en cours..."
+    },
+    "clueDisplay": {
+      "currentClue": "Indice actuel",
+      "mediaLoading": "Chargement du média...",
+      "videoError": "Impossible de charger la vidéo"
+    },
+    "themeToggle": {
+      "light": "Mode clair",
+      "dark": "Mode sombre",
+      "system": "Système"
+    },
+    "languageSelector": {
+      "title": "Langue",
+      "languages": {
+        "en": "English",
+        "fr": "Français",
+        "pt": "Português"
+      }
+    },
+    "toast": {
+      "close": "Fermer"
+    },
+    "version": {
+      "version": "Version"
+    }
+  }
+}

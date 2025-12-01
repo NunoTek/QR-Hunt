@@ -1,9 +1,13 @@
-const CACHE_NAME = 'qr-hunt-v1';
+const CACHE_NAME = 'qr-hunt-v2';
 const STATIC_ASSETS = [
   '/',
   '/join',
   '/manifest.json',
-  '/favicon.svg'
+  '/favicon.svg',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  '/icons/apple-touch-icon.png',
+  '/icons/maskable-512.png'
 ];
 
 // Install event - cache static assets

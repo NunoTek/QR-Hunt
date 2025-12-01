@@ -1,12 +1,17 @@
 {
   "name": "QR Hunt",
   "short_name": "QR Hunt",
-  "description": "A QR code scavenger hunt game",
+  "description": "QR code scavenger hunt game - Create exciting hunts for team building, events, and parties!",
   "start_url": "/",
+  "id": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#4f46e5",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#0f0f23",
+  "theme_color": "#6366f1",
   "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "dir": "ltr",
   "icons": [
     {
       "src": "/favicon.svg",
@@ -16,10 +21,48 @@
     },
     {
       "src": "/favicon.svg",
-      "sizes": "any",
+      "sizes": "512x512",
       "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ],
-  "categories": ["games", "entertainment"]
+  "screenshots": [
+    {
+      "src": "/screenshots/play.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Team play view with clues"
+    },
+    {
+      "src": "/screenshots/leaderboard.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Live leaderboard"
+    }
+  ],
+  "categories": ["games", "entertainment"],
+  "prefer_related_applications": false,
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  }
 }

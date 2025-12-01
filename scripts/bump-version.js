@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* global process, console */
 /**
  * Version bump script for CI/CD
  * Usage: node scripts/bump-version.js [patch|minor|major]

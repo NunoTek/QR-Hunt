@@ -1,5 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { authService } from "../../domain/services/AuthService.js";
+import { gameRepository } from "../../domain/repositories/GameRepository.js";
+import { gameEvents } from "../../lib/eventEmitter.js";
 import { joinGameSchema } from "../schemas.js";
 
 export async function authRoutes(fastify: FastifyInstance) {
@@ -25,6 +27,16 @@ export async function authRoutes(fastify: FastifyInstance) {
 
       if (!result.success) {
         return reply.status(400).send({ error: result.message });
+      }
+
+      // Emit team joined event for waiting room
+      const game = gameRepository.findBySlug(gameSlug);
+      if (game && result.team) {
+        gameEvents.emitTeamJoined(gameSlug, {
+          id: result.team.id,
+          name: result.team.name,
+          logoUrl: result.team.logoUrl,
+        });
       }
 
       // Return token in response body - client stores in localStorage

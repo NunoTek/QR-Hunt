@@ -1,5 +1,6 @@
 import type { MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
+import { useTranslation } from "~/i18n/I18nContext";
 
 export const meta: MetaFunction = () => {
   return [
@@ -9,6 +10,8 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Index() {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen bg-primary">
       {/* Hero Section */}
@@ -26,19 +29,18 @@ export default function Index() {
           {/* Logo */}
           <div className="flex items-center justify-center gap-2 sm:gap-3 mb-6 sm:mb-8 animate-fade-in">
             <span className="text-4xl sm:text-5xl lg:text-6xl" aria-label="Target">🎯</span>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold">QR Hunt</h1>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold">{t("common.appName")}</h1>
           </div>
 
           {/* Title */}
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-extrabold leading-tight mb-4 sm:mb-6 animate-slide-up">
-            Turn Any Space Into an
-            <span className="bg-gradient-to-r from-amber-200 to-amber-400 bg-clip-text text-transparent"> Adventure</span>
+            {t("pages.home.hero.title")}
+            <span className="bg-gradient-to-r from-amber-200 to-amber-400 bg-clip-text text-transparent"> {t("pages.home.hero.titleHighlight")}</span>
           </h2>
 
           {/* Subtitle */}
           <p className="text-base sm:text-lg md:text-xl lg:text-2xl opacity-90 leading-relaxed mb-6 sm:mb-8 max-w-2xl mx-auto animate-slide-up" style={{ animationDelay: "0.1s" }}>
-            Create exciting QR code scavenger hunts for team building, events, parties, and education.
-            Watch teams compete in real-time with instant scoring and live leaderboards.
+            {t("pages.home.hero.subtitle")}
           </p>
 
           {/* CTA Buttons */}
@@ -52,7 +54,7 @@ export default function Index() {
                 <polyline points="10 17 15 12 10 7" />
                 <line x1="15" y1="12" x2="3" y2="12" />
               </svg>
-              <span>Join a Game</span>
+              <span>{t("pages.home.hero.joinGame")}</span>
             </Link>
             <Link
               to="/admin"
@@ -62,7 +64,7 @@ export default function Index() {
                 <circle cx="12" cy="12" r="3" />
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
               </svg>
-              <span>Create a Hunt</span>
+              <span>{t("pages.home.hero.createHunt")}</span>
             </Link>
           </div>
         </div>
@@ -73,10 +75,10 @@ export default function Index() {
         <div className="mx-auto">
           <div className="text-center mb-8 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-primary mb-3 sm:mb-4">
-              The Player Experience
+              {t("pages.home.playerExperience.title")}
             </h2>
             <p className="text-secondary text-base sm:text-lg max-w-2xl mx-auto">
-              Teams race to find hidden QR codes scattered around a location. Each scan reveals a clue leading to the next location. First team to find all codes wins!
+              {t("pages.home.playerExperience.subtitle")}
             </p>
           </div>
 
@@ -91,9 +93,9 @@ export default function Index() {
                 <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] flex items-center justify-center mx-auto mb-4 text-white text-2xl sm:text-3xl group-hover:scale-110 transition-transform">
                   🎮
                 </div>
-                <h3 className="text-base sm:text-lg font-bold text-primary mb-2">1. Join the Game</h3>
+                <h3 className="text-base sm:text-lg font-bold text-primary mb-2">{t("pages.home.playerExperience.steps.join.title")}</h3>
                 <p className="text-secondary text-sm">
-                  Open the link, enter your 6-digit team code, and you're ready to play!
+                  {t("pages.home.playerExperience.steps.join.description")}
                 </p>
               </div>
 
@@ -102,9 +104,9 @@ export default function Index() {
                 <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] flex items-center justify-center mx-auto mb-4 text-white text-2xl sm:text-3xl group-hover:scale-110 transition-transform">
                   📜
                 </div>
-                <h3 className="text-base sm:text-lg font-bold text-primary mb-2">2. Read the Clue</h3>
+                <h3 className="text-base sm:text-lg font-bold text-primary mb-2">{t("pages.home.playerExperience.steps.clue.title")}</h3>
                 <p className="text-secondary text-sm">
-                  "Find the old oak tree near the fountain in the main square..."
+                  {t("pages.home.playerExperience.steps.clue.description")}
                 </p>
               </div>
 
@@ -113,9 +115,9 @@ export default function Index() {
                 <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] flex items-center justify-center mx-auto mb-4 text-white text-2xl sm:text-3xl group-hover:scale-110 transition-transform">
                   🔍
                 </div>
-                <h3 className="text-base sm:text-lg font-bold text-primary mb-2">3. Hunt & Discover</h3>
+                <h3 className="text-base sm:text-lg font-bold text-primary mb-2">{t("pages.home.playerExperience.steps.hunt.title")}</h3>
                 <p className="text-secondary text-sm">
-                  Work together, explore the area, and find the hidden QR code!
+                  {t("pages.home.playerExperience.steps.hunt.description")}
                 </p>
               </div>
 
@@ -124,9 +126,9 @@ export default function Index() {
                 <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-[var(--color-success)] to-emerald-700 flex items-center justify-center mx-auto mb-4 text-white text-2xl sm:text-3xl group-hover:scale-110 transition-transform">
                   ✨
                 </div>
-                <h3 className="text-base sm:text-lg font-bold text-primary mb-2">4. Scan & Score!</h3>
+                <h3 className="text-base sm:text-lg font-bold text-primary mb-2">{t("pages.home.playerExperience.steps.scan.title")}</h3>
                 <p className="text-secondary text-sm">
-                  Scan the QR code, earn points, and reveal the next clue!
+                  {t("pages.home.playerExperience.steps.scan.description")}
                 </p>
               </div>
             </div>
@@ -137,7 +139,7 @@ export default function Index() {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" />
             </svg>
-            <span className="font-semibold text-sm sm:text-base">Repeat until victory!</span>
+            <span className="font-semibold text-sm sm:text-base">{t("pages.home.playerExperience.repeat")}</span>
           </div>
         </div>
       </section>
@@ -146,7 +148,7 @@ export default function Index() {
       <section className="py-12 sm:py-16 lg:py-20 xl:py-24 px-4 sm:px-6 lg:px-8 bg-secondary">
         <div className="mx-auto">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-center text-primary mb-8 sm:mb-12 lg:mb-16">
-            How It Works
+            {t("pages.home.howItWorks.title")}
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
@@ -161,8 +163,8 @@ export default function Index() {
                   <rect x="14" y="14" width="3" height="3" />
                 </svg>
               </div>
-              <h3 className="text-base sm:text-lg lg:text-xl font-bold text-primary mb-2">1. Create QR Codes</h3>
-              <p className="text-secondary text-sm sm:text-base">Design your hunt with clues, riddles, and challenges. Generate unique QR codes for each checkpoint.</p>
+              <h3 className="text-base sm:text-lg lg:text-xl font-bold text-primary mb-2">{t("pages.home.howItWorks.steps.create.title")}</h3>
+              <p className="text-secondary text-sm sm:text-base">{t("pages.home.howItWorks.steps.create.description")}</p>
             </div>
 
             {/* Feature 2 */}
@@ -175,8 +177,8 @@ export default function Index() {
                   <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
               </div>
-              <h3 className="text-base sm:text-lg lg:text-xl font-bold text-primary mb-2">2. Invite Teams</h3>
-              <p className="text-secondary text-sm sm:text-base">Create teams and share unique codes. Players join instantly on their phones - no app download needed.</p>
+              <h3 className="text-base sm:text-lg lg:text-xl font-bold text-primary mb-2">{t("pages.home.howItWorks.steps.invite.title")}</h3>
+              <p className="text-secondary text-sm sm:text-base">{t("pages.home.howItWorks.steps.invite.description")}</p>
             </div>
 
             {/* Feature 3 */}
@@ -187,8 +189,8 @@ export default function Index() {
                   <circle cx="12" cy="13" r="4" />
                 </svg>
               </div>
-              <h3 className="text-base sm:text-lg lg:text-xl font-bold text-primary mb-2">3. Hunt & Scan</h3>
-              <p className="text-secondary text-sm sm:text-base">Teams follow clues to find QR codes. Each scan reveals the next clue, guiding them to the next location.</p>
+              <h3 className="text-base sm:text-lg lg:text-xl font-bold text-primary mb-2">{t("pages.home.howItWorks.steps.hunt.title")}</h3>
+              <p className="text-secondary text-sm sm:text-base">{t("pages.home.howItWorks.steps.hunt.description")}</p>
             </div>
 
             {/* Feature 4 */}
@@ -200,8 +202,8 @@ export default function Index() {
                   <path d="M6 20v-4" />
                 </svg>
               </div>
-              <h3 className="text-base sm:text-lg lg:text-xl font-bold text-primary mb-2">4. Live Leaderboard</h3>
-              <p className="text-secondary text-sm sm:text-base">Watch the competition unfold in real-time. Instant updates as teams find clues and earn points.</p>
+              <h3 className="text-base sm:text-lg lg:text-xl font-bold text-primary mb-2">{t("pages.home.howItWorks.steps.leaderboard.title")}</h3>
+              <p className="text-secondary text-sm sm:text-base">{t("pages.home.howItWorks.steps.leaderboard.description")}</p>
             </div>
           </div>
         </div>
@@ -211,22 +213,22 @@ export default function Index() {
       <section className="py-12 sm:py-16 lg:py-20 xl:py-24 px-4 sm:px-6 lg:px-8 bg-primary">
         <div className="mx-auto">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-center text-primary mb-8 sm:mb-12 lg:mb-16">
-            Perfect For
+            {t("pages.home.perfectFor.title")}
           </h2>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
             {[
-              { icon: "🏢", title: "Team Building", desc: "Engage employees with interactive challenges" },
-              { icon: "🎉", title: "Parties & Events", desc: "Make any celebration more memorable" },
-              { icon: "🎓", title: "Education", desc: "Gamify learning with interactive quests" },
-              { icon: "🏕️", title: "Camps & Retreats", desc: "Explore outdoor spaces with guided hunts" },
-              { icon: "🏛️", title: "Museums & Tours", desc: "Create engaging self-guided experiences" },
-              { icon: "💒", title: "Weddings", desc: "Fun activities for guests to enjoy" },
+              { icon: "🏢", key: "teamBuilding" },
+              { icon: "🎉", key: "parties" },
+              { icon: "🎓", key: "education" },
+              { icon: "🏕️", key: "camps" },
+              { icon: "🏛️", key: "museums" },
+              { icon: "💒", key: "weddings" },
             ].map((item, i) => (
               <div key={i} className="bg-secondary p-4 sm:p-5 lg:p-6 rounded-xl border hover:border-[var(--color-primary)]/50 transition-colors text-center">
-                <span className="text-3xl sm:text-4xl block mb-2 sm:mb-3" role="img" aria-label={item.title}>{item.icon}</span>
-                <h4 className="font-bold text-primary text-xs sm:text-sm lg:text-base mb-1">{item.title}</h4>
-                <p className="text-tertiary text-xs lg:text-sm">{item.desc}</p>
+                <span className="text-3xl sm:text-4xl block mb-2 sm:mb-3" role="img" aria-label={t(`pages.home.perfectFor.items.${item.key}.title`)}>{item.icon}</span>
+                <h4 className="font-bold text-primary text-xs sm:text-sm lg:text-base mb-1">{t(`pages.home.perfectFor.items.${item.key}.title`)}</h4>
+                <p className="text-tertiary text-xs lg:text-sm">{t(`pages.home.perfectFor.items.${item.key}.description`)}</p>
               </div>
             ))}
           </div>
@@ -240,18 +242,10 @@ export default function Index() {
             {/* Features List */}
             <div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-primary mb-6 sm:mb-8 text-center lg:text-left">
-                Everything You Need
+                {t("pages.home.features.title")}
               </h2>
               <ul className="space-y-3 sm:space-y-4">
-                {[
-                  "Clue-based navigation guides teams to each QR code",
-                  "Real-time leaderboards with live updates",
-                  "Built-in chat between teams and organizers",
-                  "QR code generator with custom logos",
-                  "Media clues (images, videos, audio)",
-                  "Works on any device - no app needed",
-                  "Self-hosted - your data stays private",
-                ].map((feature, i) => (
+                {(t("pages.home.features.list") as unknown as string[]).map((feature: string, i: number) => (
                   <li key={i} className="flex items-start gap-3 text-secondary">
                     <svg className="w-5 h-5 sm:w-6 sm:h-6 text-[var(--color-success)] flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                       <polyline points="20 6 9 17 4 12" />
@@ -269,27 +263,27 @@ export default function Index() {
                   {/* Mockup Header */}
                   <div className="flex items-center gap-2 mb-4 sm:mb-5">
                     <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-success)]" />
-                    <span className="font-semibold text-primary text-xs sm:text-sm">Team Alpha</span>
-                    <span className="ml-auto bg-[var(--color-primary)] text-white text-xs font-bold px-2.5 py-1 rounded-full">245 pts</span>
+                    <span className="font-semibold text-primary text-xs sm:text-sm">{t("pages.home.features.mockup.teamName")}</span>
+                    <span className="ml-auto bg-[var(--color-primary)] text-white text-xs font-bold px-2.5 py-1 rounded-full">245 {t("common.points")}</span>
                   </div>
 
                   {/* Mockup Clue */}
                   <div className="bg-secondary rounded-xl p-3 sm:p-4 mb-3 sm:mb-4 border-l-4 border-[var(--color-primary)]">
-                    <p className="text-xs text-[var(--color-primary)] font-semibold mb-1">Next Clue</p>
-                    <p className="font-bold text-primary text-sm mb-1">The Hidden Garden</p>
-                    <p className="text-tertiary text-xs">Find where roses bloom in shade...</p>
+                    <p className="text-xs text-[var(--color-primary)] font-semibold mb-1">{t("pages.home.features.mockup.nextClue")}</p>
+                    <p className="font-bold text-primary text-sm mb-1">{t("pages.home.features.mockup.clueTitle")}</p>
+                    <p className="text-tertiary text-xs">{t("pages.home.features.mockup.clueHint")}</p>
                   </div>
 
                   {/* Mockup Chat */}
                   <div className="mb-3 sm:mb-4">
                     <div className="bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white text-xs px-3 py-2 rounded-lg inline-block">
-                      Admin: Need a hint?
+                      {t("pages.home.features.mockup.adminHint")}
                     </div>
                   </div>
 
                   {/* Mockup Button */}
                   <div className="bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white text-center py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm">
-                    Scan QR Code
+                    {t("pages.home.features.mockup.scanButton")}
                   </div>
                 </div>
               </div>
@@ -302,23 +296,23 @@ export default function Index() {
       <section className="py-12 sm:py-16 lg:py-20 xl:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] flex items-center justify-center">
         <div className="max-w-3xl w-full text-center text-white">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold mb-3 sm:mb-4">
-            Ready to Start Your Hunt?
+            {t("pages.home.cta.title")}
           </h2>
           <p className="text-base sm:text-lg lg:text-xl opacity-90 mb-6 sm:mb-8">
-            Create your first scavenger hunt in minutes. No credit card required.
+            {t("pages.home.cta.subtitle")}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <Link
               to="/join"
               className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-white text-[var(--color-primary)] font-semibold rounded-xl hover:bg-gray-100 transition-all shadow-lg text-base sm:text-lg min-h-[3rem] sm:min-h-[3.5rem]"
             >
-              Join a Game
+              {t("pages.home.hero.joinGame")}
             </Link>
             <Link
               to="/admin"
               className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-white/20 text-warning font-semibold rounded-xl border-2 border-white/50 hover:bg-gray-100 hover:border-white/70 transition-all text-base sm:text-lg min-h-[3rem] sm:min-h-[3.5rem] backdrop-blur-sm"
             >
-              Create a Hunt
+              {t("pages.home.hero.createHunt")}
             </Link>
           </div>
         </div>
@@ -329,9 +323,9 @@ export default function Index() {
         <div className="mx-auto text-center">
           <div className="flex items-center justify-center gap-2 text-lg sm:text-xl font-bold text-secondary mb-2">
             <span>🎯</span>
-            <span>QR Hunt</span>
+            <span>{t("common.appName")}</span>
           </div>
-          <p className="text-gray-500 text-xs sm:text-sm">Self-hostable • Open source • Privacy-focused</p>
+          <p className="text-gray-500 text-xs sm:text-sm">{t("common.footer.selfHostable")} • {t("common.footer.openSource")} • {t("common.footer.privacyFocused")}</p>
         </div>
       </footer>
     </div>

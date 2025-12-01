@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Spinner } from "~/components/Loading";
 import { useToast } from "~/components/Toast";
 import { Version } from "~/components/Version";
+import { useTranslation } from "~/i18n/I18nContext";
 import { clearAuth, getGameSlug, getToken, setGameSlug, setToken } from "~/lib/tokenStorage";
 
 export const meta: MetaFunction = () => {
@@ -117,6 +118,7 @@ export default function JoinGame() {
   const [searchParams] = useSearchParams();
   const prefillGame = searchParams.get("game") || "";
   const pendingScan = searchParams.get("scan") || "";
+  const { t } = useTranslation();
 
   const [gameSlugInput, setGameSlugInput] = useState(prefillGame);
   const [teamCode, setTeamCode] = useState("");
@@ -208,8 +210,8 @@ export default function JoinGame() {
 
     // Validate
     const errors: typeof fieldErrors = {};
-    if (!gameSlug) errors.gameSlug = "Game ID is required";
-    if (!code || code.length !== CODE_LENGTH) errors.teamCode = "Team code must be 6 characters";
+    if (!gameSlug) errors.gameSlug = t("pages.join.errors.gameIdRequired");
+    if (!code || code.length !== CODE_LENGTH) errors.teamCode = t("pages.join.errors.teamCodeLength");
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -230,8 +232,8 @@ export default function JoinGame() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || "Failed to join game");
-        toast.error(data.error || "Failed to join game");
+        setError(data.error || t("pages.join.errors.joinFailed"));
+        toast.error(data.error || t("pages.join.errors.joinFailed"));
         setIsSubmitting(false);
         return;
       }
@@ -246,11 +248,11 @@ export default function JoinGame() {
         : `/play/${gameSlug}`;
       navigate(playUrl);
     } catch {
-      setError("Failed to connect to server");
-      toast.error("Failed to connect to server");
+      setError(t("pages.join.errors.connectionFailed"));
+      toast.error(t("pages.join.errors.connectionFailed"));
       setIsSubmitting(false);
     }
-  }, [gameSlugInput, teamCode, navigate, toast, pendingScan]);
+  }, [gameSlugInput, teamCode, navigate, toast, pendingScan, t]);
 
   // Debounced auto-submit when code is complete
   const handleCodeComplete = useCallback((completeCode: string) => {
@@ -279,7 +281,7 @@ export default function JoinGame() {
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-bg-primary via-bg-secondary to-bg-primary">
         <div className="flex flex-col items-center gap-4">
           <Spinner size="lg" />
-          <p className="text-muted">Checking session...</p>
+          <p className="text-muted">{t("pages.join.checkingSession")}</p>
         </div>
         <Version />
       </div>
@@ -295,10 +297,10 @@ export default function JoinGame() {
           <div className="text-center mb-6 sm:mb-8">
             <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
               <span className="text-4xl sm:text-5xl" aria-label="Target">🎯</span>
-              <span className="text-2xl sm:text-3xl font-bold text-primary">QR Hunt</span>
+              <span className="text-2xl sm:text-3xl font-bold text-primary">{t("common.appName")}</span>
             </div>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary mb-2">Welcome Back!</h1>
-            <p className="text-tertiary text-sm sm:text-base">You're already logged into a game</p>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary mb-2">{t("pages.join.welcomeBack")}</h1>
+            <p className="text-tertiary text-sm sm:text-base">{t("pages.join.alreadyLoggedIn")}</p>
           </div>
 
           {/* Current Session Card */}
@@ -324,7 +326,7 @@ export default function JoinGame() {
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polygon points="5 3 19 12 5 21 5 3" />
               </svg>
-              Resume Game
+              {t("pages.join.resumeGame")}
             </button>
 
             <button
@@ -337,14 +339,28 @@ export default function JoinGame() {
                 <polyline points="10 17 15 12 10 7" />
                 <line x1="15" y1="12" x2="3" y2="12" />
               </svg>
-              Join a Different Game
+              {t("pages.join.joinDifferent")}
             </button>
           </div>
 
           {/* Info text */}
           <p className="mt-6 text-xs text-muted text-center">
-            Joining a different game will sign you out of your current session
+            {t("pages.join.joinDifferentWarning")}
           </p>
+
+          {/* Back Link */}
+          <div className="mt-8 text-center mt-5 sm:mt-6">
+            <a
+              href="/"
+              className="inline-flex items-center gap-2 text-tertiary hover:text-[var(--color-primary)] text-sm transition-colors"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+              </svg>
+              {t("pages.join.backToHome")}
+            </a>
+          </div>
         </div>
         <Version />
       </div>
@@ -358,10 +374,10 @@ export default function JoinGame() {
         <div className="text-center mb-6 sm:mb-8">
           <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
             <span className="text-4xl sm:text-5xl" aria-label="Target">🎯</span>
-            <span className="text-2xl sm:text-3xl font-bold text-primary">QR Hunt</span>
+            <span className="text-2xl sm:text-3xl font-bold text-primary">{t("common.appName")}</span>
           </div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary mb-2">Join a Game</h1>
-          <p className="text-tertiary text-sm sm:text-base">Enter your game ID and team code to start playing</p>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary mb-2">{t("pages.join.title")}</h1>
+          <p className="text-tertiary text-sm sm:text-base">{t("pages.join.subtitle")}</p>
         </div>
 
         {/* Error Alert */}
@@ -383,7 +399,7 @@ export default function JoinGame() {
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
               </svg>
-              Game ID
+              {t("pages.join.form.gameId")}
             </label>
             <input
               type="text"
@@ -391,7 +407,7 @@ export default function JoinGame() {
               value={gameSlugInput}
               onChange={(e) => setGameSlugInput(e.target.value)}
               className="w-full px-4 py-3 bg-secondary border rounded-xl text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
-              placeholder="e.g., summer-hunt-2024"
+              placeholder={t("pages.join.form.gameIdPlaceholder")}
               autoComplete="off"
               disabled={isSubmitting}
             />
@@ -409,7 +425,7 @@ export default function JoinGame() {
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
                 <path d="M16 3.13a4 4 0 0 1 0 7.75" />
               </svg>
-              Team Code
+              {t("pages.join.form.teamCode")}
             </label>
             <TeamCodeInput
               value={teamCode}
@@ -423,7 +439,7 @@ export default function JoinGame() {
               disabled={isSubmitting}
             />
             <p className="mt-3 text-xs sm:text-sm text-muted text-center">
-              Your team code was provided by the game organizer
+              {t("pages.join.form.teamCodeHint")}
             </p>
             {fieldErrors.teamCode && (
               <p className="mt-2 text-sm text-[var(--color-error)] text-center">{fieldErrors.teamCode}</p>
@@ -439,7 +455,7 @@ export default function JoinGame() {
             {isSubmitting ? (
               <>
                 <Spinner size="sm" />
-                <span>Joining...</span>
+                <span>{t("pages.join.form.joining")}</span>
               </>
             ) : (
               <>
@@ -448,7 +464,7 @@ export default function JoinGame() {
                   <polyline points="10 17 15 12 10 7" />
                   <line x1="15" y1="12" x2="3" y2="12" />
                 </svg>
-                Join Game
+                {t("pages.join.form.joinButton")}
               </>
             )}
           </button>
@@ -464,7 +480,7 @@ export default function JoinGame() {
               <line x1="19" y1="12" x2="5" y2="12" />
               <polyline points="12 19 5 12 12 5" />
             </svg>
-            Back to home
+            {t("pages.join.backToHome")}
           </a>
         </div>
       </div>

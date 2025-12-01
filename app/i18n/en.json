@@ -1,0 +1,782 @@
+{
+  "common": {
+    "appName": "QR Hunt",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "retry": "Retry",
+    "points": "pts",
+    "team": "Team",
+    "teams": "Teams",
+    "game": "Game",
+    "player": "Player",
+    "admin": "Admin",
+    "status": {
+      "draft": "Draft",
+      "active": "Active",
+      "completed": "Completed"
+    },
+    "footer": {
+      "selfHostable": "Self-hostable",
+      "openSource": "Open source",
+      "privacyFocused": "Privacy-focused"
+    }
+  },
+  "pages": {
+    "home": {
+      "meta": {
+        "title": "QR Hunt - QR Code Scavenger Hunt Platform",
+        "description": "Create exciting QR code scavenger hunts for team building, events, and parties. Real-time leaderboards, instant scoring, and easy setup."
+      },
+      "hero": {
+        "title": "Turn Any Space Into an",
+        "titleHighlight": "Adventure",
+        "subtitle": "Create exciting QR code scavenger hunts for team building, events, parties, and education. Watch teams compete in real-time with instant scoring and live leaderboards.",
+        "joinGame": "Join a Game",
+        "createHunt": "Create a Hunt"
+      },
+      "playerExperience": {
+        "title": "The Player Experience",
+        "subtitle": "Teams race to find hidden QR codes scattered around a location. Each scan reveals a clue leading to the next location. First team to find all codes wins!",
+        "steps": {
+          "join": {
+            "title": "1. Join the Game",
+            "description": "Open the link, enter your 6-digit team code, and you're ready to play!"
+          },
+          "clue": {
+            "title": "2. Read the Clue",
+            "description": "\"Find the old oak tree near the fountain in the main square...\""
+          },
+          "hunt": {
+            "title": "3. Hunt & Discover",
+            "description": "Work together, explore the area, and find the hidden QR code!"
+          },
+          "scan": {
+            "title": "4. Scan & Score!",
+            "description": "Scan the QR code, earn points, and reveal the next clue!"
+          }
+        },
+        "repeat": "Repeat until victory!"
+      },
+      "howItWorks": {
+        "title": "How It Works",
+        "steps": {
+          "create": {
+            "title": "1. Create QR Codes",
+            "description": "Design your hunt with clues, riddles, and challenges. Generate unique QR codes for each checkpoint."
+          },
+          "invite": {
+            "title": "2. Invite Teams",
+            "description": "Create teams and share unique codes. Players join instantly on their phones - no app download needed."
+          },
+          "hunt": {
+            "title": "3. Hunt & Scan",
+            "description": "Teams follow clues to find QR codes. Each scan reveals the next clue, guiding them to the next location."
+          },
+          "leaderboard": {
+            "title": "4. Live Leaderboard",
+            "description": "Watch the competition unfold in real-time. Instant updates as teams find clues and earn points."
+          }
+        }
+      },
+      "perfectFor": {
+        "title": "Perfect For",
+        "items": {
+          "teamBuilding": {
+            "title": "Team Building",
+            "description": "Engage employees with interactive challenges"
+          },
+          "parties": {
+            "title": "Parties & Events",
+            "description": "Make any celebration more memorable"
+          },
+          "education": {
+            "title": "Education",
+            "description": "Gamify learning with interactive quests"
+          },
+          "camps": {
+            "title": "Camps & Retreats",
+            "description": "Explore outdoor spaces with guided hunts"
+          },
+          "museums": {
+            "title": "Museums & Tours",
+            "description": "Create engaging self-guided experiences"
+          },
+          "weddings": {
+            "title": "Weddings",
+            "description": "Fun activities for guests to enjoy"
+          }
+        }
+      },
+      "features": {
+        "title": "Everything You Need",
+        "list": [
+          "Clue-based navigation guides teams to each QR code",
+          "Real-time leaderboards with live updates",
+          "Built-in chat between teams and organizers",
+          "QR code generator with custom logos",
+          "Media clues (images, videos, audio)",
+          "Works on any device - no app needed",
+          "Self-hosted - your data stays private"
+        ],
+        "mockup": {
+          "teamName": "Team Alpha",
+          "nextClue": "Next Clue",
+          "clueTitle": "The Hidden Garden",
+          "clueHint": "Find where roses bloom in shade...",
+          "adminHint": "Admin: Need a hint?",
+          "scanButton": "Scan QR Code"
+        }
+      },
+      "cta": {
+        "title": "Ready to Start Your Hunt?",
+        "subtitle": "Create your first scavenger hunt in minutes. No credit card required."
+      }
+    },
+    "join": {
+      "meta": {
+        "title": "Join Game - QR Hunt"
+      },
+      "title": "Join a Game",
+      "subtitle": "Enter your game ID and team code to start playing",
+      "checkingSession": "Checking session...",
+      "welcomeBack": "Welcome Back!",
+      "alreadyLoggedIn": "You're already logged into a game",
+      "resumeGame": "Resume Game",
+      "joinDifferent": "Join a Different Game",
+      "joinDifferentWarning": "Joining a different game will sign you out of your current session",
+      "form": {
+        "gameId": "Game ID",
+        "gameIdPlaceholder": "e.g., summer-hunt-2024",
+        "teamCode": "Team Code",
+        "teamCodeHint": "Your team code was provided by the game organizer",
+        "joinButton": "Join Game",
+        "joining": "Joining..."
+      },
+      "errors": {
+        "gameIdRequired": "Game ID is required",
+        "teamCodeLength": "Team code must be 6 characters",
+        "connectionFailed": "Failed to connect to server",
+        "joinFailed": "Failed to join game"
+      },
+      "backToHome": "Back to home"
+    },
+    "play": {
+      "meta": {
+        "title": "Play - {{gameName}}"
+      },
+      "loading": "Loading game...",
+      "processingQR": "Processing QR code...",
+      "tabs": {
+        "clue": "Clue",
+        "scan": "Scan",
+        "progress": "Progress",
+        "team": "Team",
+        "chat": "Chat"
+      },
+      "victory": {
+        "title": "Victory!",
+        "congratulations": "Congratulations, {{teamName}}!",
+        "finishedFirst": "You finished first!",
+        "qrCodes": "QR Codes",
+        "totalPoints": "Total Points"
+      },
+      "gameComplete": {
+        "title": "Game Complete",
+        "wellPlayed": "Well played, {{teamName}}!"
+      },
+      "viewLeaderboard": "View Leaderboard",
+      "feedback": {
+        "leave": "Leave Feedback",
+        "update": "Update Feedback",
+        "title": "Rate Your Experience",
+        "placeholder": "Share your thoughts (optional)",
+        "submitting": "Submitting...",
+        "updateBtn": "Update",
+        "submitBtn": "Submit",
+        "thanks": "Thank you for your feedback!",
+        "updated": "Feedback updated!",
+        "selectRating": "Please select a rating",
+        "failed": "Failed to submit feedback",
+        "helpUs": "Help us improve the game experience"
+      },
+      "offline": {
+        "indicator": "You're offline - showing cached data",
+        "pending": "{{count}} pending",
+        "syncing": "Syncing pending scans...",
+        "cached": "You're offline. Showing cached data."
+      },
+      "points": "points",
+      "clueTab": {
+        "startingClue": "Starting Clue",
+        "nextClue": "Next Clue",
+        "tryAnother": "Try another",
+        "scanQRCode": "Scan QR Code",
+        "pointAtCamera": "Point your camera at the QR code",
+        "readyToBegin": "Ready to Begin?",
+        "scanFirstQR": "Scan your first QR code to start the hunt!",
+        "openScanner": "Open Scanner",
+        "qrCodesFound": "QR codes found",
+        "moreToFind": "{{count}} more to find!",
+        "allFoundFinish": "All found! Scan an end point to finish!",
+        "gotNewClue": "Got a new clue!",
+        "failedNewClue": "Failed to get new clue"
+      },
+      "hints": {
+        "needHint": "Need a hint?",
+        "pointsCost": "-{{points}} points",
+        "hintRevealed": "Hint revealed! -{{points}} points",
+        "failedHint": "Failed to get hint",
+        "requestTitle": "Request Hint?",
+        "cannotUndo": "This action cannot be undone",
+        "pointsPenalty": "Points Penalty",
+        "costExplanation": "Using this hint will cost you {{points}} points (half of this clue's value).",
+        "revealHint": "Reveal Hint"
+      },
+      "progressTab": {
+        "yourProgress": "Your Progress",
+        "qrCodesFound": "QR codes found",
+        "moreToFind": "{{count}} more to find!",
+        "allFoundFinish": "All found! Scan an end point to finish!",
+        "yourJourney": "Your Journey",
+        "noQRCodesYet": "No QR codes scanned yet",
+        "startHunt": "Start your hunt by scanning your first QR code!"
+      },
+      "teamTab": {
+        "inviteTeammates": "Invite Teammates",
+        "shareDetails": "Share these details so teammates can join your team",
+        "gameId": "Game ID",
+        "teamCode": "Team Code",
+        "shareInviteLink": "Share Invite Link",
+        "copyLink": "Copy Link",
+        "copied": "Copied!",
+        "signOut": "Sign Out",
+        "feedback": "Feedback",
+        "feedbackDescription": "Help us improve the game experience"
+      },
+      "viewCurrentClue": "View Current Clue",
+      "scanQRCode": "Scan QR Code",
+      "clue": "Clue",
+      "noClue": "No clue available",
+      "nextClue": "Next Clue",
+      "completed": "Completed!",
+      "allNodesFound": "You found all the checkpoints!",
+      "score": "Score",
+      "progress": "Progress",
+      "found": "found",
+      "hint": "Hint",
+      "showHint": "Show Hint",
+      "hintUsed": "Hint used",
+      "noHintAvailable": "No hint available for this clue",
+      "alreadyScanned": "Already scanned!",
+      "invalidQRCode": "Invalid QR code",
+      "wrongNode": "Wrong checkpoint - keep looking!",
+      "nodeFound": "Checkpoint found!",
+      "pointsEarned": "+{{points}} points",
+      "gameNotActive": "This game is not active yet",
+      "gameCompleted": "This game has ended",
+      "notAuthenticated": "Please join the game first",
+      "copiedToClipboard": "Copied to clipboard!",
+      "failedToCopy": "Failed to copy",
+      "syncedScans": "Synced pending scans!",
+      "gameNotFound": "Game not found",
+      "failedToLoad": "Failed to load game data"
+    },
+    "leaderboard": {
+      "meta": {
+        "title": "Leaderboard - {{gameName}}"
+      },
+      "title": "Leaderboard",
+      "noTeams": "No teams yet",
+      "noTeamsDescription": "Teams will appear here once they start scanning QR codes.",
+      "rank": "Rank",
+      "teamName": "Team",
+      "score": "Score",
+      "progress": "Progress",
+      "lastScan": "Last scan",
+      "you": "You",
+      "live": "Live Updates",
+      "finished": "Finished!",
+      "notStarted": "Not started",
+      "clues": "clues",
+      "teamFeedback": "Team Feedback",
+      "average": "average",
+      "review": "review",
+      "reviews": "reviews",
+      "lastUpdated": "Last updated",
+      "realTime": "real-time",
+      "refreshing": "Refreshing...",
+      "refresh": "Refresh",
+      "feedbackTitle": "How was your experience?",
+      "feedbackPlaceholder": "Share your thoughts...",
+      "sendFeedback": "Send Feedback",
+      "feedbackSent": "Thanks for your feedback!",
+      "rankUp": "Rank up!",
+      "rankDown": "Rank down"
+    },
+    "admin": {
+      "meta": {
+        "title": "Admin Dashboard - QR Hunt"
+      },
+      "title": "Admin Dashboard",
+      "login": {
+        "title": "Admin Login",
+        "subtitle": "Enter your admin code to continue",
+        "label": "Admin Code",
+        "placeholder": "Enter admin code",
+        "signingIn": "Signing in...",
+        "signIn": "Sign In",
+        "backToHome": "← Back to home"
+      },
+      "nav": {
+        "dashboard": "Dashboard",
+        "games": "Games",
+        "signOut": "Sign Out"
+      },
+      "dashboard": {
+        "title": "Dashboard",
+        "createGame": "Create Game",
+        "importing": "Importing...",
+        "import": "Import",
+        "stats": {
+          "totalGames": "Total Games",
+          "activeGames": "Active Games",
+          "completed": "Completed"
+        },
+        "recentGames": "Recent Games",
+        "noGamesYet": "No games yet. Create your first game to get started!",
+        "table": {
+          "name": "Name",
+          "slug": "Slug",
+          "status": "Status",
+          "created": "Created"
+        },
+        "manage": "Manage",
+        "viewAllGames": "View all games →",
+        "confirmDelete": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+        "confirmOverwrite": "A game with slug \"{{slug}}\" already exists. Do you want to overwrite it?",
+        "confirmImport": "Import game \"{{name}}\" with slug \"{{slug}}\"?",
+        "importFailed": "Import failed: {{error}}",
+        "deleteFailed": "Delete failed: {{error}}",
+        "failedToRead": "Failed to read file: {{error}}"
+      },
+      "games": {
+        "title": "Games",
+        "create": "Create Game",
+        "noGames": "No games yet. Create your first hunt!",
+        "manage": "Manage",
+        "viewLeaderboard": "View Leaderboard",
+        "teamsCount": "{{count}} teams",
+        "nodesCount": "{{count}} checkpoints"
+      },
+      "gamesList": {
+        "title": "Games",
+        "createGame": "Create Game",
+        "importing": "Importing...",
+        "import": "Import",
+        "searchPlaceholder": "Search by name or slug...",
+        "filters": {
+          "allStatus": "All Status",
+          "draft": "Draft",
+          "active": "Active",
+          "completed": "Completed"
+        },
+        "empty": {
+          "noGames": "No games yet.",
+          "noMatches": "No games match your filters.",
+          "createFirst": "Create your first game"
+        },
+        "table": {
+          "name": "Name",
+          "slug": "Slug",
+          "status": "Status",
+          "created": "Created"
+        },
+        "actions": {
+          "manage": "Manage",
+          "leaderboard": "Leaderboard",
+          "delete": "Delete game"
+        },
+        "confirm": {
+          "overwrite": "A game with slug \"{{slug}}\" already exists. Do you want to overwrite it?",
+          "import": "Import game \"{{name}}\" with slug \"{{slug}}\"?",
+          "delete": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone."
+        },
+        "errors": {
+          "importFailed": "Import failed: {{error}}",
+          "deleteFailed": "Delete failed: {{error}}",
+          "readFailed": "Failed to read file: {{error}}"
+        }
+      },
+      "newGame": {
+        "meta": {
+          "title": "Create Game - QR Hunt Admin"
+        },
+        "backToGames": "← Back to games",
+        "title": "Create New Game",
+        "form": {
+          "gameName": "Game Name",
+          "gameNamePlaceholder": "e.g., Summer Festival Hunt",
+          "urlSlug": "URL Slug",
+          "urlSlugPlaceholder": "e.g., summer-2024",
+          "urlSlugHelp": "Lowercase letters, numbers, and hyphens only. Used in URLs.",
+          "rankingMode": "Ranking Mode",
+          "rankingModes": {
+            "points": "By Points (fastest teams get more points)",
+            "nodes": "By Nodes Found (most clues wins)",
+            "time": "By Time (fastest total time wins)"
+          },
+          "logoUrl": "Game Logo URL",
+          "logoUrlOptional": "(optional)",
+          "logoUrlPlaceholder": "https://example.com/logo.png",
+          "logoUrlHelp": "Logo will be used as default for QR codes. Can be changed later."
+        },
+        "buttons": {
+          "creating": "Creating...",
+          "createGame": "Create Game",
+          "cancel": "Cancel"
+        },
+        "errors": {
+          "nameRequired": "Name is required",
+          "slugRequired": "Slug is required",
+          "createFailed": "Failed to create game",
+          "connectionFailed": "Failed to connect to server"
+        }
+      },
+      "gameEditor": {
+        "title": "Edit Game",
+        "backToGames": "← Back to games",
+        "activateGame": "Activate Game",
+        "completeGame": "Complete Game",
+        "viewLeaderboard": "View Leaderboard",
+        "activationWarning": {
+          "title": "Game cannot be activated yet. Please ensure:",
+          "needsNodes": "At least one node exists",
+          "needsStartNode": "At least one node is marked as a Start node",
+          "needsEndNode": "At least one node is marked as an End node"
+        },
+        "tabs": {
+          "nodes": "Nodes",
+          "edges": "Edges",
+          "teams": "Teams",
+          "qrcodes": "QR Codes",
+          "feedback": "Feedback",
+          "settings": "Settings"
+        },
+        "nodeBadges": {
+          "start": "Start",
+          "end": "End",
+          "hint": "Hint"
+        },
+        "filters": {
+          "filterByTitle": "Filter by title...",
+          "allStatus": "All Status",
+          "activated": "Activated",
+          "notActivated": "Not Activated",
+          "nodesCount": "{{filtered}} / {{total}} nodes",
+          "qrCodesCount": "{{filtered}} / {{total}} QR codes"
+        },
+        "nodes": {
+          "title": "Checkpoints",
+          "tableHeaders": {
+            "title": "Title",
+            "key": "Key",
+            "type": "Type",
+            "pts": "Pts",
+            "activated": "Activated"
+          },
+          "noNodes": "No nodes yet. Add your first node.",
+          "addNode": "Add Node",
+          "editNode": "Edit Node",
+          "form": {
+            "title": "Title",
+            "content": "Content",
+            "contentType": "Content Type",
+            "contentTypes": {
+              "text": "Text",
+              "image": "Image",
+              "video": "Video",
+              "audio": "Audio",
+              "link": "Link"
+            },
+            "mediaUrl": "Media URL",
+            "mediaUrlOptional": "(optional)",
+            "points": "Points",
+            "hint": "Hint",
+            "hintHelp": "(optional, costs half points)",
+            "hintPlaceholder": "A hint players can request for half the points...",
+            "adminComment": "Admin Comment",
+            "adminCommentHelp": "(only visible to admins)",
+            "adminCommentPlaceholder": "Internal notes about this node...",
+            "passwordRequired": "Password Required",
+            "password": "Password",
+            "passwordPlaceholder": "(leave empty to keep current)",
+            "startNode": "Start Node",
+            "endNode": "End Node"
+          },
+          "buttons": {
+            "preview": "Preview",
+            "edit": "Edit",
+            "delete": "Delete",
+            "addNode": "Add Node",
+            "updateNode": "Update Node",
+            "cancel": "Cancel",
+            "clear": "Clear"
+          }
+        },
+        "edges": {
+          "tableHeaders": {
+            "from": "From",
+            "to": "To"
+          },
+          "noEdges": "No edges yet. Connect your nodes.",
+          "addEdge": "Add Edge",
+          "editEdge": "Edit Edge",
+          "randomModeInfo": "Random Mode is enabled for this game. Edges are not used in random mode - each team gets a random next clue from unvisited nodes.",
+          "form": {
+            "fromNode": "From Node",
+            "toNode": "To Node",
+            "select": "Select..."
+          },
+          "buttons": {
+            "addEdge": "Add Edge",
+            "updateEdge": "Update Edge",
+            "cancel": "Cancel",
+            "clear": "Clear"
+          }
+        },
+        "teams": {
+          "title": "Teams",
+          "tableHeaders": {
+            "team": "Team",
+            "code": "Code",
+            "startNode": "Start Node"
+          },
+          "noTeams": "No teams yet. Create team codes.",
+          "default": "Default",
+          "defaultOption": "Default (any start node)",
+          "addTeam": "Add Team",
+          "editTeam": "Edit Team",
+          "form": {
+            "teamName": "Team Name",
+            "startNode": "Start Node",
+            "logoUrl": "Logo URL",
+            "logoPlaceholder": "https://example.com/logo.png"
+          },
+          "buttons": {
+            "share": "Share",
+            "edit": "Edit",
+            "delete": "Delete",
+            "addTeam": "Add Team",
+            "updateTeam": "Update Team",
+            "cancel": "Cancel"
+          }
+        },
+        "qrcodes": {
+          "title": "QR Codes",
+          "description": "Generate, customize, and download QR codes for each node.",
+          "downloadAll": "Download All (ZIP)",
+          "scanToIdentify": "Scan to Identify / Activate",
+          "tableHeaders": {
+            "node": "Node",
+            "url": "URL",
+            "activated": "Activated"
+          },
+          "noQRCodes": "No QR codes match the current filters.",
+          "buttons": {
+            "generateQR": "Generate QR",
+            "copyUrl": "Copy URL"
+          },
+          "messages": {
+            "urlCopied": "URL copied to clipboard!",
+            "copyFailed": "Failed to copy URL",
+            "downloaded": "Downloaded {{count}} QR codes",
+            "downloadFailed": "Failed to download QR codes",
+            "noQRToDownload": "No QR codes to download"
+          }
+        },
+        "feedback": {
+          "title": "Team Feedback",
+          "description": "View feedback submitted by teams during or after the game.",
+          "loading": "Loading feedback...",
+          "noFeedback": "No feedback yet.",
+          "noFeedbackHelp": "Teams can submit feedback during or after the game.",
+          "review": "review",
+          "reviews": "reviews",
+          "deleted": "Feedback from \"{{teamName}}\" deleted",
+          "deleteFailed": "Failed to delete feedback"
+        },
+        "settings": {
+          "gameStatus": {
+            "title": "Game Status",
+            "description": "Control the current status of your game.",
+            "changeStatus": "Change the game status:",
+            "completeSetup": "Complete the setup checklist above before activating the game.",
+            "draft": {
+              "label": "Draft",
+              "description": "Game is being set up and not yet playable."
+            },
+            "active": {
+              "label": "Active",
+              "description": "Game is live! Teams can join and play."
+            },
+            "completed": {
+              "label": "Completed",
+              "description": "Game has ended. Results are final."
+            }
+          },
+          "clueOrder": {
+            "title": "Clue Order Mode",
+            "description": "Control how teams receive their next clue after scanning a QR code.",
+            "randomMode": "Random Mode",
+            "randomModeDescription": "When enabled, each team receives a random next clue from unvisited nodes instead of following predefined edges. This creates a unique path for each team.",
+            "saveSetting": "Save Setting",
+            "saving": "Saving..."
+          },
+          "gameLogo": {
+            "title": "Game Logo",
+            "description": "Set a logo for your game. This will be used as the default logo for QR codes.",
+            "logoUrl": "Logo URL",
+            "saveLogo": "Save Logo"
+          },
+          "exportImport": {
+            "title": "Export / Import",
+            "description": "Export your game data to a JSON file, or import from a previous export to overwrite settings, nodes, edges, and teams.",
+            "exportGame": "Export Game",
+            "importOverwrite": "Import & Overwrite",
+            "confirmOverwrite": "This will overwrite all nodes, edges, and teams with data from \"{{name}}\". Continue?",
+            "importSuccess": "Import successful! Page will refresh.",
+            "importFailed": "Import failed: {{error}}",
+            "readFailed": "Failed to read file: {{error}}"
+          },
+          "dangerZone": {
+            "title": "Danger Zone",
+            "description": "Deleting this game will permanently remove all nodes, edges, teams, and scan data. This action cannot be undone.",
+            "deleteGame": "Delete Game"
+          }
+        },
+        "preview": {
+          "title": "Clue Preview",
+          "clueContent": "Clue Content",
+          "points": "+{{points}} points",
+          "passwordRequired": "Password required to unlock this clue",
+          "hintAvailable": "Hint Available (costs {{points}} pts):",
+          "adminNote": "Admin Note:",
+          "close": "Close",
+          "editNode": "Edit Node"
+        },
+        "deleteModal": {
+          "title": "Delete Game",
+          "subtitle": "This action cannot be undone",
+          "description": "This will permanently delete {{name}} and all associated data including:",
+          "items": {
+            "nodes": "All {{count}} nodes and QR codes",
+            "edges": "All {{count}} edges",
+            "teams": "All {{count}} teams and their progress",
+            "history": "All scan history and chat messages"
+          },
+          "confirmLabel": "Type {{name}} to confirm:",
+          "confirmPlaceholder": "Enter game name",
+          "cancel": "Cancel",
+          "deleteForever": "Delete Forever",
+          "deleting": "Deleting..."
+        },
+        "toasts": {
+          "gameLogoUpdated": "Game logo updated",
+          "gameStatusUpdated": "Game status updated",
+          "gameActivated": "Game activated successfully",
+          "gameCompleted": "Game marked as completed",
+          "nodeCreated": "Node created",
+          "nodeUpdated": "Node updated",
+          "nodeActivationUpdated": "Node activation updated",
+          "edgeCreated": "Edge created",
+          "edgeUpdated": "Edge updated",
+          "teamCreated": "Team created",
+          "teamUpdated": "Team updated",
+          "randomModeUpdated": "Random mode updated",
+          "shareInfoCopied": "Share info for \"{{teamName}}\" copied!",
+          "copyFailed": "Failed to copy",
+          "deleteFailed": "Failed to delete {{type}}",
+          "deleteScheduled": "{{type}} \"{{name}}\" will be deleted in 20s",
+          "deleteCancelled": "{{type}} deletion cancelled"
+        }
+      }
+    }
+  },
+  "components": {
+    "waitingRoom": {
+      "waitingForGame": "Waiting for the game to start",
+      "yourTeam": "Your Team",
+      "ready": "Ready",
+      "teamsReady": "Teams Ready",
+      "noTeamsYet": "No teams have joined yet",
+      "you": "You",
+      "connected": "Connected",
+      "connecting": "Connecting..."
+    },
+    "gameCountdown": {
+      "go": "GO!"
+    },
+    "chat": {
+      "title": "Chat",
+      "teamChat": "Team Chat",
+      "noMessages": "No messages yet",
+      "sendMessage": "Send a message to the organizers",
+      "placeholder": "Type a message...",
+      "everyone": "Everyone",
+      "specificTeam": "Specific Team",
+      "selectTeam": "Select team...",
+      "newMessage": "New message from {{sender}}",
+      "sendFailed": "Failed to send message",
+      "notConfigured": "Chat not configured properly"
+    },
+    "installPrompt": {
+      "title": "Install QR Hunt",
+      "addToHomeScreen": "Add to your home screen for quick access",
+      "iosInstructions": "Tap {{icon}} then \"Add to Home Screen\"",
+      "install": "Install"
+    },
+    "qrScanner": {
+      "title": "Scan QR Code",
+      "instruction": "Point your camera at a QR code",
+      "permissionDenied": "Camera permission denied",
+      "noCameraFound": "No camera found",
+      "scanning": "Scanning..."
+    },
+    "clueDisplay": {
+      "currentClue": "Current Clue",
+      "mediaLoading": "Loading media...",
+      "videoError": "Unable to load video"
+    },
+    "themeToggle": {
+      "light": "Light mode",
+      "dark": "Dark mode",
+      "system": "System"
+    },
+    "languageSelector": {
+      "title": "Language",
+      "languages": {
+        "en": "English",
+        "fr": "Français",
+        "pt": "Português"
+      }
+    },
+    "toast": {
+      "close": "Close"
+    },
+    "version": {
+      "version": "Version"
+    }
+  }
+}

@@ -7,8 +7,11 @@ import {
   ScrollRestoration,
   useNavigation,
 } from "@remix-run/react";
+import { InstallPrompt } from "~/components/InstallPrompt";
+import { LanguageSelector } from "~/components/LanguageSelector";
 import { ThemeToggle } from "~/components/ThemeToggle";
 import { ToastProvider } from "~/components/Toast";
+import { I18nProvider } from "~/i18n/I18nContext";
 import "./styles/global.css";
 
 // Spinner import removed - was unused
@@ -17,7 +20,16 @@ export const meta: MetaFunction = () => {
   return [
     { title: "QR Hunt - Scavenger Hunt Platform" },
     { name: "description", content: "Self-hostable QR code scavenger hunt platform" },
-    { name: "theme-color", content: "#6366f1" }, // "#06b6d4"
+    { name: "theme-color", content: "#6366f1" },
+    // PWA iOS meta tags
+    { name: "apple-mobile-web-app-capable", content: "yes" },
+    { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+    { name: "apple-mobile-web-app-title", content: "QR Hunt" },
+    // PWA Android meta tags
+    { name: "mobile-web-app-capable", content: "yes" },
+    { name: "application-name", content: "QR Hunt" },
+    // MS Tile
+    { name: "msapplication-TileColor", content: "#6366f1" },
   ];
 };
 
@@ -25,7 +37,12 @@ export const links: LinksFunction = () => {
   return [
     { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
     { rel: "manifest", href: "/manifest.json" },
-    { rel: "apple-touch-icon", href: "/favicon.svg" },
+    // iOS icons
+    { rel: "apple-touch-icon", href: "/icons/apple-touch-icon.png" },
+    { rel: "apple-touch-icon", sizes: "180x180", href: "/icons/apple-touch-icon.png" },
+    // Splash screens for iOS (will use SVG as fallback)
+    { rel: "apple-touch-startup-image", href: "/favicon.svg" },
+    // Fonts
     { rel: "preconnect", href: "https://fonts.googleapis.com" },
     { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
     { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" },
@@ -88,14 +105,34 @@ export default function App() {
             50% { transform: translateX(100%); width: 60%; }
             100% { transform: translateX(300%); width: 30%; }
           }
+          .global-controls {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            z-index: 100;
+          }
+          @media (max-width: 640px) {
+            .global-controls {
+              top: 0.5rem;
+              right: 0.5rem;
+            }
+          }
         `}</style>
       </head>
       <body>
-        <ToastProvider>
-          <GlobalLoadingIndicator />
-          <Outlet />
-          <ThemeToggle />
-        </ToastProvider>
+        <I18nProvider>
+          <ToastProvider>
+            <GlobalLoadingIndicator />
+            <Outlet />
+            <div className="global-controls">
+              <LanguageSelector />
+              <ThemeToggle />
+            </div>
+            <InstallPrompt />
+          </ToastProvider>
+        </I18nProvider>
         <ScrollRestoration />
         <Scripts />
         <script

@@ -327,3 +327,163 @@ export function playRankDownSound(): void {
     console.log("Audio not available", e);
   }
 }
+
+// Countdown tick sound - different pitch for each number (3, 2, 1)
+export function playCountdownTick(number: 3 | 2 | 1): void {
+  try {
+    const ctx = getAudioContext();
+    const now = ctx.currentTime;
+
+    // Higher pitch for lower numbers (building tension)
+    const frequencies: Record<number, number> = {
+      3: 440,   // A4 - low
+      2: 554.37, // C#5 - medium
+      1: 659.25, // E5 - high
+    };
+
+    const freq = frequencies[number] || 440;
+
+    // Main tone
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(freq, now);
+
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.4, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+    osc.start(now);
+    osc.stop(now + 0.35);
+
+    // Add a subtle click for impact
+    const click = ctx.createOscillator();
+    const clickGain = ctx.createGain();
+
+    click.connect(clickGain);
+    clickGain.connect(ctx.destination);
+
+    click.type = "square";
+    click.frequency.setValueAtTime(freq * 2, now);
+    click.frequency.exponentialRampToValueAtTime(freq, now + 0.05);
+
+    clickGain.gain.setValueAtTime(0.15, now);
+    clickGain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+
+    click.start(now);
+    click.stop(now + 0.1);
+
+    // Add sub-bass thump
+    const bass = ctx.createOscillator();
+    const bassGain = ctx.createGain();
+
+    bass.connect(bassGain);
+    bassGain.connect(ctx.destination);
+
+    bass.type = "sine";
+    bass.frequency.setValueAtTime(80, now);
+    bass.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+
+    bassGain.gain.setValueAtTime(0.3, now);
+    bassGain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+    bass.start(now);
+    bass.stop(now + 0.2);
+  } catch (e) {
+    console.log("Audio not available", e);
+  }
+}
+
+// Countdown "GO!" sound - exciting ascending arpeggio
+export function playCountdownGo(): void {
+  try {
+    const ctx = getAudioContext();
+    const now = ctx.currentTime;
+
+    // Fast ascending arpeggio
+    const notes = [
+      { freq: 523.25, time: 0 },      // C5
+      { freq: 659.25, time: 0.05 },   // E5
+      { freq: 783.99, time: 0.1 },    // G5
+      { freq: 1046.50, time: 0.15 },  // C6
+      { freq: 1318.51, time: 0.2 },   // E6
+    ];
+
+    notes.forEach(({ freq, time }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, now + time);
+
+      gain.gain.setValueAtTime(0, now + time);
+      gain.gain.linearRampToValueAtTime(0.25, now + time + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + time + 0.25);
+
+      osc.start(now + time);
+      osc.stop(now + time + 0.3);
+    });
+
+    // Big final chord
+    const chordFreqs = [523.25, 659.25, 783.99, 1046.50]; // C major
+    chordFreqs.forEach((freq) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, now + 0.25);
+
+      gain.gain.setValueAtTime(0, now + 0.25);
+      gain.gain.linearRampToValueAtTime(0.2, now + 0.28);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+
+      osc.start(now + 0.25);
+      osc.stop(now + 0.9);
+    });
+
+    // Crash/shimmer effect
+    const noise = ctx.createOscillator();
+    const noiseGain = ctx.createGain();
+
+    noise.connect(noiseGain);
+    noiseGain.connect(ctx.destination);
+
+    noise.type = "sawtooth";
+    noise.frequency.setValueAtTime(3000, now + 0.25);
+    noise.frequency.exponentialRampToValueAtTime(1500, now + 0.5);
+
+    noiseGain.gain.setValueAtTime(0.08, now + 0.25);
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+
+    noise.start(now + 0.25);
+    noise.stop(now + 0.6);
+
+    // Bass impact
+    const bass = ctx.createOscillator();
+    const bassGain = ctx.createGain();
+
+    bass.connect(bassGain);
+    bassGain.connect(ctx.destination);
+
+    bass.type = "sine";
+    bass.frequency.setValueAtTime(65.41, now + 0.25); // C2
+
+    bassGain.gain.setValueAtTime(0.4, now + 0.25);
+    bassGain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+
+    bass.start(now + 0.25);
+    bass.stop(now + 0.7);
+  } catch (e) {
+    console.log("Audio not available", e);
+  }
+}

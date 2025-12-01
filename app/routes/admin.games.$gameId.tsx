@@ -9,6 +9,7 @@ import { ClueDisplay } from "~/components/ClueDisplay";
 import { QRCodeGenerator } from "~/components/QRCodeGenerator";
 import { QRIdentifyScanner } from "~/components/QRIdentifyScanner";
 import { ToastProvider, useToast } from "~/components/Toast";
+import { useTranslation } from "~/i18n/I18nContext";
 import { getApiUrl } from "~/lib/api";
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
@@ -395,21 +396,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 // Reusable components
-const StatusBadge = ({ status }: { status: string }) => (
+const StatusBadge = ({ status, t }: { status: string; t: (key: string) => string }) => (
   <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
     status === "active" ? "bg-[var(--color-success)]/15 text-[var(--color-success)]" :
     status === "completed" ? "bg-[var(--color-info)]/15 text-[var(--color-info)]" :
     "bg-[var(--color-warning)]/15 text-[var(--color-warning)]"
   }`}>
-    {status}
+    {t(`common.status.${status}`)}
   </span>
 );
 
-const NodeBadge = ({ type }: { type: "start" | "end" }) => (
+const NodeBadge = ({ type, t }: { type: "start" | "end"; t: (key: string) => string }) => (
   <span className={`ml-2 inline-flex px-2 py-0.5 rounded text-xs font-medium ${
     type === "start" ? "bg-[var(--color-success)]/15 text-[var(--color-success)]" : "bg-[var(--color-error)]/15 text-[var(--color-error)]"
   }`}>
-    {type === "start" ? "Start" : "End"}
+    {t(`pages.admin.gameEditor.nodeBadges.${type}`)}
   </span>
 );
 
@@ -434,6 +435,7 @@ function AdminGameDetailContent() {
   const navigation = useNavigation();
   const revalidator = useRevalidator();
   const toast = useToast();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"nodes" | "edges" | "teams" | "qrcodes" | "feedback" | "settings">("nodes");
   const [selectedQR, setSelectedQR] = useState<{ url: string; title: string } | null>(null);
   const [showQRIdentifyScanner, setShowQRIdentifyScanner] = useState(false);
@@ -640,44 +642,44 @@ function AdminGameDetailContent() {
     } else if ("success" in actionData && actionData.success && "action" in actionData) {
       switch (actionData.action) {
         case "updateGameLogo":
-          toast.success("Game logo updated");
+          toast.success(t("pages.admin.gameEditor.toasts.gameLogoUpdated"));
           break;
         case "setStatus":
-          toast.success("Game status updated");
+          toast.success(t("pages.admin.gameEditor.toasts.gameStatusUpdated"));
           break;
         case "activateGame":
-          toast.success("Game activated successfully");
+          toast.success(t("pages.admin.gameEditor.toasts.gameActivated"));
           break;
         case "completeGame":
-          toast.success("Game marked as completed");
+          toast.success(t("pages.admin.gameEditor.toasts.gameCompleted"));
           break;
         case "createNode":
-          toast.success("Node created");
+          toast.success(t("pages.admin.gameEditor.toasts.nodeCreated"));
           break;
         case "updateNode":
-          toast.success("Node updated");
+          toast.success(t("pages.admin.gameEditor.toasts.nodeUpdated"));
           break;
         case "createEdge":
-          toast.success("Edge created");
+          toast.success(t("pages.admin.gameEditor.toasts.edgeCreated"));
           break;
         case "updateEdge":
-          toast.success("Edge updated");
+          toast.success(t("pages.admin.gameEditor.toasts.edgeUpdated"));
           break;
         case "createTeam":
-          toast.success("Team created");
+          toast.success(t("pages.admin.gameEditor.toasts.teamCreated"));
           break;
         case "updateTeam":
-          toast.success("Team updated");
+          toast.success(t("pages.admin.gameEditor.toasts.teamUpdated"));
           break;
         case "updateRandomMode":
-          toast.success("Random mode updated");
+          toast.success(t("pages.admin.gameEditor.toasts.randomModeUpdated"));
           break;
         case "toggleActivated":
-          toast.success("Node activation updated");
+          toast.success(t("pages.admin.gameEditor.toasts.nodeActivationUpdated"));
           break;
       }
     }
-  }, [actionData, toast]);
+  }, [actionData, toast, t]);
 
   const handleDelete = useCallback(
     async (type: "node" | "edge" | "team", id: string, name: string) => {
@@ -695,26 +697,26 @@ function AdminGameDetailContent() {
           deleteTimersRef.current.delete(`${type}-${id}`);
           revalidator.revalidate();
         } catch {
-          toast.error(`Failed to delete ${type}`);
+          toast.error(t("pages.admin.gameEditor.toasts.deleteFailed", { type }));
         }
       }, 20000);
 
       deleteTimersRef.current.set(`${type}-${id}`, timerId);
 
-      const typeLabel = type === "node" ? "Node" : type === "edge" ? "Edge" : "Team";
-      toast.warning(`${typeLabel} "${name}" will be deleted in 20s`, 20000, {
-        label: "Undo",
+      const typeLabel = type === "node" ? t("pages.admin.gameEditor.tabs.nodes") : type === "edge" ? t("pages.admin.gameEditor.tabs.edges") : t("pages.admin.gameEditor.tabs.teams");
+      toast.warning(t("pages.admin.gameEditor.toasts.deleteScheduled", { type: typeLabel, name }), 20000, {
+        label: t("common.cancel"),
         onClick: () => {
           const timer = deleteTimersRef.current.get(`${type}-${id}`);
           if (timer) {
             clearTimeout(timer);
             deleteTimersRef.current.delete(`${type}-${id}`);
-            toast.info(`${typeLabel} deletion cancelled`);
+            toast.info(t("pages.admin.gameEditor.toasts.deleteCancelled", { type: typeLabel }));
           }
         },
       });
     },
-    [toast, revalidator, adminCode]
+    [toast, revalidator, adminCode, t]
   );
 
   const isSubmitting = navigation.state === "submitting";
@@ -725,9 +727,9 @@ function AdminGameDetailContent() {
 
     try {
       await navigator.clipboard.writeText(shareText);
-      toast.success(`Share info for "${team.name}" copied!`);
+      toast.success(t("pages.admin.gameEditor.toasts.shareInfoCopied", { teamName: team.name }));
     } catch {
-      toast.error("Failed to copy");
+      toast.error(t("pages.admin.gameEditor.toasts.copyFailed"));
     }
   };
 
@@ -741,7 +743,7 @@ function AdminGameDetailContent() {
       {/* Header */}
       <div className="mb-6">
         <Link to="/admin/games" className="text-muted hover:text-[var(--color-primary)] text-sm transition-colors">
-          ← Back to games
+          {t("pages.admin.gameEditor.backToGames")}
         </Link>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mt-2">
           <div className="flex items-center gap-4">
@@ -758,7 +760,7 @@ function AdminGameDetailContent() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2 items-center">
-            <StatusBadge status={data.game.status} />
+            <StatusBadge status={data.game.status} t={t} />
 
             {data.game.status === "draft" && (
               <Form method="post" className="inline">
@@ -767,9 +769,9 @@ function AdminGameDetailContent() {
                   type="submit"
                   className={`${btnPrimary} ${!canActivate ? 'opacity-50 cursor-not-allowed' : ''}`}
                   disabled={isSubmitting || !canActivate}
-                  title={!canActivate ? "Game needs at least one node, one start node, and one end node" : ""}
+                  title={!canActivate ? t("pages.admin.gameEditor.activationWarning.title") : ""}
                 >
-                  Activate Game
+                  {t("pages.admin.gameEditor.activateGame")}
                 </button>
               </Form>
             )}
@@ -778,13 +780,13 @@ function AdminGameDetailContent() {
               <Form method="post" className="inline">
                 <input type="hidden" name="_action" value="completeGame" />
                 <button type="submit" className={btnPrimary} disabled={isSubmitting}>
-                  Complete Game
+                  {t("pages.admin.gameEditor.completeGame")}
                 </button>
               </Form>
             )}
 
             <Link to={`/leaderboard/${data.game.publicSlug}`} target="_blank" className={btnSecondary}>
-              View Leaderboard
+              {t("pages.admin.gameEditor.viewLeaderboard")}
             </Link>
           </div>
         </div>
@@ -801,18 +803,18 @@ function AdminGameDetailContent() {
       {/* Activation Requirements Warning */}
       {data.game.status === "draft" && !canActivate && (
         <div className="bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/30 text-[var(--color-warning)] px-4 py-3 rounded-xl mb-4">
-          <strong>Game cannot be activated yet. Please ensure:</strong>
+          <strong>{t("pages.admin.gameEditor.activationWarning.title")}</strong>
           <ul className="mt-2 ml-5 list-disc">
-            {!hasNodes && <li>At least one node exists</li>}
-            {hasNodes && !hasStartNode && <li>At least one node is marked as a <strong>Start</strong> node</li>}
-            {hasNodes && !hasEndNode && <li>At least one node is marked as an <strong>End</strong> node</li>}
+            {!hasNodes && <li>{t("pages.admin.gameEditor.activationWarning.needsNodes")}</li>}
+            {hasNodes && !hasStartNode && <li>{t("pages.admin.gameEditor.activationWarning.needsStartNode")}</li>}
+            {hasNodes && !hasEndNode && <li>{t("pages.admin.gameEditor.activationWarning.needsEndNode")}</li>}
           </ul>
         </div>
       )}
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b border-border pb-3 flex-wrap">
-        {(["nodes", "edges", "teams", "qrcodes", "feedback", "settings"] as const).map((tab) => (
+        {(["nodes", "qrcodes", "edges", "teams", "feedback", "settings"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -822,7 +824,7 @@ function AdminGameDetailContent() {
                 : "text-muted hover:text-primary hover:bg-secondary"
             }`}
           >
-            {tab === "qrcodes" ? "QR Codes" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+            {t(`pages.admin.gameEditor.tabs.${tab}`)}
             {tab !== "settings" && tab !== "feedback" && (
               <span className="ml-2 opacity-70">
                 ({tab === "nodes" ? data.nodes.length : tab === "edges" ? data.edges.length : tab === "teams" ? data.teams.length : data.qrCodes.length})
@@ -845,7 +847,7 @@ function AdminGameDetailContent() {
               <div className="flex-1">
                 <input
                   type="text"
-                  placeholder="Filter by title..."
+                  placeholder={t("pages.admin.gameEditor.filters.filterByTitle")}
                   value={nodeFilter.title}
                   onChange={(e) => setNodeFilter({ ...nodeFilter, title: e.target.value })}
                   className="w-full px-3 py-2 text-sm bg-secondary text-primary border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -857,24 +859,24 @@ function AdminGameDetailContent() {
                   onChange={(e) => setNodeFilter({ ...nodeFilter, activated: e.target.value as "all" | "activated" | "not-activated" })}
                   className="w-full px-3 py-2 text-sm bg-secondary text-primary border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 >
-                  <option value="all">All Status</option>
-                  <option value="activated">Activated</option>
-                  <option value="not-activated">Not Activated</option>
+                  <option value="all">{t("pages.admin.gameEditor.filters.allStatus")}</option>
+                  <option value="activated">{t("pages.admin.gameEditor.filters.activated")}</option>
+                  <option value="not-activated">{t("pages.admin.gameEditor.filters.notActivated")}</option>
                 </select>
               </div>
               <div className="text-sm text-muted self-center">
-                {filteredNodes.length} / {data.nodes.length} nodes
+                {filteredNodes.length} / {data.nodes.length} {t("pages.admin.gameEditor.tabs.nodes").toLowerCase()}
               </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">Title</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">Key</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">Type</th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">Pts</th>
-                    <th className="text-center px-4 py-3 text-xs font-medium text-muted uppercase">Activated</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">{t("pages.admin.gameEditor.nodes.tableHeaders.title")}</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">{t("pages.admin.gameEditor.nodes.tableHeaders.key")}</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">{t("pages.admin.gameEditor.nodes.tableHeaders.type")}</th>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">{t("pages.admin.gameEditor.nodes.tableHeaders.pts")}</th>
+                    <th className="text-center px-4 py-3 text-xs font-medium text-muted uppercase">{t("pages.admin.gameEditor.nodes.tableHeaders.activated")}</th>
                     <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
@@ -884,11 +886,11 @@ function AdminGameDetailContent() {
                       <td className="px-4 py-3 text-primary">
                         <div>
                           <span className="font-medium">{node.title}</span>
-                          {node.isStart && <NodeBadge type="start" />}
-                          {node.isEnd && <NodeBadge type="end" />}
+                          {node.isStart && <NodeBadge type="start" t={t} />}
+                          {node.isEnd && <NodeBadge type="end" t={t} />}
                           {node.hint && (
                             <span className="ml-2 inline-flex px-2 py-0.5 rounded text-xs font-medium bg-[var(--color-info)]/15 text-[var(--color-info)]" title={node.hint}>
-                              Hint
+                              {t("pages.admin.gameEditor.nodeBadges.hint")}
                             </span>
                           )}
                         </div>
@@ -927,20 +929,21 @@ function AdminGameDetailContent() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1 justify-end">
-                          <button onClick={() => setPreviewNode(node)} className={`${btnSecondary} ${btnSmall}`} title="Preview clue">
+                          <button onClick={() => setPreviewNode(node)} className={`${btnSecondary} ${btnSmall}`} title={t("pages.admin.gameEditor.nodes.buttons.preview")}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                               <circle cx="12" cy="12" r="3" />
                             </svg>
+                            <span className="hidden">{t("pages.admin.gameEditor.nodes.buttons.preview")}</span>
                           </button>
-                          <button onClick={() => setEditingNode(node)} className={`${btnSecondary} ${btnSmall}`}>Edit</button>
-                          <button onClick={() => handleDelete("node", node.id, node.title)} className={`${btnDanger} ${btnSmall}`}>Delete</button>
+                          <button onClick={() => setEditingNode(node)} className={`${btnSecondary} ${btnSmall}`}>{t("pages.admin.gameEditor.nodes.buttons.edit")}</button>
+                          <button onClick={() => handleDelete("node", node.id, node.title)} className={`${btnDanger} ${btnSmall}`}>{t("pages.admin.gameEditor.nodes.buttons.delete")}</button>
                         </div>
                       </td>
                     </tr>
                   ))}
                   {data.nodes.length === 0 && (
-                    <tr><td colSpan={5} className="px-4 py-8 text-center text-muted">No nodes yet. Add your first node.</td></tr>
+                    <tr><td colSpan={5} className="px-4 py-8 text-center text-muted">{t("pages.admin.gameEditor.nodes.noNodes")}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -949,7 +952,7 @@ function AdminGameDetailContent() {
 
           {/* Add/Edit Node Form */}
           <div className="bg-elevated rounded-xl border p-5 shadow-sm">
-            <h3 className="text-lg font-semibold text-primary mb-4">{editingNode ? "Edit Node" : "Add Node"}</h3>
+            <h3 className="text-lg font-semibold text-primary mb-4">{editingNode ? t("pages.admin.gameEditor.nodes.editNode") : t("pages.admin.gameEditor.nodes.addNode")}</h3>
             <Form method="post" onSubmit={() => setEditingNode(null)} className="space-y-4">
               <input type="hidden" name="_action" value={editingNode ? "updateNode" : "createNode"} />
               {editingNode && <input type="hidden" name="nodeId" value={editingNode.id} />}
@@ -1296,8 +1299,8 @@ function AdminGameDetailContent() {
                   <tr key={qr.nodeId} className="hover:bg-secondary">
                     <td className="px-4 py-3 text-primary">
                       {qr.title}
-                      {qr.isStart && <NodeBadge type="start" />}
-                      {qr.isEnd && <NodeBadge type="end" />}
+                      {qr.isStart && <NodeBadge type="start" t={t} />}
+                      {qr.isEnd && <NodeBadge type="end" t={t} />}
                     </td>
                     <td className="px-4 py-3">
                       <code className="text-xs text-secondary break-all">{qr.url}</code>
@@ -1725,13 +1728,13 @@ function AdminGameDetailContent() {
               {/* Player View Simulation */}
               <div className="mb-4">
                 <div className="flex items-center justify-center gap-2 mb-4">
-                  <span className="text-sm text-[var(--color-success)] font-medium">+{previewNode.points} points</span>
-                  {previewNode.isStart && <NodeBadge type="start" />}
-                  {previewNode.isEnd && <NodeBadge type="end" />}
+                  <span className="text-sm text-[var(--color-success)] font-medium">{t("pages.admin.gameEditor.preview.points", { points: previewNode.points })}</span>
+                  {previewNode.isStart && <NodeBadge type="start" t={t} />}
+                  {previewNode.isEnd && <NodeBadge type="end" t={t} />}
                 </div>
                 <ClueDisplay
                   node={previewNode}
-                  headerText="Clue Content"
+                  headerText={t("pages.admin.gameEditor.preview.clueContent")}
                 />
               </div>
 

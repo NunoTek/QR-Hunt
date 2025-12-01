@@ -4,6 +4,7 @@ import { Form, Link, Outlet, useActionData, useLoaderData, useLocation, useNavig
 import { useEffect, useRef } from "react";
 import { useToast } from "~/components/Toast";
 import { Version } from "~/components/Version";
+import { useTranslation } from "~/i18n/I18nContext";
 
 export const meta: MetaFunction = () => {
   return [{ title: "Admin Dashboard - QR Hunt" }];
@@ -56,6 +57,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 function AdminLogin() {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const actionData = useActionData<{ error?: string }>();
   const isSubmitting = navigation.state === "submitting";
@@ -77,10 +79,10 @@ function AdminLogin() {
         <div className="text-center mb-6 sm:mb-8">
           <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
             <span className="text-4xl" aria-label="Target">🎯</span>
-            <span className="text-2xl font-bold text-primary">QR Hunt</span>
+            <span className="text-2xl font-bold text-primary">{t("common.appName")}</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-primary mb-2">Admin Login</h1>
-          <p className="text-tertiary text-sm">Enter your admin code to continue</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-primary mb-2">{t("pages.admin.login.title")}</h1>
+          <p className="text-tertiary text-sm">{t("pages.admin.login.subtitle")}</p>
         </div>
 
         {actionData?.error && (
@@ -94,7 +96,7 @@ function AdminLogin() {
           <input type="hidden" name="_action" value="login" />
           <div className="mb-5 sm:mb-6">
             <label htmlFor="adminCode" className="block text-sm font-medium text-secondary mb-2">
-              Admin Code
+              {t("pages.admin.login.label")}
             </label>
             <input
               type="password"
@@ -103,7 +105,7 @@ function AdminLogin() {
               className={`w-full px-4 py-3 bg-secondary border rounded-xl text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all ${
                 actionData?.error ? 'border-[var(--color-error)]' : 'border-border'
               }`}
-              placeholder="Enter admin code"
+              placeholder={t("pages.admin.login.placeholder")}
               autoFocus
             />
           </div>
@@ -113,13 +115,13 @@ function AdminLogin() {
             className="mt-4 w-full px-6 py-3 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white font-semibold rounded-xl hover:opacity-90 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed min-h-[3rem]"
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Signing in..." : "Sign In"}
+            {isSubmitting ? t("pages.admin.login.signingIn") : t("pages.admin.login.signIn")}
           </button>
         </Form>
 
         <div className="mt-8 text-center mt-5 sm:mt-6">
           <Link to="/" className="text-tertiary hover:text-[var(--color-primary)] text-sm transition-colors">
-            ← Back to home
+            {t("pages.admin.login.backToHome")}
           </Link>
         </div>
       </div>
@@ -128,11 +130,12 @@ function AdminLogin() {
 }
 
 function AdminLayout() {
+  const { t } = useTranslation();
   const location = useLocation();
 
   const navItems = [
-    { path: "/admin", label: "Dashboard", exact: true },
-    { path: "/admin/games", label: "Games", exact: false },
+    { path: "/admin", labelKey: "pages.admin.nav.dashboard", exact: true },
+    { path: "/admin/games", labelKey: "pages.admin.nav.games", exact: false },
   ];
 
   return (
@@ -144,7 +147,7 @@ function AdminLayout() {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 text-primary font-bold text-lg hover:text-[var(--color-primary)] transition-colors">
               <span className="text-2xl" aria-label="Target">🎯</span>
-              <span className="hidden sm:inline">QR Hunt</span>
+              <span className="hidden sm:inline">{t("common.appName")}</span>
             </Link>
 
             {/* Navigation */}
@@ -164,7 +167,7 @@ function AdminLayout() {
                         : 'text-tertiary hover:text-primary hover:bg-secondary'
                     }`}
                   >
-                    {item.label}
+                    {t(item.labelKey)}
                   </Link>
                 );
               })}
@@ -176,8 +179,14 @@ function AdminLayout() {
               <button
                 type="submit"
                 className="px-3 py-2 sm:px-4 text-sm text-tertiary hover:text-primary border hover:border-strong rounded-lg transition-all"
+                title={t("pages.admin.nav.signOut")}
               >
-                Sign Out
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                <span className="hidden">{t("pages.admin.nav.signOut")}</span>
               </button>
             </Form>
           </div>

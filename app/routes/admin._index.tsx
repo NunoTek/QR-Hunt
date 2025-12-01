@@ -3,6 +3,7 @@ import { json } from "@remix-run/node";
 import { Link, useLoaderData, useNavigate } from "@remix-run/react";
 import { useState } from "react";
 import { getApiUrl } from "~/lib/api";
+import { useTranslation } from "~/i18n/I18nContext";
 
 interface Game {
   id: string;
@@ -69,6 +70,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function AdminDashboard() {
+  const { t } = useTranslation();
   const data = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const [isImporting, setIsImporting] = useState(false);
@@ -84,12 +86,12 @@ export default function AdminDashboard() {
       const existingGame = data.games.find(g => g.publicSlug === gameSlug);
 
       if (existingGame) {
-        if (!confirm(`A game with slug "${gameSlug}" already exists. Do you want to overwrite it?`)) {
+        if (!confirm(t("pages.admin.dashboard.confirmOverwrite", { slug: gameSlug }))) {
           setIsImporting(false);
           return;
         }
       } else {
-        if (!confirm(`Import game "${gameName}" with slug "${gameSlug}"?`)) {
+        if (!confirm(t("pages.admin.dashboard.confirmImport", { name: gameName, slug: gameSlug }))) {
           setIsImporting(false);
           return;
         }
@@ -109,16 +111,16 @@ export default function AdminDashboard() {
         alert(`${result.message}`);
         navigate(`/admin/games/${result.game.id}`);
       } else {
-        alert(`Import failed: ${result.error}`);
+        alert(t("pages.admin.dashboard.importFailed", { error: result.error }));
       }
     } catch (err) {
-      alert(`Failed to read file: ${err instanceof Error ? err.message : "Unknown error"}`);
+      alert(t("pages.admin.dashboard.failedToRead", { error: err instanceof Error ? err.message : "Unknown error" }));
     }
     setIsImporting(false);
   };
 
   const handleDelete = async (game: Game) => {
-    if (!confirm(`Are you sure you want to delete "${game.name}"? This action cannot be undone.`)) {
+    if (!confirm(t("pages.admin.dashboard.confirmDelete", { name: game.name }))) {
       return;
     }
     setIsDeleting(game.id);
@@ -131,10 +133,10 @@ export default function AdminDashboard() {
         window.location.reload();
       } else {
         const result = await response.json();
-        alert(`Delete failed: ${result.error}`);
+        alert(t("pages.admin.dashboard.deleteFailed", { error: result.error }));
       }
     } catch {
-      alert("Failed to delete game");
+      alert(t("pages.admin.dashboard.deleteFailed", { error: "Unknown error" }));
     }
     setIsDeleting(null);
   };
@@ -143,14 +145,14 @@ export default function AdminDashboard() {
     <div>
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-primary">Dashboard</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-primary">{t("pages.admin.dashboard.title")}</h1>
         <div className="flex gap-2">
           <Link to="/admin/games/new" className="btn btn-primary">
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
-            Create Game
+            {t("pages.admin.dashboard.createGame")}
           </Link>
           <label className={`btn btn-secondary cursor-pointer ${isImporting ? "opacity-50 pointer-events-none" : ""}`}>
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -158,7 +160,7 @@ export default function AdminDashboard() {
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
-            {isImporting ? "Importing..." : "Import"}
+            {isImporting ? t("pages.admin.dashboard.importing") : t("pages.admin.dashboard.import")}
             <input
               type="file"
               accept=".json"
@@ -177,15 +179,15 @@ export default function AdminDashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
         <div className="bg-elevated rounded-xl p-5 border shadow-sm">
-          <p className="text-muted text-sm mb-1">Total Games</p>
+          <p className="text-muted text-sm mb-1">{t("pages.admin.dashboard.stats.totalGames")}</p>
           <p className="text-3xl sm:text-4xl font-bold text-primary">{data.stats.totalGames}</p>
         </div>
         <div className="bg-elevated rounded-xl p-5 border shadow-sm">
-          <p className="text-muted text-sm mb-1">Active Games</p>
+          <p className="text-muted text-sm mb-1">{t("pages.admin.dashboard.stats.activeGames")}</p>
           <p className="text-3xl sm:text-4xl font-bold text-[var(--color-success)]">{data.stats.activeGames}</p>
         </div>
         <div className="bg-elevated rounded-xl p-5 border shadow-sm">
-          <p className="text-muted text-sm mb-1">Completed</p>
+          <p className="text-muted text-sm mb-1">{t("pages.admin.dashboard.stats.completed")}</p>
           <p className="text-3xl sm:text-4xl font-bold text-primary">{data.stats.completedGames}</p>
         </div>
       </div>
@@ -193,22 +195,22 @@ export default function AdminDashboard() {
       {/* Recent Games Table */}
       <div className="bg-elevated rounded-xl border overflow-hidden shadow-sm">
         <div className="p-4 sm:p-6 border-b border-border">
-          <h2 className="text-lg sm:text-xl font-semibold text-primary">Recent Games</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-primary">{t("pages.admin.dashboard.recentGames")}</h2>
         </div>
 
         {data.games.length === 0 ? (
           <div className="p-6 text-center">
-            <p className="text-muted">No games yet. Create your first game to get started!</p>
+            <p className="text-muted">{t("pages.admin.dashboard.noGamesYet")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left px-4 sm:px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider">Name</th>
-                  <th className="text-left px-4 sm:px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden sm:table-cell">Slug</th>
-                  <th className="text-left px-4 sm:px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider">Status</th>
-                  <th className="text-left px-4 sm:px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden md:table-cell">Created</th>
+                  <th className="text-left px-4 sm:px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider">{t("pages.admin.dashboard.table.name")}</th>
+                  <th className="text-left px-4 sm:px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden sm:table-cell">{t("pages.admin.dashboard.table.slug")}</th>
+                  <th className="text-left px-4 sm:px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider">{t("pages.admin.dashboard.table.status")}</th>
+                  <th className="text-left px-4 sm:px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden md:table-cell">{t("pages.admin.dashboard.table.created")}</th>
                   <th className="px-4 sm:px-6 py-3"></th>
                 </tr>
               </thead>
@@ -238,7 +240,7 @@ export default function AdminDashboard() {
                               : "bg-[var(--color-warning)]/15 text-[var(--color-warning)]"
                         }`}
                       >
-                        {game.status}
+                        {t(`common.status.${game.status}`)}
                       </span>
                     </td>
                     <td className="px-4 sm:px-6 py-4 text-secondary hidden md:table-cell">
@@ -250,7 +252,7 @@ export default function AdminDashboard() {
                           to={`/admin/games/${game.id}`}
                           className="inline-flex items-center px-3 py-1.5 text-sm text-[var(--color-primary)] border border-[var(--color-primary)]/30 hover:border-[var(--color-primary)]/50 rounded-lg transition-colors"
                         >
-                          Manage
+                          {t("pages.admin.dashboard.manage")}
                         </Link>
                         {(game.status === "draft" || game.status === "completed") && (
                           <button
@@ -258,7 +260,7 @@ export default function AdminDashboard() {
                             onClick={() => handleDelete(game)}
                             disabled={isDeleting === game.id}
                             className="inline-flex items-center px-2 py-1.5 text-sm text-[var(--color-error)] border border-[var(--color-error)]/30 hover:bg-[var(--color-error)]/10 rounded-lg transition-colors disabled:opacity-50"
-                            title="Delete game"
+                            title={t("common.delete")}
                           >
                             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <polyline points="3 6 5 6 21 6" />
@@ -278,7 +280,7 @@ export default function AdminDashboard() {
         {data.games.length > 5 && (
           <div className="p-4 sm:p-6 border-t border-border">
             <Link to="/admin/games" className="text-[var(--color-primary)] hover:text-[var(--color-primary-dark)] text-sm transition-colors">
-              View all games →
+              {t("pages.admin.dashboard.viewAllGames")}
             </Link>
           </div>
         )}

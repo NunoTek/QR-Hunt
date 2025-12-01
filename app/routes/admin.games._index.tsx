@@ -3,6 +3,7 @@ import { json } from "@remix-run/node";
 import { Link, useLoaderData, useNavigate } from "@remix-run/react";
 import { useState } from "react";
 import { getApiUrl } from "~/lib/api";
+import { useTranslation } from "~/i18n/I18nContext";
 
 interface Game {
   id: string;
@@ -45,6 +46,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function AdminGames() {
   const data = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [isImporting, setIsImporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -71,12 +73,12 @@ export default function AdminGames() {
       const existingGame = data.games.find(g => g.publicSlug === gameSlug);
 
       if (existingGame) {
-        if (!confirm(`A game with slug "${gameSlug}" already exists. Do you want to overwrite it?`)) {
+        if (!confirm(t("pages.admin.gamesList.confirm.overwrite", { slug: gameSlug }))) {
           setIsImporting(false);
           return;
         }
       } else {
-        if (!confirm(`Import game "${gameName}" with slug "${gameSlug}"?`)) {
+        if (!confirm(t("pages.admin.gamesList.confirm.import", { name: gameName, slug: gameSlug }))) {
           setIsImporting(false);
           return;
         }
@@ -96,16 +98,16 @@ export default function AdminGames() {
         alert(`${result.message}`);
         navigate(`/admin/games/${result.game.id}`);
       } else {
-        alert(`Import failed: ${result.error}`);
+        alert(t("pages.admin.gamesList.errors.importFailed", { error: result.error }));
       }
     } catch (err) {
-      alert(`Failed to read file: ${err instanceof Error ? err.message : "Unknown error"}`);
+      alert(t("pages.admin.gamesList.errors.readFailed", { error: err instanceof Error ? err.message : "Unknown error" }));
     }
     setIsImporting(false);
   };
 
   const handleDelete = async (game: Game) => {
-    if (!confirm(`Are you sure you want to delete "${game.name}"? This action cannot be undone.`)) {
+    if (!confirm(t("pages.admin.gamesList.confirm.delete", { name: game.name }))) {
       return;
     }
     setIsDeleting(game.id);
@@ -118,10 +120,10 @@ export default function AdminGames() {
         window.location.reload();
       } else {
         const result = await response.json();
-        alert(`Delete failed: ${result.error}`);
+        alert(t("pages.admin.gamesList.errors.deleteFailed", { error: result.error }));
       }
     } catch {
-      alert("Failed to delete game");
+      alert(t("pages.admin.gamesList.errors.deleteFailed", { error: "Unknown error" }));
     }
     setIsDeleting(null);
   };
@@ -136,7 +138,7 @@ export default function AdminGames() {
             : "bg-[var(--color-warning)]/15 text-[var(--color-warning)]"
       }`}
     >
-      {status}
+      {t(`common.status.${status}`)}
     </span>
   );
 
@@ -144,14 +146,14 @@ export default function AdminGames() {
     <div>
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-primary">Games</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-primary">{t("pages.admin.gamesList.title")}</h1>
         <div className="flex gap-2">
           <Link to="/admin/games/new" className="btn btn-primary">
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
-            Create Game
+            {t("pages.admin.gamesList.createGame")}
           </Link>
           <label className={`btn btn-secondary cursor-pointer ${isImporting ? "opacity-50 pointer-events-none" : ""}`}>
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -159,7 +161,7 @@ export default function AdminGames() {
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
-            {isImporting ? "Importing..." : "Import"}
+            {isImporting ? t("pages.admin.gamesList.importing") : t("pages.admin.gamesList.import")}
             <input
               type="file"
               accept=".json"
@@ -180,7 +182,7 @@ export default function AdminGames() {
         <div className="flex-1">
           <input
             type="text"
-            placeholder="Search by name or slug..."
+            placeholder={t("pages.admin.gamesList.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full px-4 py-2 bg-secondary border rounded-lg text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
@@ -191,21 +193,21 @@ export default function AdminGames() {
           onChange={(e) => setStatusFilter(e.target.value)}
           className="px-4 py-2 bg-secondary border rounded-lg text-primary focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
         >
-          <option value="all">All Status</option>
-          <option value="draft">Draft</option>
-          <option value="active">Active</option>
-          <option value="completed">Completed</option>
+          <option value="all">{t("pages.admin.gamesList.filters.allStatus")}</option>
+          <option value="draft">{t("pages.admin.gamesList.filters.draft")}</option>
+          <option value="active">{t("pages.admin.gamesList.filters.active")}</option>
+          <option value="completed">{t("pages.admin.gamesList.filters.completed")}</option>
         </select>
       </div>
 
       {filteredGames.length === 0 ? (
         <div className="bg-elevated rounded-xl border p-8 text-center shadow-sm">
           <p className="text-muted mb-4">
-            {data.games.length === 0 ? "No games yet." : "No games match your filters."}
+            {data.games.length === 0 ? t("pages.admin.gamesList.empty.noGames") : t("pages.admin.gamesList.empty.noMatches")}
           </p>
           {data.games.length === 0 && (
             <Link to="/admin/games/new" className="btn btn-secondary">
-              Create your first game
+              {t("pages.admin.gamesList.empty.createFirst")}
             </Link>
           )}
         </div>
@@ -215,10 +217,10 @@ export default function AdminGames() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left px-4 sm:px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider">Name</th>
-                  <th className="text-left px-4 sm:px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden sm:table-cell">Slug</th>
-                  <th className="text-left px-4 sm:px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider">Status</th>
-                  <th className="text-left px-4 sm:px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden md:table-cell">Created</th>
+                  <th className="text-left px-4 sm:px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider">{t("pages.admin.gamesList.table.name")}</th>
+                  <th className="text-left px-4 sm:px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden sm:table-cell">{t("pages.admin.gamesList.table.slug")}</th>
+                  <th className="text-left px-4 sm:px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider">{t("pages.admin.gamesList.table.status")}</th>
+                  <th className="text-left px-4 sm:px-6 py-3 text-xs font-medium text-muted uppercase tracking-wider hidden md:table-cell">{t("pages.admin.gamesList.table.created")}</th>
                   <th className="px-4 sm:px-6 py-3"></th>
                 </tr>
               </thead>
@@ -250,14 +252,14 @@ export default function AdminGames() {
                           to={`/admin/games/${game.id}`}
                           className="px-3 py-1.5 text-sm text-[var(--color-primary)] hover:text-[var(--color-primary-dark)] border border-[var(--color-primary)]/30 hover:border-[var(--color-primary)]/50 rounded-lg transition-colors"
                         >
-                          Manage
+                          {t("pages.admin.gamesList.actions.manage")}
                         </Link>
                         <Link
                           to={`/leaderboard/${game.publicSlug}`}
                           target="_blank"
                           className="px-3 py-1.5 text-sm text-secondary hover:text-primary border hover:border-strong rounded-lg transition-colors hidden sm:inline-flex"
                         >
-                          Leaderboard
+                          {t("pages.admin.gamesList.actions.leaderboard")}
                         </Link>
                         {(game.status === "draft" || game.status === "completed") && (
                           <button
@@ -265,12 +267,13 @@ export default function AdminGames() {
                             onClick={() => handleDelete(game)}
                             disabled={isDeleting === game.id}
                             className="px-2 py-1.5 text-sm text-[var(--color-error)] border border-[var(--color-error)]/30 hover:bg-[var(--color-error)]/10 rounded-lg transition-colors disabled:opacity-50"
-                            title="Delete game"
+                            title={t("pages.admin.gamesList.actions.delete")}
                           >
                             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <polyline points="3 6 5 6 21 6" />
                               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                             </svg>
+                            <span className="hidden">{t("common.delete")}</span>
                           </button>
                         )}
                       </div>
