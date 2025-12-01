@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "~/i18n/I18nContext";
 
 interface WaitingTeam {
   id: string;
@@ -26,6 +27,7 @@ export function WaitingRoom({
   teamLogoUrl,
   onGameStart,
 }: WaitingRoomProps) {
+  const { t } = useTranslation();
   const [teams, setTeams] = useState<WaitingTeam[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [dots, setDots] = useState("");
@@ -148,7 +150,7 @@ export function WaitingRoom({
             <div className="waiting-pulse-dot" />
           </div>
           <p className="waiting-message">
-            Waiting for the game to start{dots}
+            {t("components.waitingRoom.waitingForGame")}{dots}
           </p>
         </div>
 
@@ -163,11 +165,11 @@ export function WaitingRoom({
               )}
             </div>
             <div className="waiting-player-info">
-              <span className="waiting-player-label">Your Team</span>
+              <span className="waiting-player-label">{t("components.waitingRoom.yourTeam")}</span>
               <span className="waiting-player-name">{teamName}</span>
             </div>
             <div className="waiting-player-status">
-              <span className="waiting-ready-badge">Ready</span>
+              <span className="waiting-ready-badge">{t("components.waitingRoom.ready")}</span>
             </div>
           </div>
         )}
@@ -176,11 +178,11 @@ export function WaitingRoom({
         <div className="waiting-teams animate-fade-in" style={{ animationDelay: "0.3s" }}>
           <h3 className="waiting-teams-title">
             <span className="waiting-teams-icon">👥</span>
-            Teams Ready ({teams.length})
+            {t("components.waitingRoom.teamsReady")} ({teams.length})
           </h3>
           <div className="waiting-teams-list">
             {teams.length === 0 ? (
-              <p className="waiting-teams-empty">No teams have joined yet</p>
+              <p className="waiting-teams-empty">{t("components.waitingRoom.noTeamsYet")}</p>
             ) : (
               teams.map((team, index) => (
                 <div
@@ -197,7 +199,7 @@ export function WaitingRoom({
                   </div>
                   <span className="waiting-team-name">{team.name}</span>
                   {team.name === teamName && (
-                    <span className="waiting-team-you">You</span>
+                    <span className="waiting-team-you">{t("components.waitingRoom.you")}</span>
                   )}
                 </div>
               ))
@@ -209,7 +211,7 @@ export function WaitingRoom({
         <div className="waiting-connection">
           <span className={`waiting-connection-dot ${isConnected ? "connected" : ""}`} />
           <span className="waiting-connection-text">
-            {isConnected ? "Connected" : "Connecting..."}
+            {isConnected ? t("components.waitingRoom.connected") : t("components.waitingRoom.connecting")}
           </span>
         </div>
       </div>

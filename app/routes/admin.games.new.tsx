@@ -2,6 +2,7 @@ import type { ActionFunctionArgs, MetaFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, Link, useActionData, useNavigation } from "@remix-run/react";
 import { getApiUrl } from "~/lib/api";
+import { useTranslation } from "~/i18n/I18nContext";
 
 export const meta: MetaFunction = () => {
   return [{ title: "Create Game - QR Hunt Admin" }];
@@ -64,6 +65,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function NewGame() {
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const isSubmitting = navigation.state === "submitting";
 
   return (
@@ -71,9 +73,9 @@ export default function NewGame() {
       {/* Header */}
       <div className="mb-6">
         <Link to="/admin/games" className="text-muted hover:text-[var(--color-primary)] text-sm transition-colors">
-          ← Back to games
+          {t("pages.admin.newGame.backToGames")}
         </Link>
-        <h1 className="text-2xl sm:text-3xl font-bold text-primary mt-2">Create New Game</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-primary mt-2">{t("pages.admin.newGame.title")}</h1>
       </div>
 
       {/* Form Card */}
@@ -89,14 +91,14 @@ export default function NewGame() {
           {/* Game Name */}
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-secondary mb-2">
-              Game Name
+              {t("pages.admin.newGame.form.gameName")}
             </label>
             <input
               type="text"
               id="name"
               name="name"
               className="w-full px-4 py-3 bg-secondary border rounded-xl text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
-              placeholder="e.g., Summer Festival Hunt"
+              placeholder={t("pages.admin.newGame.form.gameNamePlaceholder")}
               required
             />
             {actionData?.fieldErrors?.name?.[0] && (
@@ -107,19 +109,19 @@ export default function NewGame() {
           {/* URL Slug */}
           <div>
             <label htmlFor="publicSlug" className="block text-sm font-medium text-secondary mb-2">
-              URL Slug
+              {t("pages.admin.newGame.form.urlSlug")}
             </label>
             <input
               type="text"
               id="publicSlug"
               name="publicSlug"
               className="w-full px-4 py-3 bg-secondary border rounded-xl text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
-              placeholder="e.g., summer-2024"
+              placeholder={t("pages.admin.newGame.form.urlSlugPlaceholder")}
               pattern="[a-z0-9\-]+"
               required
             />
             <p className="mt-2 text-xs text-muted">
-              Lowercase letters, numbers, and hyphens only. Used in URLs.
+              {t("pages.admin.newGame.form.urlSlugHelp")}
             </p>
             {actionData?.fieldErrors?.publicSlug?.[0] && (
               <p className="mt-2 text-sm text-[var(--color-error)]">{actionData.fieldErrors.publicSlug[0]}</p>
@@ -129,33 +131,33 @@ export default function NewGame() {
           {/* Ranking Mode */}
           <div>
             <label htmlFor="rankingMode" className="block text-sm font-medium text-secondary mb-2">
-              Ranking Mode
+              {t("pages.admin.newGame.form.rankingMode")}
             </label>
             <select
               id="rankingMode"
               name="rankingMode"
               className="w-full px-4 py-3 bg-secondary border rounded-xl text-primary focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
             >
-              <option value="points">By Points (fastest teams get more points)</option>
-              <option value="nodes">By Nodes Found (most clues wins)</option>
-              <option value="time">By Time (fastest total time wins)</option>
+              <option value="points">{t("pages.admin.newGame.form.rankingModes.points")}</option>
+              <option value="nodes">{t("pages.admin.newGame.form.rankingModes.nodes")}</option>
+              <option value="time">{t("pages.admin.newGame.form.rankingModes.time")}</option>
             </select>
           </div>
 
           {/* Logo URL */}
           <div>
             <label htmlFor="logoUrl" className="block text-sm font-medium text-secondary mb-2">
-              Game Logo URL <span className="text-muted">(optional)</span>
+              {t("pages.admin.newGame.form.logoUrl")} <span className="text-muted">{t("pages.admin.newGame.form.logoUrlOptional")}</span>
             </label>
             <input
               type="url"
               id="logoUrl"
               name="logoUrl"
               className="w-full px-4 py-3 bg-secondary border rounded-xl text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
-              placeholder="https://example.com/logo.png"
+              placeholder={t("pages.admin.newGame.form.logoUrlPlaceholder")}
             />
             <p className="mt-2 text-xs text-muted">
-              Logo will be used as default for QR codes. Can be changed later.
+              {t("pages.admin.newGame.form.logoUrlHelp")}
             </p>
           </div>
 
@@ -166,13 +168,13 @@ export default function NewGame() {
               className="flex-1 sm:flex-none px-6 py-3 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white font-semibold rounded-xl hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Creating..." : "Create Game"}
+              {isSubmitting ? t("pages.admin.newGame.buttons.creating") : t("pages.admin.newGame.buttons.createGame")}
             </button>
             <Link
               to="/admin/games"
               className="flex-1 sm:flex-none px-6 py-3 text-center text-secondary border hover:border-strong rounded-xl transition-colors"
             >
-              Cancel
+              {t("pages.admin.newGame.buttons.cancel")}
             </Link>
           </div>
         </Form>

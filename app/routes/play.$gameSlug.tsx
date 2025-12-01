@@ -12,6 +12,7 @@ import { ToastProvider, useToast } from "~/components/Toast";
 import { Version } from "~/components/Version";
 import { WaitingRoom } from "~/components/WaitingRoom";
 import { useOfflineMode } from "~/hooks/useOfflineMode";
+import { useTranslation } from "~/i18n/I18nContext";
 import { playCoinSound, playDefeatSound, playSuccessSound, playVictorySound } from "~/lib/sounds";
 import { cacheGameData, clearAuth, getCachedGameData, getToken } from "~/lib/tokenStorage";
 
@@ -107,6 +108,7 @@ function PlayGameContent() {
   const loaderData = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { t } = useTranslation();
 
   // Auth and data state
   const [isLoading, setIsLoading] = useState(true);
@@ -523,7 +525,7 @@ function PlayGameContent() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--bg-primary)]">
         <Spinner size="lg" />
-        <p className="text-muted mt-4">Loading game...</p>
+        <p className="text-muted mt-4">{t("pages.play.loading")}</p>
       </div>
     );
   }
@@ -542,20 +544,20 @@ function PlayGameContent() {
           ))}
         </div>
         <div className="text-6xl mb-4">👑</div>
-        <h1 className="text-4xl sm:text-5xl font-extrabold text-center mb-2 text-[var(--color-primary)]">Victory!</h1>
-        <p className="text-xl text-center text-secondary mb-4">Congratulations, {data.teamName}!</p>
-        <p className="mt-4 text-muted">You finished first!</p>
+        <h1 className="text-4xl sm:text-5xl font-extrabold text-center mb-2 text-[var(--color-primary)]">{t("pages.play.victory.title")}</h1>
+        <p className="text-xl text-center text-secondary mb-4">{t("pages.play.victory.congratulations", { teamName: data.teamName })}</p>
+        <p className="mt-4 text-muted">{t("pages.play.victory.finishedFirst")}</p>
 
         <div className="p-6 bg-elevated rounded-lg border shadow-sm mt-6 max-w-[300px] w-full">
           <div className="flex items-center justify-center gap-8">
             <div className="flex flex-col items-center">
               <span className="text-3xl font-extrabold text-[var(--color-primary)]">{data.nodesFound}/{data.totalNodes}</span>
-              <span className="text-sm text-muted">QR Codes</span>
+              <span className="text-sm text-muted">{t("pages.play.victory.qrCodes")}</span>
             </div>
             <div className="w-px h-12 bg-border" />
             <div className="flex flex-col items-center">
               <span className="text-3xl font-extrabold text-[var(--color-primary)]">{data.totalPoints}</span>
-              <span className="text-sm text-muted">Total Points</span>
+              <span className="text-sm text-muted">{t("pages.play.victory.totalPoints")}</span>
             </div>
           </div>
         </div>
@@ -565,14 +567,14 @@ function PlayGameContent() {
             <path d="M8 6L21 6" /><path d="M8 12L21 12" /><path d="M8 18L21 18" />
             <path d="M3 6L3.01 6" /><path d="M3 12L3.01 12" /><path d="M3 18L3.01 18" />
           </svg>
-          View Leaderboard
+          {t("pages.play.viewLeaderboard")}
         </Link>
 
         <button type="button" onClick={() => setShowFeedback(true)} className="inline-flex items-center justify-center gap-2 px-4 py-2 text-secondary border hover:border-strong rounded-lg transition-colors mt-4">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
           </svg>
-          {feedbackSubmitted ? "Update Feedback" : "Leave Feedback"}
+          {feedbackSubmitted ? t("pages.play.feedback.update") : t("pages.play.feedback.leave")}
         </button>
 
         {showFeedback && <FeedbackModal {...{ feedbackRating, setFeedbackRating, feedbackComment, setFeedbackComment, isSubmittingFeedback, feedbackSubmitted, submitFeedback, setShowFeedback }} />}
@@ -592,19 +594,19 @@ function PlayGameContent() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-bg-secondary to-bg-primary">
         <div className="text-6xl mb-4">🏁</div>
-        <h1 className="text-4xl sm:text-5xl font-extrabold text-center mb-2 text-[var(--color-primary)]">Game Complete</h1>
-        <p className="text-xl text-center text-secondary">Well played, {data.teamName}!</p>
+        <h1 className="text-4xl sm:text-5xl font-extrabold text-center mb-2 text-[var(--color-primary)]">{t("pages.play.gameComplete.title")}</h1>
+        <p className="text-xl text-center text-secondary">{t("pages.play.gameComplete.wellPlayed", { teamName: data.teamName })}</p>
 
         <div className="p-6 bg-elevated rounded-lg border shadow-sm mt-6 max-w-[300px] w-full">
           <div className="flex items-center justify-center gap-8">
             <div className="flex flex-col items-center">
               <span className="text-3xl font-extrabold text-[var(--color-primary)]">{data.nodesFound}/{data.totalNodes}</span>
-              <span className="text-sm text-muted">QR Codes</span>
+              <span className="text-sm text-muted">{t("pages.play.victory.qrCodes")}</span>
             </div>
             <div className="w-px h-12 bg-border" />
             <div className="flex flex-col items-center">
               <span className="text-3xl font-extrabold text-[var(--color-primary)]">{data.totalPoints}</span>
-              <span className="text-sm text-muted">Total Points</span>
+              <span className="text-sm text-muted">{t("pages.play.victory.totalPoints")}</span>
             </div>
           </div>
         </div>
@@ -614,14 +616,14 @@ function PlayGameContent() {
             <path d="M8 6L21 6" /><path d="M8 12L21 12" /><path d="M8 18L21 18" />
             <path d="M3 6L3.01 6" /><path d="M3 12L3.01 12" /><path d="M3 18L3.01 18" />
           </svg>
-          View Leaderboard
+          {t("pages.play.viewLeaderboard")}
         </Link>
 
         <button type="button" onClick={() => setShowFeedback(true)} className="inline-flex items-center justify-center gap-2 px-4 py-2 text-secondary border hover:border-strong rounded-lg transition-colors mt-4">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
           </svg>
-          {feedbackSubmitted ? "Update Feedback" : "Leave Feedback"}
+          {feedbackSubmitted ? t("pages.play.feedback.update") : t("pages.play.feedback.leave")}
         </button>
 
         {showFeedback && <FeedbackModal {...{ feedbackRating, setFeedbackRating, feedbackComment, setFeedbackComment, isSubmittingFeedback, feedbackSubmitted, submitFeedback, setShowFeedback }} />}
@@ -661,11 +663,11 @@ function PlayGameContent() {
 
   // Tab definitions
   const tabs = [
-    { id: "clue" as const, label: "Clue", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="10" r="3" /><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z" /></svg> },
-    { id: "scan" as const, label: "Scan", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg> },
-    { id: "progress" as const, label: "Progress", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg> },
-    { id: "team" as const, label: "Team", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg> },
-    { id: "chat" as const, label: "Chat", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg> },
+    { id: "clue" as const, label: t("pages.play.tabs.clue"), icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="10" r="3" /><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z" /></svg> },
+    { id: "scan" as const, label: t("pages.play.tabs.scan"), icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg> },
+    { id: "progress" as const, label: t("pages.play.tabs.progress"), icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg> },
+    { id: "team" as const, label: t("pages.play.tabs.team"), icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg> },
+    { id: "chat" as const, label: t("pages.play.tabs.chat"), icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg> },
   ];
 
   return (
@@ -698,23 +700,17 @@ function PlayGameContent() {
         </div>
       )}
 
-      {/* Fixed points display at top right */}
-      <div className={`fixed ${isOffline || isSyncing ? "top-14" : "top-4"} right-4 z-40 flex flex-col items-center px-4 py-2 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] rounded-xl text-white shadow-lg transition-all`}>
-        <span className="text-2xl font-extrabold leading-none">{data.totalPoints}</span>
-        <span className="text-xs opacity-90">points</span>
-      </div>
-
       <div className="w-full max-w-2xl">
         {/* Auto-scan loading overlay */}
         {isAutoScanning && !autoScanResult && (
           <div className="fixed inset-0 bg-black/70 flex flex-col items-center justify-center z-50">
             <Spinner size="lg" />
-            <p className="text-white mt-4">Processing QR code...</p>
+            <p className="text-white mt-4">{t("pages.play.processingQR")}</p>
           </div>
         )}
 
         {/* Header */}
-        <div className="flex items-center gap-4 mb-4 pr-24">
+        <div className="flex items-center justify-between gap-4 mb-4">
           <div className="flex flex-col gap-1">
             <div className="inline-flex items-center gap-2 text-sm text-secondary">
               {data.gameLogoUrl && <img src={data.gameLogoUrl} alt={`${data.gameName} logo`} style={{ width: "20px", height: "20px", borderRadius: "4px", objectFit: "cover" }} />}
@@ -725,6 +721,11 @@ function PlayGameContent() {
               {data.teamLogoUrl && <img src={data.teamLogoUrl} alt={`${data.teamName} logo`} className="w-8 h-8 rounded-lg object-cover" />}
               <h1 className="text-2xl sm:text-3xl font-bold text-primary">{data.teamName}</h1>
             </div>
+          </div>
+
+          <div className={`${isOffline || isSyncing ? "top-14" : "top-4"} right-4 z-40 flex flex-col items-center px-4 py-2 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] rounded-xl text-white shadow-lg transition-all`}>
+            <span className="text-2xl font-extrabold leading-none">{data.totalPoints}</span>
+            <span className="text-xs opacity-90">{t("pages.play.points")}</span>
           </div>
         </div>
 
@@ -763,12 +764,12 @@ function PlayGameContent() {
                     </div>
                     <div className="flex-1">
                       <h2 className="text-xl font-bold text-primary m-0">{currentClue.title}</h2>
-                      <p className="text-muted text-sm m-0">{data.scannedNodes.length === 0 ? "Starting Clue" : "Next Clue"}</p>
+                      <p className="text-muted text-sm m-0">{data.scannedNodes.length === 0 ? t("pages.play.clueTab.startingClue") : t("pages.play.clueTab.nextClue")}</p>
                     </div>
                     {data.isRandomMode && data.totalNodes - data.nodesFound > 1 && (
                       <button type="button" onClick={shuffleClue} disabled={isShuffling} className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-secondary bg-tertiary hover:bg-secondary border border-border rounded-lg transition-colors disabled:opacity-50" title="Get a different random clue">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={isShuffling ? "animate-spin" : ""}><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
-                        {isShuffling ? "..." : "Try another"}
+                        {isShuffling ? "..." : t("pages.play.clueTab.tryAnother")}
                       </button>
                     )}
                   </div>
@@ -785,7 +786,7 @@ function PlayGameContent() {
                               <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
                               <line x1="12" y1="17" x2="12.01" y2="17" />
                             </svg>
-                            <span>Hint (-{currentHint.pointsDeducted} points)</span>
+                            <span>{t("pages.play.hint")} (-{currentHint.pointsDeducted} {t("pages.play.points")})</span>
                           </div>
                           <p className="text-amber-800 dark:text-amber-300">{currentHint.hintText}</p>
                         </div>
@@ -800,7 +801,7 @@ function PlayGameContent() {
                             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
                             <line x1="12" y1="17" x2="12.01" y2="17" />
                           </svg>
-                          <span>Need a hint? (-{currentHint.pointsCost} points)</span>
+                          <span>{t("pages.play.hints.needHint")} ({t("pages.play.hints.pointsCost", { points: currentHint.pointsCost })})</span>
                         </button>
                       )}
                     </div>
@@ -814,7 +815,7 @@ function PlayGameContent() {
                   className="w-full mt-4 inline-flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white font-semibold rounded-xl hover:opacity-90 transition-all shadow-lg"
                 >
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
-                  <span>Scan QR Code</span>
+                  <span>{t("pages.play.clueTab.scanQRCode")}</span>
                 </button>
               </div>
             ) : (
@@ -822,15 +823,15 @@ function PlayGameContent() {
                 <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white mb-4">
                   <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3" /></svg>
                 </div>
-                <h2 className="text-2xl font-bold text-primary mb-2">Ready to Begin?</h2>
-                <p className="text-muted mb-4">Scan your first QR code to start the hunt!</p>
+                <h2 className="text-2xl font-bold text-primary mb-2">{t("pages.play.clueTab.readyToBegin")}</h2>
+                <p className="text-muted mb-4">{t("pages.play.clueTab.scanFirstQR")}</p>
                 <button
                   type="button"
                   onClick={() => setActiveTab("scan")}
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white font-semibold rounded-xl hover:opacity-90 transition-all shadow-lg"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
-                  <span>Open Scanner</span>
+                  <span>{t("pages.play.clueTab.openScanner")}</span>
                 </button>
               </div>
             )}
@@ -843,15 +844,15 @@ function PlayGameContent() {
                     <span className="text-3xl font-extrabold text-[var(--color-primary)]">{data.nodesFound}</span>
                     <span className="text-sm text-secondary">/ {data.totalNodes}</span>
                   </div>
-                  <span className="text-sm text-muted">QR codes found</span>
+                  <span className="text-sm text-muted">{t("pages.play.clueTab.qrCodesFound")}</span>
                 </div>
                 <Link to={`/leaderboard/${loaderData.gameSlug}`} className="inline-flex items-center gap-1 text-sm text-secondary hover:text-primary transition-colors">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 6L21 6" /><path d="M8 12L21 12" /><path d="M8 18L21 18" /><path d="M3 6L3.01 6" /><path d="M3 12L3.01 12" /><path d="M3 18L3.01 18" /></svg>
-                  Leaderboard
+                  {t("pages.leaderboard.title")}
                 </Link>
               </div>
-              {data.nodesFound > 0 && data.nodesFound < data.totalNodes && <p className="text-sm text-secondary mt-2">{data.totalNodes - data.nodesFound} more to find!</p>}
-              {data.nodesFound >= data.totalNodes && !data.isFinished && <p className="text-sm text-[var(--color-success)] mt-2 font-medium">All found! Scan an end point to finish!</p>}
+              {data.nodesFound > 0 && data.nodesFound < data.totalNodes && <p className="text-sm text-secondary mt-2">{t("pages.play.clueTab.moreToFind", { count: data.totalNodes - data.nodesFound })}</p>}
+              {data.nodesFound >= data.totalNodes && !data.isFinished && <p className="text-sm text-[var(--color-success)] mt-2 font-medium">{t("pages.play.clueTab.allFoundFinish")}</p>}
             </div>
           </>
         )}
@@ -865,8 +866,8 @@ function PlayGameContent() {
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-xl font-bold text-primary m-0">Scan QR Code</h2>
-                  <p className="text-muted text-sm m-0">Point your camera at the QR code</p>
+                  <h2 className="text-xl font-bold text-primary m-0">{t("pages.play.clueTab.scanQRCode")}</h2>
+                  <p className="text-muted text-sm m-0">{t("pages.play.clueTab.pointAtCamera")}</p>
                 </div>
               </div>
               <QRScanner
@@ -887,7 +888,7 @@ function PlayGameContent() {
               className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-secondary text-primary border hover:border-strong rounded-lg transition-colors"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="10" r="3" /><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z" /></svg>
-              <span>View Current Clue</span>
+              <span>{t("pages.play.viewCurrentClue")}</span>
             </button>
           </>
         )}
@@ -898,16 +899,16 @@ function PlayGameContent() {
             <div className="p-6 bg-gradient-to-br from-bg-secondary to-bg-elevated rounded-lg border shadow-sm mb-6">
               <div className="flex items-center gap-2 text-secondary mb-4">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
-                <span className="font-semibold">Your Progress</span>
+                <span className="font-semibold">{t("pages.play.progressTab.yourProgress")}</span>
               </div>
               <div className="flex flex-col items-center">
                 <div className="flex items-baseline gap-2">
                   <span className="text-5xl font-extrabold text-[var(--color-primary)]">{data.nodesFound}</span>
                   <span className="text-lg text-secondary">/ {data.totalNodes}</span>
                 </div>
-                <span className="text-sm text-muted mt-1">QR codes found</span>
-                {data.nodesFound > 0 && data.nodesFound < data.totalNodes && <span className="text-sm text-secondary mt-2">{data.totalNodes - data.nodesFound} more to find!</span>}
-                {data.nodesFound >= data.totalNodes && !data.isFinished && <span className="text-sm text-[var(--color-success)] mt-2 font-medium">All found! Scan an end point to finish!</span>}
+                <span className="text-sm text-muted mt-1">{t("pages.play.clueTab.qrCodesFound")}</span>
+                {data.nodesFound > 0 && data.nodesFound < data.totalNodes && <span className="text-sm text-secondary mt-2">{t("pages.play.clueTab.moreToFind", { count: data.totalNodes - data.nodesFound })}</span>}
+                {data.nodesFound >= data.totalNodes && !data.isFinished && <span className="text-sm text-[var(--color-success)] mt-2 font-medium">{t("pages.play.clueTab.allFoundFinish")}</span>}
               </div>
             </div>
 
@@ -915,7 +916,7 @@ function PlayGameContent() {
               <div className="p-6 bg-elevated rounded-lg border shadow-sm">
                 <div className="flex items-center gap-2 text-secondary mb-4 font-semibold">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
-                  <span>Your Journey</span>
+                  <span>{t("pages.play.progressTab.yourJourney")}</span>
                 </div>
                 <div className="flex flex-col gap-2">
                   {data.scannedNodes.map((node, index) => (
@@ -923,7 +924,7 @@ function PlayGameContent() {
                       <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--color-primary)] text-white font-bold text-sm flex-shrink-0">{index + 1}</div>
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold text-primary truncate">{node.title}</div>
-                        <div className="text-sm text-[var(--color-success)] font-semibold">+{node.points} points</div>
+                        <div className="text-sm text-[var(--color-success)] font-semibold">+{node.points} {t("pages.play.points")}</div>
                       </div>
                       <div className="text-[var(--color-success)] flex-shrink-0">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
@@ -937,15 +938,15 @@ function PlayGameContent() {
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-tertiary text-muted mb-4">
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>
                 </div>
-                <h3 className="text-lg font-semibold text-primary mb-2">No QR codes scanned yet</h3>
-                <p className="text-muted">Start your hunt by scanning your first QR code!</p>
+                <h3 className="text-lg font-semibold text-primary mb-2">{t("pages.play.progressTab.noQRCodesYet")}</h3>
+                <p className="text-muted">{t("pages.play.progressTab.startHunt")}</p>
               </div>
             )}
 
             <div className="mt-6">
               <Link to={`/leaderboard/${loaderData.gameSlug}`} className="flex items-center justify-center gap-2 px-4 py-3 bg-elevated text-secondary border hover:border-strong rounded-lg transition-colors">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 6L21 6" /><path d="M8 12L21 12" /><path d="M8 18L21 18" /><path d="M3 6L3.01 6" /><path d="M3 12L3.01 12" /><path d="M3 18L3.01 18" /></svg>
-                View Leaderboard
+                {t("pages.play.viewLeaderboard")}
               </Link>
             </div>
           </>
@@ -978,7 +979,7 @@ function PlayGameContent() {
                     <polyline points="16 17 21 12 16 7" />
                     <line x1="21" y1="12" x2="9" y2="12" />
                   </svg>
-                  <span>Sign Out</span>
+                  <span>{t("pages.play.teamTab.signOut")}</span>
                 </button>
               </div>
             </div>
@@ -986,13 +987,13 @@ function PlayGameContent() {
             <div className="p-6 bg-elevated rounded-lg border shadow-sm mb-6">
               <div className="flex items-center gap-2 font-semibold text-primary mb-1">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-                <span>Invite Teammates</span>
+                <span>{t("pages.play.teamTab.inviteTeammates")}</span>
               </div>
-              <p className="text-sm text-muted mb-4">Share these details so teammates can join your team</p>
+              <p className="text-sm text-muted mb-4">{t("pages.play.teamTab.shareDetails")}</p>
 
               <div className="flex flex-col gap-3 mb-4">
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-muted uppercase tracking-wide">Game ID</label>
+                  <label className="text-xs font-medium text-muted uppercase tracking-wide">{t("pages.play.teamTab.gameId")}</label>
                   <div className="flex items-center gap-2 p-3 bg-secondary border rounded-lg">
                     <span className="flex-1 text-sm text-primary break-all">{loaderData.gameSlug}</span>
                     <button type="button" className="flex items-center justify-center w-8 h-8 bg-tertiary rounded-lg hover:bg-[var(--color-primary)] hover:text-white transition-colors flex-shrink-0" onClick={() => copyToClipboard(loaderData.gameSlug, "gameSlug")}>
@@ -1002,7 +1003,7 @@ function PlayGameContent() {
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-muted uppercase tracking-wide">Team Code</label>
+                  <label className="text-xs font-medium text-muted uppercase tracking-wide">{t("pages.play.teamTab.teamCode")}</label>
                   <div className="flex items-center gap-2 p-3 bg-secondary border rounded-lg">
                     <span className="flex-1 font-mono text-xl font-bold tracking-wider text-primary">{data.teamCode}</span>
                     <button type="button" className="flex items-center justify-center w-8 h-8 bg-tertiary rounded-lg hover:bg-[var(--color-primary)] hover:text-white transition-colors flex-shrink-0" onClick={() => copyToClipboard(data.teamCode, "teamCode")}>
@@ -1015,10 +1016,10 @@ function PlayGameContent() {
               <div className="flex flex-col sm:flex-row gap-3">
                 <button type="button" className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white font-medium rounded-lg hover:opacity-90 transition-colors shadow-md" onClick={shareWithNavigator}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" /></svg>
-                  Share Invite Link
+                  {t("pages.play.teamTab.shareInviteLink")}
                 </button>
                 <button type="button" className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 text-secondary border hover:border-strong rounded-lg transition-colors" onClick={() => copyToClipboard(shareLink, "link")}>
-                  {copiedField === "link" ? <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>Copied!</> : <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>Copy Link</>}
+                  {copiedField === "link" ? <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>{t("pages.play.teamTab.copied")}</> : <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>{t("pages.play.teamTab.copyLink")}</>}
                 </button>
               </div>
             </div>
@@ -1026,12 +1027,12 @@ function PlayGameContent() {
             <div className="p-6 bg-elevated rounded-lg border shadow-sm">
               <div className="flex items-center gap-2 font-semibold text-primary mb-1">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                <span>Feedback</span>
+                <span>{t("pages.play.teamTab.feedback")}</span>
               </div>
-              <p className="text-sm text-muted mb-4">Help us improve the game experience</p>
+              <p className="text-sm text-muted mb-4">{t("pages.play.teamTab.feedbackDescription")}</p>
               <button type="button" onClick={() => setShowFeedback(true)} className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-secondary text-primary border hover:border-strong rounded-lg transition-colors">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
-                {feedbackSubmitted ? "Update Your Feedback" : "Leave Feedback"}
+                {feedbackSubmitted ? t("pages.play.feedback.update") : t("pages.play.feedback.leave")}
               </button>
             </div>
           </>
@@ -1060,8 +1061,8 @@ function PlayGameContent() {
                 </svg>
               </div>
               <div>
-                <h3 className="text-xl font-bold text-primary">Request Hint?</h3>
-                <p className="text-sm text-muted">This action cannot be undone</p>
+                <h3 className="text-xl font-bold text-primary">{t("pages.play.hints.requestTitle")}</h3>
+                <p className="text-sm text-muted">{t("pages.play.hints.cannotUndo")}</p>
               </div>
             </div>
 
@@ -1072,10 +1073,10 @@ function PlayGameContent() {
                   <line x1="12" y1="9" x2="12" y2="13" />
                   <line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
-                <span>Points Penalty</span>
+                <span>{t("pages.play.hints.pointsPenalty")}</span>
               </div>
               <p className="text-amber-800 dark:text-amber-300">
-                Using this hint will cost you <strong>{currentHint.pointsCost} points</strong> (half of this clue's value).
+                {t("pages.play.hints.costExplanation", { points: currentHint.pointsCost })}
               </p>
             </div>
 
@@ -1086,7 +1087,7 @@ function PlayGameContent() {
                 disabled={isRequestingHint}
                 className="flex-1 px-4 py-2.5 border rounded-lg text-secondary hover:border-strong transition-colors disabled:opacity-50"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 type="button"
@@ -1097,7 +1098,7 @@ function PlayGameContent() {
                 disabled={isRequestingHint}
                 className="flex-1 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
               >
-                {isRequestingHint ? "Loading..." : "Reveal Hint"}
+                {isRequestingHint ? t("common.loading") : t("pages.play.hints.revealHint")}
               </button>
             </div>
           </div>
@@ -1119,11 +1120,12 @@ function FeedbackModal({ feedbackRating, setFeedbackRating, feedbackComment, set
   submitFeedback: () => void;
   setShowFeedback: (v: boolean) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
       <div className="bg-[var(--bg-elevated)] rounded-xl shadow-2xl max-w-md w-full p-6 animate-fade-in border border-[var(--border-color)]">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-primary">Rate Your Experience</h3>
+          <h3 className="text-xl font-bold text-primary">{t("pages.play.feedback.title")}</h3>
           <button type="button" onClick={() => setShowFeedback(false)} className="text-muted hover:text-primary transition-colors">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
@@ -1135,11 +1137,11 @@ function FeedbackModal({ feedbackRating, setFeedbackRating, feedbackComment, set
             </button>
           ))}
         </div>
-        <textarea value={feedbackComment} onChange={(e) => setFeedbackComment(e.target.value)} placeholder="Share your thoughts (optional)" className="w-full p-3 border rounded-lg bg-secondary text-primary resize-none h-24 mb-4" maxLength={1000} />
+        <textarea value={feedbackComment} onChange={(e) => setFeedbackComment(e.target.value)} placeholder={t("pages.play.feedback.placeholder")} className="w-full p-3 border rounded-lg bg-secondary text-primary resize-none h-24 mb-4" maxLength={1000} />
         <div className="flex gap-3">
-          <button type="button" onClick={() => setShowFeedback(false)} className="flex-1 px-4 py-2 border rounded-lg text-secondary hover:border-strong transition-colors">Cancel</button>
+          <button type="button" onClick={() => setShowFeedback(false)} className="flex-1 px-4 py-2 border rounded-lg text-secondary hover:border-strong transition-colors">{t("common.cancel")}</button>
           <button type="button" onClick={submitFeedback} disabled={isSubmittingFeedback || feedbackRating === 0} className="flex-1 px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg hover:opacity-90 transition-colors disabled:opacity-50">
-            {isSubmittingFeedback ? "Submitting..." : feedbackSubmitted ? "Update" : "Submit"}
+            {isSubmittingFeedback ? t("pages.play.feedback.submitting") : feedbackSubmitted ? t("pages.play.feedback.updateBtn") : t("pages.play.feedback.submitBtn")}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "~/i18n/I18nContext";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -12,6 +13,7 @@ declare global {
 }
 
 export function InstallPrompt() {
+  const { t } = useTranslation();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -84,19 +86,20 @@ export function InstallPrompt() {
           <img src="/favicon.svg" alt="QR Hunt" width={40} height={40} />
         </div>
         <div className="install-prompt-text">
-          <strong>Install QR Hunt</strong>
+          <strong>{t("components.installPrompt.title")}</strong>
           {isIOS ? (
             <p>
-              Tap <span className="install-share-icon">
+              {t("components.installPrompt.iosInstructions", { icon: "" })}
+              <span className="install-share-icon">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
                   <polyline points="16 6 12 2 8 6" />
                   <line x1="12" y1="2" x2="12" y2="15" />
                 </svg>
-              </span> then "Add to Home Screen"
+              </span>
             </p>
           ) : (
-            <p>Add to your home screen for quick access</p>
+            <p>{t("components.installPrompt.addToHomeScreen")}</p>
           )}
         </div>
         <div className="install-prompt-actions">
@@ -106,7 +109,7 @@ export function InstallPrompt() {
               onClick={handleInstall}
               className="install-btn-primary"
             >
-              Install
+              {t("components.installPrompt.install")}
             </button>
           )}
           <button

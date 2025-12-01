@@ -7,6 +7,7 @@ import { Spinner } from "~/components/Loading";
 import { RevealAnimation } from "~/components/RevealAnimation";
 import { useToast } from "~/components/Toast";
 import { WaitingRoom } from "~/components/WaitingRoom";
+import { useTranslation } from "~/i18n/I18nContext";
 import { getApiUrl } from "~/lib/api";
 import { playNotificationSound, playRankDownSound, playRankUpSound } from "~/lib/sounds";
 
@@ -104,6 +105,7 @@ export default function Leaderboard() {
   const previousRanksRef = useRef<Map<string, number>>(new Map());
   const toast = useToast();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Game phase state for waiting room and countdown
   const [gamePhase, setGamePhase] = useState<"waiting" | "countdown" | "playing">(
@@ -396,12 +398,12 @@ export default function Leaderboard() {
                   className={`pulse-dot mr-2 ${isConnected ? "connected" : ""}`}
                   style={{ background: isConnected ? "var(--color-success)" : data.game.status === "active" ? "var(--color-warning)" : "var(--color-gray-400)" }}
                 />
-                {isConnected ? "Live Updates" : data.game.status === "active" ? "Connecting..." : "Leaderboard"}
+                {isConnected ? t("pages.leaderboard.live") : data.game.status === "active" ? t("common.loading") : t("pages.leaderboard.title")}
               </p>
             </div>
           </div>
           <span className={`badge ${data.game.status === "active" ? "badge-success" : data.game.status === "completed" ? "badge-info" : "badge-warning"}`}>
-            {data.game.status}
+            {t(`common.status.${data.game.status}`)}
           </span>
         </div>
 
@@ -417,9 +419,9 @@ export default function Leaderboard() {
         {data.leaderboard.length === 0 ? (
           <div className="card empty-state">
             <div className="empty-state-icon">🏁</div>
-            <h3 className="empty-state-title">No teams yet</h3>
+            <h3 className="empty-state-title">{t("pages.leaderboard.noTeams")}</h3>
             <p className="empty-state-description">
-              Teams will appear here once they start scanning QR codes.
+              {t("pages.leaderboard.noTeamsDescription")}
             </p>
           </div>
         ) : (
@@ -450,9 +452,9 @@ export default function Leaderboard() {
                   </div>
                   <span className="team-status">
                     {entry.isFinished ? (
-                      <span className="badge badge-success">Finished!</span>
+                      <span className="badge badge-success">{t("pages.leaderboard.finished")}</span>
                     ) : (
-                      <span className="current-clue">{entry.currentClue || "Not started"}</span>
+                      <span className="current-clue">{entry.currentClue || t("pages.leaderboard.notStarted")}</span>
                     )}
                   </span>
                 </div>
@@ -460,11 +462,11 @@ export default function Leaderboard() {
                 <div className="team-stats">
                   <div className="stat-box clues">
                     <span className="stat-num">{entry.nodesFound}</span>
-                    <span className="stat-lbl">clues</span>
+                    <span className="stat-lbl">{t("pages.leaderboard.clues")}</span>
                   </div>
                   <div className="stat-box points">
                     <span className="stat-num">{entry.totalPoints}</span>
-                    <span className="stat-lbl">pts</span>
+                    <span className="stat-lbl">{t("common.points")}</span>
                   </div>
                 </div>
               </div>
@@ -483,11 +485,11 @@ export default function Leaderboard() {
               <div className="flex items-center gap-3">
                 <span className="text-2xl">⭐</span>
                 <div className="text-left">
-                  <span className="font-semibold text-primary">Team Feedback</span>
+                  <span className="font-semibold text-primary">{t("pages.leaderboard.teamFeedback")}</span>
                   <div className="flex items-center gap-2 text-sm text-muted">
-                    <span>{feedbackData.averageRating?.toFixed(1) || "N/A"} average</span>
+                    <span>{feedbackData.averageRating?.toFixed(1) || "N/A"} {t("pages.leaderboard.average")}</span>
                     <span>•</span>
-                    <span>{feedbackData.count} {feedbackData.count === 1 ? "review" : "reviews"}</span>
+                    <span>{feedbackData.count} {feedbackData.count === 1 ? t("pages.leaderboard.review") : t("pages.leaderboard.reviews")}</span>
                   </div>
                 </div>
               </div>
@@ -531,8 +533,8 @@ export default function Leaderboard() {
         {/* Footer */}
         <div className="leaderboard-footer mt-6">
           <p className="text-muted text-center" style={{ fontSize: "0.875rem" }}>
-            Last updated: {new Date(data.updatedAt).toLocaleTimeString()}
-            {isConnected && " (real-time)"}
+            {t("pages.leaderboard.lastUpdated")}: {new Date(data.updatedAt).toLocaleTimeString()}
+            {isConnected && ` (${t("pages.leaderboard.realTime")})`}
           </p>
 
           <div className="flex justify-center gap-3 mt-4">
@@ -544,7 +546,7 @@ export default function Leaderboard() {
               {isRefreshing ? (
                 <>
                   <Spinner size="sm" />
-                  <span>Refreshing...</span>
+                  <span>{t("pages.leaderboard.refreshing")}</span>
                 </>
               ) : (
                 <>
@@ -553,7 +555,7 @@ export default function Leaderboard() {
                     <path d="M1 20v-6h6" />
                     <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
                   </svg>
-                  Refresh
+                  {t("pages.leaderboard.refresh")}
                 </>
               )}
             </button>
@@ -565,7 +567,7 @@ export default function Leaderboard() {
                 <line x1="19" y1="12" x2="5" y2="12" />
                 <polyline points="12 19 5 12 12 5" />
               </svg>
-              Back
+              {t("common.back")}
             </button>
           </div>
         </div>
