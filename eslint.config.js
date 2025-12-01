@@ -96,6 +96,7 @@ export default [
       // General rules
       "no-console": "off",
       "no-undef": "off", // TypeScript handles this
+      "no-redeclare": "off", // TypeScript handles this (allows function overloads)
     },
     settings: {
       react: {

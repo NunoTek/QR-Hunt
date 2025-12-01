@@ -618,6 +618,7 @@
           "deleteFailed": "Échec de la suppression de l'avis"
         },
         "settings": {
+          "rankingModeDescription": "Choisissez comment les équipes sont classées au classement.",
           "gameStatus": {
             "title": "Statut du jeu",
             "description": "Contrôlez le statut actuel de votre jeu.",
@@ -705,6 +706,7 @@
           "teamCreated": "Équipe créée",
           "teamUpdated": "Équipe mise à jour",
           "randomModeUpdated": "Mode aléatoire mis à jour",
+          "rankingModeUpdated": "Mode de classement mis à jour",
           "shareInfoCopied": "Informations de partage pour \"{{teamName}}\" copiées !",
           "copyFailed": "Échec de la copie",
           "deleteFailed": "Échec de la suppression de {{type}}",
