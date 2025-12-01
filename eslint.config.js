@@ -103,4 +103,24 @@ export default [
       },
     },
   },
+  // Node.js scripts configuration
+  {
+    files: ["scripts/**/*.js"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "module",
+      globals: {
+        console: "readonly",
+        process: "readonly",
+        Buffer: "readonly",
+        __dirname: "readonly",
+        __filename: "readonly",
+        URL: "readonly",
+      },
+    },
+    rules: {
+      "no-console": "off",
+      "no-undef": "off",
+    },
+  },
 ];

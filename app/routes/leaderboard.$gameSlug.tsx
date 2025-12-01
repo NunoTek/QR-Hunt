@@ -2,8 +2,11 @@ import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { GameCountdown } from "~/components/GameCountdown";
 import { Spinner } from "~/components/Loading";
+import { RevealAnimation } from "~/components/RevealAnimation";
 import { useToast } from "~/components/Toast";
+import { WaitingRoom } from "~/components/WaitingRoom";
 import { getApiUrl } from "~/lib/api";
 import { playNotificationSound, playRankDownSound, playRankUpSound } from "~/lib/sounds";
 
@@ -101,6 +104,12 @@ export default function Leaderboard() {
   const previousRanksRef = useRef<Map<string, number>>(new Map());
   const toast = useToast();
   const navigate = useNavigate();
+
+  // Game phase state for waiting room and countdown
+  const [gamePhase, setGamePhase] = useState<"waiting" | "countdown" | "playing">(
+    loaderData.game.status === "draft" ? "waiting" : "playing"
+  );
+  const [isRevealed, setIsRevealed] = useState(loaderData.game.status !== "draft");
 
   // Handle back navigation - go back in history if available, otherwise go home
   const handleBack = useCallback(() => {
@@ -333,7 +342,41 @@ export default function Leaderboard() {
     };
   };
 
+  // Show waiting room when game is in draft mode
+  if (gamePhase === "waiting") {
+    return (
+      <WaitingRoom
+        gameName={data.game.name}
+        gameLogoUrl={data.game.logoUrl}
+        gameSlug={data.game.slug}
+        mode="spectator"
+        onGameStart={() => {
+          setGamePhase("countdown");
+        }}
+      />
+    );
+  }
+
+  // Show countdown when transitioning from waiting to playing
+  if (gamePhase === "countdown") {
+    return (
+      <GameCountdown
+        duration={3}
+        onComplete={() => {
+          setGamePhase("playing");
+          setIsRevealed(true);
+          // Update game status in data
+          setData((prev) => ({
+            ...prev,
+            game: { ...prev.game, status: "active" },
+          }));
+        }}
+      />
+    );
+  }
+
   return (
+    <RevealAnimation isRevealed={isRevealed} effect="blur">
     <div className="min-h-screen bg-gradient-to-b from-[var(--bg-secondary)] to-[var(--bg-primary)] py-6 px-4 flex justify-center">
       <div className="w-full max-w-3xl">
         {/* Header */}
@@ -803,5 +846,6 @@ export default function Leaderboard() {
         }
       `}</style>
     </div>
+    </RevealAnimation>
   );
 }

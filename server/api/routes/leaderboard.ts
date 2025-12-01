@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { gameService } from "../../domain/services/GameService.js";
 import { gameRepository } from "../../domain/repositories/GameRepository.js";
+import { teamRepository } from "../../domain/repositories/TeamRepository.js";
 import { gameEvents } from "../../lib/eventEmitter.js";
 import { LEADERBOARD_CACHE, SSE } from "../../config/constants.js";
 
@@ -166,6 +167,77 @@ export async function leaderboardRoutes(fastify: FastifyInstance) {
         gameEvents.offLeaderboardUpdate(slug, onLeaderboardUpdate);
         gameEvents.offScan(slug, onScan);
         gameEvents.offChat(slug, onChat);
+      });
+
+      // Don't end the response - keep it open for SSE
+      return reply;
+    }
+  );
+
+  // Game status stream for waiting room (SSE)
+  fastify.get(
+    "/:slug/status/stream",
+    async (
+      request: FastifyRequest<{
+        Params: { slug: string };
+      }>,
+      reply: FastifyReply
+    ) => {
+      const { slug } = request.params;
+
+      const game = gameRepository.findBySlug(slug);
+      if (!game) {
+        return reply.status(404).send({ error: "Game not found" });
+      }
+
+      // Set SSE headers
+      reply.raw.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+        "Access-Control-Allow-Origin": "*",
+      });
+
+      // Send initial status
+      reply.raw.write(`event: status\n`);
+      reply.raw.write(`data: ${JSON.stringify({ status: game.status, timestamp: new Date().toISOString() })}\n\n`);
+
+      // Send current teams list
+      const teams = teamRepository.findByGameId(game.id);
+      const teamsData = teams.map((t) => ({
+        id: t.id,
+        name: t.name,
+        logoUrl: t.logoUrl,
+        joinedAt: t.createdAt,
+      }));
+      reply.raw.write(`event: teams\n`);
+      reply.raw.write(`data: ${JSON.stringify({ teams: teamsData })}\n\n`);
+
+      // Keep-alive ping
+      const keepAliveInterval = setInterval(() => {
+        reply.raw.write(`: ping\n\n`);
+      }, SSE.KEEP_ALIVE_INTERVAL_MS);
+
+      // Listen for game status changes
+      const onGameStatus = (data: { status: string; timestamp: string }) => {
+        reply.raw.write(`event: status\n`);
+        reply.raw.write(`data: ${JSON.stringify(data)}\n\n`);
+      };
+
+      // Listen for team joined events
+      const onTeamJoined = (data: { id: string; name: string; logoUrl: string | null; joinedAt: string }) => {
+        reply.raw.write(`event: team_joined\n`);
+        reply.raw.write(`data: ${JSON.stringify(data)}\n\n`);
+      };
+
+      gameEvents.onGameStatus(slug, onGameStatus);
+      gameEvents.onTeamJoined(slug, onTeamJoined);
+
+      // Clean up on close
+      request.raw.on("close", () => {
+        clearInterval(keepAliveInterval);
+        gameEvents.offGameStatus(slug, onGameStatus);
+        gameEvents.offTeamJoined(slug, onTeamJoined);
       });
 
       // Don't end the response - keep it open for SSE

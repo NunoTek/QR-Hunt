@@ -4,10 +4,13 @@ import { Link, useLoaderData, useNavigate, useSearchParams } from "@remix-run/re
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Chat } from "~/components/Chat";
 import { ClueDisplay } from "~/components/ClueDisplay";
+import { GameCountdown } from "~/components/GameCountdown";
 import { Spinner } from "~/components/Loading";
 import { QRScanner } from "~/components/QRScanner";
+import { RevealAnimation } from "~/components/RevealAnimation";
 import { ToastProvider, useToast } from "~/components/Toast";
 import { Version } from "~/components/Version";
+import { WaitingRoom } from "~/components/WaitingRoom";
 import { useOfflineMode } from "~/hooks/useOfflineMode";
 import { playCoinSound, playDefeatSound, playSuccessSound, playVictorySound } from "~/lib/sounds";
 import { cacheGameData, clearAuth, getCachedGameData, getToken } from "~/lib/tokenStorage";
@@ -109,6 +112,10 @@ function PlayGameContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [token, setTokenState] = useState<string | null>(null);
   const [data, setData] = useState<GameData | null>(null);
+
+  // Game phase state: waiting (draft), countdown, playing (active)
+  const [gamePhase, setGamePhase] = useState<"loading" | "waiting" | "countdown" | "playing">("loading");
+  const [isRevealed, setIsRevealed] = useState(false);
 
   // UI state
   const [autoScanResult, setAutoScanResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -229,6 +236,14 @@ function PlayGameContent() {
           setCurrentHint(progressData.startingClueHint);
         }
         setIsLoading(false);
+
+        // Set game phase based on status
+        if (gameData.status === "draft") {
+          setGamePhase("waiting");
+        } else {
+          setGamePhase("playing");
+          setIsRevealed(true);
+        }
 
         // Cache data for offline mode
         cacheGameData({
@@ -614,6 +629,36 @@ function PlayGameContent() {
     );
   }
 
+  // Waiting room - show when game is in draft mode
+  if (gamePhase === "waiting") {
+    return (
+      <WaitingRoom
+        gameName={data.gameName}
+        gameLogoUrl={data.gameLogoUrl}
+        gameSlug={loaderData.gameSlug}
+        mode="player"
+        teamName={data.teamName}
+        teamLogoUrl={data.teamLogoUrl}
+        onGameStart={() => {
+          setGamePhase("countdown");
+        }}
+      />
+    );
+  }
+
+  // Countdown - show when transitioning from waiting to playing
+  if (gamePhase === "countdown") {
+    return (
+      <GameCountdown
+        duration={3}
+        onComplete={() => {
+          setGamePhase("playing");
+          setIsRevealed(true);
+        }}
+      />
+    );
+  }
+
   // Tab definitions
   const tabs = [
     { id: "clue" as const, label: "Clue", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="10" r="3" /><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 7 8 11.7z" /></svg> },
@@ -624,6 +669,7 @@ function PlayGameContent() {
   ];
 
   return (
+    <RevealAnimation isRevealed={isRevealed} effect="blur">
     <div className="min-h-screen bg-[var(--bg-primary)] py-6 px-4 flex justify-center">
       {/* Offline indicator */}
       {isOffline && (
@@ -1058,6 +1104,7 @@ function PlayGameContent() {
         </div>
       )}
     </div>
+    </RevealAnimation>
   );
 }
 

@@ -51,6 +51,32 @@ class GameEventEmitter extends EventEmitter {
   offChat(gameSlug: string, callback: (message: unknown) => void): void {
     this.off(`chat:${gameSlug}`, callback);
   }
+
+  // Game status events (for waiting room)
+  emitGameStatus(gameSlug: string, status: string): void {
+    this.emit(`gamestatus:${gameSlug}`, { status, timestamp: new Date().toISOString() });
+  }
+
+  onGameStatus(gameSlug: string, callback: (data: { status: string; timestamp: string }) => void): void {
+    this.on(`gamestatus:${gameSlug}`, callback);
+  }
+
+  offGameStatus(gameSlug: string, callback: (data: { status: string; timestamp: string }) => void): void {
+    this.off(`gamestatus:${gameSlug}`, callback);
+  }
+
+  // Team joined events (for waiting room)
+  emitTeamJoined(gameSlug: string, team: { id: string; name: string; logoUrl: string | null }): void {
+    this.emit(`teamjoined:${gameSlug}`, { ...team, joinedAt: new Date().toISOString() });
+  }
+
+  onTeamJoined(gameSlug: string, callback: (data: { id: string; name: string; logoUrl: string | null; joinedAt: string }) => void): void {
+    this.on(`teamjoined:${gameSlug}`, callback);
+  }
+
+  offTeamJoined(gameSlug: string, callback: (data: { id: string; name: string; logoUrl: string | null; joinedAt: string }) => void): void {
+    this.off(`teamjoined:${gameSlug}`, callback);
+  }
 }
 
 export const gameEvents = GameEventEmitter.getInstance();

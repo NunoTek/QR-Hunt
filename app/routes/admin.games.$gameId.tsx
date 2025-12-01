@@ -932,6 +932,7 @@ function AdminGameDetailContent() {
                               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                               <circle cx="12" cy="12" r="3" />
                             </svg>
+                            <span className="hidden">Preview</span>
                           </button>
                           <button onClick={() => setEditingNode(node)} className={`${btnSecondary} ${btnSmall}`}>Edit</button>
                           <button onClick={() => handleDelete("node", node.id, node.title)} className={`${btnDanger} ${btnSmall}`}>Delete</button>
