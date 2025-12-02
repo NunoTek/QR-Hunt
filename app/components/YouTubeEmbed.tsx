@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Spinner } from "~/components/Loading";
+import { AlertCircle } from "./icons";
 
 interface YouTubeEmbedProps {
   url: string;
@@ -111,11 +112,7 @@ export function YouTubeEmbed({ url, title = "Video", audioOnly = false }: YouTub
   if (!videoId) {
     return (
       <div className="flex flex-col items-center justify-center gap-2 h-[150px] bg-tertiary rounded-lg text-muted">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="10" />
-          <line x1="12" y1="8" x2="12" y2="12" />
-          <line x1="12" y1="16" x2="12.01" y2="16" />
-        </svg>
+        <AlertCircle size={24} />
         <span>Invalid YouTube URL</span>
       </div>
     );
@@ -179,11 +176,7 @@ export function YouTubeEmbed({ url, title = "Video", audioOnly = false }: YouTub
         )}
         {error ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-tertiary text-muted">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
+            <AlertCircle size={24} />
             <span>Failed to load video</span>
             <a
               href={url}

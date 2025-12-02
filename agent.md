@@ -39,12 +39,16 @@ QR Hunt is a self-hostable QR code scavenger hunt platform that allows organizer
 ```
 ├── app/                    # Remix frontend application
 │   ├── components/         # Reusable React components
+│   │   ├── Button.tsx      # Polymorphic button (as="button"|"link"|"a") with variants
+│   │   ├── Card.tsx        # Card container component
+│   │   ├── Modal.tsx       # Centralized modal with header/footer support
 │   │   ├── Chat.tsx        # Real-time chat widget
 │   │   ├── ClueDisplay.tsx # Clue content renderer
 │   │   ├── Loading.tsx     # Loading spinner component
-│   │   ├── QRCodeGenerator.tsx # QR code generator with logo support
-│   │   ├── QRIdentifyScanner.tsx # Admin scanner to identify QR codes
+│   │   ├── QRCodeGenerator.tsx # QR code generator with logo support (uses Modal)
+│   │   ├── QRIdentifyScanner.tsx # Admin scanner to identify QR codes (uses Modal)
 │   │   ├── QRScanner.tsx   # Camera-based QR scanner for gameplay
+│   │   ├── WaitingRoom.tsx # Pre-game waiting room with team presence
 │   │   ├── ThemeToggle.tsx # Dark/light theme switcher
 │   │   └── Toast.tsx       # Toast notification system
 │   ├── lib/                # Client-side utilities
@@ -298,9 +302,11 @@ interface ChatMessage {
 ### Player Experience
 - **Mobile-first design**: Responsive UI optimized for phones
 - **Auto-submit join code**: Form submits automatically when 6th character entered (with debounce)
+- **Pre-filled join codes**: URL query params `?teamCode=ABC123` or `?code=ABC123` with animated typing effect
 - **Camera QR scanner**: Built-in scanner using device camera
 - **Progress display**: Shows X/Y QR codes found with "Your Journey" history
 - **Starting clue**: Immediately visible upon joining
+- **Waiting room**: Shows "X of Y ready" team counter with real-time connection status
 - **Dark/light theme**: User-selectable theme
 
 ## Development Principles
@@ -402,6 +408,61 @@ npm test              # Watch mode
 npm test -- --run     # Single run (CI)
 npm run test:coverage # With coverage report
 npm test -- path/to/file.test.ts  # Specific file
+```
+
+## UI Component Patterns
+
+### Button Component
+Polymorphic button supporting multiple render modes:
+```tsx
+// As a button
+<Button variant="primary" onClick={handleClick}>Submit</Button>
+
+// As a Remix Link
+<Button as="link" to="/admin" variant="outline">Admin</Button>
+
+// As an anchor
+<Button as="a" href="https://example.com" variant="secondary">External</Button>
+
+// With loading state
+<Button isLoading={isSubmitting} disabled={isSubmitting}>Save</Button>
+
+// With icons
+<Button leftIcon={<Plus />} rightIcon={<ArrowRight />}>Add Item</Button>
+```
+
+Variants: `primary`, `secondary`, `outline`, `danger`, `success`, `accent`, `ghost`
+Sizes: `small`, `default`, `large`
+
+### Modal Component
+Centralized modal with header, body, and footer:
+```tsx
+<Modal
+  isOpen={showModal}
+  onClose={() => setShowModal(false)}
+  title="Confirm Action"
+  maxWidth="max-w-md"
+  footer={
+    <div className="flex gap-2">
+      <Button variant="outline" onClick={onCancel}>Cancel</Button>
+      <Button variant="primary" onClick={onConfirm}>Confirm</Button>
+    </div>
+  }
+>
+  <p>Are you sure you want to proceed?</p>
+</Modal>
+```
+
+### Form Reset Pattern
+For forms with `defaultValue`, use a reset key to force re-render:
+```tsx
+const [formResetKey, setFormResetKey] = useState(0);
+
+// In form fields
+<input defaultValue="" key={`field-${formResetKey}`} />
+
+// Clear button increments the key
+<Button onClick={() => setFormResetKey(k => k + 1)}>Clear</Button>
 ```
 
 ## Code Style Guidelines

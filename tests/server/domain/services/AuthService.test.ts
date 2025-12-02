@@ -62,13 +62,32 @@ describe("AuthService", () => {
       expect(result.message).toBe("Invalid team code");
     });
 
-    it("should reject join for inactive game", () => {
+    it("should reject join for draft game", () => {
       gameRepository.update(gameId, { status: "draft" });
 
       const result = authService.joinGame("test-auth-game", teamCode);
 
       expect(result.success).toBe(false);
-      expect(result.message).toBe("Game is not currently active");
+      expect(result.message).toBe("Game is not currently open for joining");
+    });
+
+    it("should allow join for pending game", () => {
+      gameRepository.update(gameId, { status: "pending" });
+
+      const result = authService.joinGame("test-auth-game", teamCode);
+
+      expect(result.success).toBe(true);
+      expect(result.team).toBeDefined();
+      expect(result.session).toBeDefined();
+    });
+
+    it("should reject join for completed game", () => {
+      gameRepository.update(gameId, { status: "completed" });
+
+      const result = authService.joinGame("test-auth-game", teamCode);
+
+      expect(result.success).toBe(false);
+      expect(result.message).toBe("Game is not currently open for joining");
     });
   });
 

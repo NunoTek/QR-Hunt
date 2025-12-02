@@ -1,4 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { Check, Close, AlertTriangle, Info } from "./icons";
+import { Z_CLASS } from "~/config/constants";
 
 export type ToastType = "success" | "error" | "info" | "warning";
 
@@ -87,7 +89,7 @@ function ToastContainer({ toasts, removeToast }: { toasts: Toast[]; removeToast:
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 max-w-sm sm:max-w-md md:max-w-lg pointer-events-none">
+    <div className={`fixed top-4 right-4 ${Z_CLASS.TOAST} flex flex-col gap-3 max-w-sm sm:max-w-md md:max-w-lg pointer-events-none`}>
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onClose={() => removeToast(toast.id)} />
       ))}
@@ -111,26 +113,10 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
   }, [toast.duration]);
 
   const icons = {
-    success: (
-      <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-      </svg>
-    ),
-    error: (
-      <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    ),
-    warning: (
-      <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-      </svg>
-    ),
-    info: (
-      <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
+    success: <Check size={20} className="flex-shrink-0" />,
+    error: <Close size={20} className="flex-shrink-0" />,
+    warning: <AlertTriangle size={20} className="flex-shrink-0" />,
+    info: <Info size={20} className="flex-shrink-0" />,
   };
 
   const borderColors = {
@@ -165,14 +151,12 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
             {toast.action.label}
           </button>
         )}
-        <button 
-          className="flex items-center justify-center w-6 h-6 p-0 bg-transparent border-0 cursor-pointer text-muted hover:text-secondary transition-colors flex-shrink-0" 
-          onClick={handleClose} 
+        <button
+          className="flex items-center justify-center w-6 h-6 p-0 bg-transparent border-0 cursor-pointer text-muted hover:text-secondary transition-colors flex-shrink-0"
+          onClick={handleClose}
           aria-label="Close"
         >
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <Close size={16} />
         </button>
       </div>
     </div>

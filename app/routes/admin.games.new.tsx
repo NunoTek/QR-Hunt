@@ -1,6 +1,7 @@
 import type { ActionFunctionArgs, MetaFunction } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Form, Link, useActionData, useNavigation } from "@remix-run/react";
+import { Button } from "~/components/Button";
 import { getApiUrl } from "~/lib/api";
 import { useTranslation } from "~/i18n/I18nContext";
 
@@ -163,19 +164,23 @@ export default function NewGame() {
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <button
+            <Button
               type="submit"
-              className="flex-1 sm:flex-none px-6 py-3 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white font-semibold rounded-xl hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+              variant="primary"
               disabled={isSubmitting}
+              isLoading={isSubmitting}
+              className="flex-1 sm:flex-none"
             >
               {isSubmitting ? t("pages.admin.newGame.buttons.creating") : t("pages.admin.newGame.buttons.createGame")}
-            </button>
-            <Link
+            </Button>
+            <Button
+              as="link"
               to="/admin/games"
-              className="flex-1 sm:flex-none px-6 py-3 text-center text-secondary border hover:border-strong rounded-xl transition-colors"
+              variant="outline"
+              className="flex-1 sm:flex-none"
             >
               {t("pages.admin.newGame.buttons.cancel")}
-            </Link>
+            </Button>
           </div>
         </Form>
       </div>

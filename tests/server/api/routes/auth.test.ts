@@ -69,7 +69,7 @@ describe("Auth API", () => {
       const result = authService.joinGame("auth-test-game", teamCode);
 
       expect(result.success).toBe(false);
-      expect(result.message).toBe("Game is not currently active");
+      expect(result.message).toBe("Game is not currently open for joining");
     });
 
     it("should fail for completed game", () => {
@@ -78,7 +78,7 @@ describe("Auth API", () => {
       const result = authService.joinGame("auth-test-game", teamCode);
 
       expect(result.success).toBe(false);
-      expect(result.message).toBe("Game is not currently active");
+      expect(result.message).toBe("Game is not currently open for joining");
     });
 
     it("should be case-insensitive for team code", () => {

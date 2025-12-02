@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLanguage, useTranslation } from "~/i18n/I18nContext";
 import { languages, type Language } from "~/i18n";
+import { ChevronUp, Check } from "./icons";
 
 interface LanguageSelectorProps {
   variant?: "dropdown" | "inline";
@@ -140,17 +141,7 @@ export function LanguageSelector({ variant = "dropdown", showLabel = false }: La
         aria-label={t("components.languageSelector.title")}
       >
         <span className="language-code">{language.toUpperCase()}</span>
-        <svg
-          className={`language-chevron ${isOpen ? "open" : ""}`}
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <polyline points="6 15 12 9 18 15" />
-        </svg>
+        <ChevronUp size={12} className={`language-chevron ${isOpen ? "open" : ""}`} />
       </button>
 
       {isOpen && (
@@ -167,17 +158,7 @@ export function LanguageSelector({ variant = "dropdown", showLabel = false }: La
               <span className="language-flag">{languageFlags[lang]}</span>
               <span className="language-name">{languages[lang]}</span>
               {language === lang && (
-                <svg
-                  className="language-check"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
+                <Check size={16} className="language-check" strokeWidth={3} />
               )}
             </button>
           ))}

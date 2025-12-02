@@ -66,9 +66,49 @@ export class GameService {
     return gameRepository.update(id, data);
   }
 
+  /**
+   * Opens a game for team registration (sets status to pending).
+   * Teams can join and wait in the waiting room.
+   */
+  openGame(id: string): Game | null {
+    const game = gameRepository.findById(id);
+    if (!game) return null;
+
+    const nodes = nodeRepository.findByGameId(id);
+    if (nodes.length === 0) {
+      throw new Error("Cannot open game without any nodes");
+    }
+
+    const startNodes = nodes.filter((n) => n.isStart);
+    if (startNodes.length === 0) {
+      throw new Error("Cannot open game without at least one start node");
+    }
+
+    const endNodes = nodes.filter((n) => n.isEnd);
+    if (endNodes.length === 0) {
+      throw new Error("Cannot open game without at least one end node");
+    }
+
+    const updatedGame = gameRepository.update(id, { status: "pending" });
+    if (updatedGame) {
+      // Emit game status change event for SSE listeners
+      gameEvents.emitGameStatus(game.publicSlug, "pending");
+    }
+    return updatedGame;
+  }
+
+  /**
+   * Activates a game (sets status to active).
+   * This starts the game - teams in the waiting room will see the countdown.
+   */
   activateGame(id: string): Game | null {
     const game = gameRepository.findById(id);
     if (!game) return null;
+
+    // Allow activation from either draft or pending status
+    if (game.status !== "draft" && game.status !== "pending") {
+      throw new Error("Can only activate games that are in draft or pending status");
+    }
 
     const nodes = nodeRepository.findByGameId(id);
     if (nodes.length === 0) {
@@ -83,6 +123,11 @@ export class GameService {
     const endNodes = nodes.filter((n) => n.isEnd);
     if (endNodes.length === 0) {
       throw new Error("Cannot activate game without at least one end node");
+    }
+
+    const activatedNodes = nodes.filter((n) => n.activated);
+    if (activatedNodes.length === 0) {
+      throw new Error("Cannot activate game without at least one activated node");
     }
 
     const updatedGame = gameRepository.update(id, { status: "active" });

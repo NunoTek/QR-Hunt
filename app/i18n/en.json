@@ -24,6 +24,7 @@
     "admin": "Admin",
     "status": {
       "draft": "Draft",
+      "pending": "Pending",
       "active": "Active",
       "completed": "Completed"
     },
@@ -144,6 +145,41 @@
       "cta": {
         "title": "Ready to Start Your Hunt?",
         "subtitle": "Create your first scavenger hunt in minutes. No credit card required."
+      },
+      "screenshots": {
+        "title": "See It in Action",
+        "subtitle": "A beautiful mobile-first experience that works seamlessly on any device",
+        "items": {
+          "scan": {
+            "title": "QR Scanner",
+            "description": "Point your camera at any QR code. Instant recognition with visual feedback."
+          },
+          "clue": {
+            "title": "Clue Display",
+            "description": "Beautiful clue cards with support for text, images, videos, and audio."
+          },
+          "progress": {
+            "title": "Progress Tracking",
+            "description": "See your journey unfold. Track found QR codes and points earned."
+          },
+          "leaderboard": {
+            "title": "Live Leaderboard",
+            "description": "Real-time rankings update instantly as teams find clues."
+          },
+          "chat": {
+            "title": "Team Chat",
+            "description": "Message organizers for hints or coordinate with teammates."
+          },
+          "resume": {
+            "title": "Resume Game",
+            "description": "Jump back in anytime. Your progress is always saved."
+          }
+        },
+        "features": {
+          "darkMode": "Dark Mode",
+          "mobile": "Mobile-First",
+          "realtime": "Real-Time Updates"
+        }
       }
     },
     "join": {
@@ -467,6 +503,8 @@
       "gameEditor": {
         "title": "Edit Game",
         "backToGames": "← Back to games",
+        "openGame": "Open Game",
+        "startGame": "Start Game",
         "activateGame": "Activate Game",
         "completeGame": "Complete Game",
         "viewLeaderboard": "View Leaderboard",
@@ -706,6 +744,7 @@
         "toasts": {
           "gameLogoUpdated": "Game logo updated",
           "gameStatusUpdated": "Game status updated",
+          "gameOpened": "Game opened - teams can now join and wait",
           "gameActivated": "Game activated successfully",
           "gameCompleted": "Game marked as completed",
           "nodeCreated": "Node created",
@@ -732,6 +771,7 @@
       "yourTeam": "Your Team",
       "ready": "Ready",
       "teamsReady": "Teams Ready",
+      "of": "of",
       "noTeamsYet": "No teams have joined yet",
       "you": "You",
       "connected": "Connected",

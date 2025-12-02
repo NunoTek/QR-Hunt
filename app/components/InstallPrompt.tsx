@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "~/i18n/I18nContext";
+import { INSTALL_PROMPT } from "~/config/constants";
+import { Close, Upload } from "./icons";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -27,12 +29,12 @@ export function InstallPrompt() {
 
     if (standalone) return;
 
-    // Check if dismissed recently (within 7 days)
+    // Check if dismissed recently
     const dismissed = localStorage.getItem("pwa-install-dismissed");
     if (dismissed) {
       const dismissedTime = parseInt(dismissed, 10);
-      const sevenDays = 7 * 24 * 60 * 60 * 1000;
-      if (Date.now() - dismissedTime < sevenDays) {
+      const cooldownMs = INSTALL_PROMPT.DISMISS_COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
+      if (Date.now() - dismissedTime < cooldownMs) {
         return;
       }
     }
@@ -43,7 +45,7 @@ export function InstallPrompt() {
 
     // For iOS, show manual install instructions after a delay
     if (iOS) {
-      const timer = setTimeout(() => setShowPrompt(true), 3000);
+      const timer = setTimeout(() => setShowPrompt(true), INSTALL_PROMPT.INITIAL_DELAY_MS);
       return () => clearTimeout(timer);
     }
 
@@ -52,7 +54,7 @@ export function InstallPrompt() {
       e.preventDefault();
       setDeferredPrompt(e);
       // Show prompt after a delay
-      setTimeout(() => setShowPrompt(true), 3000);
+      setTimeout(() => setShowPrompt(true), INSTALL_PROMPT.INITIAL_DELAY_MS);
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstall);
@@ -91,11 +93,7 @@ export function InstallPrompt() {
             <p>
               {t("components.installPrompt.iosInstructions", { icon: "" })}
               <span className="install-share-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                  <polyline points="16 6 12 2 8 6" />
-                  <line x1="12" y1="2" x2="12" y2="15" />
-                </svg>
+                <Upload size={16} />
               </span>
             </p>
           ) : (
@@ -118,10 +116,7 @@ export function InstallPrompt() {
             className="install-btn-dismiss"
             aria-label="Dismiss"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <Close size={20} />
           </button>
         </div>
       </div>

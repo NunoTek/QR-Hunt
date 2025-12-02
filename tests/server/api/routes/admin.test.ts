@@ -3,6 +3,120 @@ import { initializeDatabase, closeDatabase, getDatabase } from "@server/db/datab
 import { gameRepository } from "@server/domain/repositories/GameRepository.js";
 import { teamRepository } from "@server/domain/repositories/TeamRepository.js";
 import { nodeRepository } from "@server/domain/repositories/NodeRepository.js";
+import { gameService } from "@server/domain/services/GameService.js";
+
+describe("Admin API - Game Status", () => {
+  let gameId: string;
+
+  beforeEach(async () => {
+    process.env.DATA_DIR = "./tests/test-data-admin-status";
+    await initializeDatabase();
+
+    // Create test game with required nodes
+    const game = gameRepository.create({
+      name: "Status Test Game",
+      publicSlug: "status-test-game",
+    });
+    gameId = game.id;
+
+    // Create start and end nodes for a valid game (activated for game to be activatable)
+    nodeRepository.create({
+      gameId,
+      title: "Start Node",
+      isStart: true,
+      activated: true,
+    });
+
+    nodeRepository.create({
+      gameId,
+      title: "End Node",
+      isEnd: true,
+      activated: true,
+    });
+  });
+
+  afterEach(() => {
+    const db = getDatabase();
+    db.exec("DELETE FROM scans");
+    db.exec("DELETE FROM team_sessions");
+    db.exec("DELETE FROM edges");
+    db.exec("DELETE FROM nodes");
+    db.exec("DELETE FROM teams");
+    db.exec("DELETE FROM games");
+    closeDatabase();
+  });
+
+  describe("openGame", () => {
+    it("should open a draft game and set status to pending", () => {
+      const game = gameRepository.findById(gameId);
+      expect(game?.status).toBe("draft");
+
+      const openedGame = gameService.openGame(gameId);
+      expect(openedGame?.status).toBe("pending");
+    });
+
+    it("should return null for non-existent game", () => {
+      const result = gameService.openGame("non-existent-id");
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("activateGame", () => {
+    it("should activate a draft game directly", () => {
+      const activatedGame = gameService.activateGame(gameId);
+      expect(activatedGame?.status).toBe("active");
+    });
+
+    it("should activate a pending game", () => {
+      // First open the game
+      gameService.openGame(gameId);
+
+      // Then activate
+      const activatedGame = gameService.activateGame(gameId);
+      expect(activatedGame?.status).toBe("active");
+    });
+
+    it("should not activate an already active game", () => {
+      gameService.activateGame(gameId);
+
+      expect(() => {
+        gameService.activateGame(gameId);
+      }).toThrow("Can only activate games that are in draft or pending status");
+    });
+  });
+
+  describe("game status flow", () => {
+    it("should follow draft -> pending -> active -> completed flow", () => {
+      // Start in draft
+      let game = gameRepository.findById(gameId);
+      expect(game?.status).toBe("draft");
+
+      // Open to pending
+      gameService.openGame(gameId);
+      game = gameRepository.findById(gameId);
+      expect(game?.status).toBe("pending");
+
+      // Activate
+      gameService.activateGame(gameId);
+      game = gameRepository.findById(gameId);
+      expect(game?.status).toBe("active");
+
+      // Complete
+      gameService.completeGame(gameId);
+      game = gameRepository.findById(gameId);
+      expect(game?.status).toBe("completed");
+    });
+
+    it("should allow skipping pending status (draft -> active)", () => {
+      let game = gameRepository.findById(gameId);
+      expect(game?.status).toBe("draft");
+
+      gameService.activateGame(gameId);
+      game = gameRepository.findById(gameId);
+      expect(game?.status).toBe("active");
+    });
+  });
+});
 
 describe("Admin API - Team Creation", () => {
   let gameId: string;

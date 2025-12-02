@@ -57,6 +57,77 @@ describe("GameService", () => {
     });
   });
 
+  describe("openGame", () => {
+    it("should not open game without nodes", () => {
+      const game = gameService.createGame({
+        name: "Empty Game",
+        publicSlug: "empty-game-open",
+      });
+
+      expect(() => {
+        gameService.openGame(game.id);
+      }).toThrow("Cannot open game without any nodes");
+    });
+
+    it("should not open game without start node", () => {
+      const game = gameService.createGame({
+        name: "No Start",
+        publicSlug: "no-start-open",
+      });
+
+      nodeRepository.create({
+        gameId: game.id,
+        title: "Middle Node",
+        isStart: false,
+        isEnd: true,
+      });
+
+      expect(() => {
+        gameService.openGame(game.id);
+      }).toThrow("Cannot open game without at least one start node");
+    });
+
+    it("should not open game without end node", () => {
+      const game = gameService.createGame({
+        name: "No End",
+        publicSlug: "no-end-open",
+      });
+
+      nodeRepository.create({
+        gameId: game.id,
+        title: "Start Node",
+        isStart: true,
+        isEnd: false,
+      });
+
+      expect(() => {
+        gameService.openGame(game.id);
+      }).toThrow("Cannot open game without at least one end node");
+    });
+
+    it("should open valid game and set status to pending", () => {
+      const game = gameService.createGame({
+        name: "Valid Game",
+        publicSlug: "valid-game-open",
+      });
+
+      nodeRepository.create({
+        gameId: game.id,
+        title: "Start",
+        isStart: true,
+      });
+
+      nodeRepository.create({
+        gameId: game.id,
+        title: "End",
+        isEnd: true,
+      });
+
+      const opened = gameService.openGame(game.id);
+      expect(opened?.status).toBe("pending");
+    });
+  });
+
   describe("activateGame", () => {
     it("should not activate game without nodes", () => {
       const game = gameService.createGame({
@@ -105,7 +176,32 @@ describe("GameService", () => {
       }).toThrow("Cannot activate game without at least one end node");
     });
 
-    it("should activate valid game", () => {
+    it("should not activate game without activated nodes", () => {
+      const game = gameService.createGame({
+        name: "No Activated",
+        publicSlug: "no-activated",
+      });
+
+      nodeRepository.create({
+        gameId: game.id,
+        title: "Start Node",
+        isStart: true,
+        activated: false,
+      });
+
+      nodeRepository.create({
+        gameId: game.id,
+        title: "End Node",
+        isEnd: true,
+        activated: false,
+      });
+
+      expect(() => {
+        gameService.activateGame(game.id);
+      }).toThrow("Cannot activate game without at least one activated node");
+    });
+
+    it("should activate valid game from draft status", () => {
       const game = gameService.createGame({
         name: "Valid Game",
         publicSlug: "valid-game",
@@ -115,16 +211,106 @@ describe("GameService", () => {
         gameId: game.id,
         title: "Start",
         isStart: true,
+        activated: true,
       });
 
       nodeRepository.create({
         gameId: game.id,
         title: "End",
         isEnd: true,
+        activated: true,
       });
 
       const activated = gameService.activateGame(game.id);
       expect(activated?.status).toBe("active");
+    });
+
+    it("should activate valid game from pending status", () => {
+      const game = gameService.createGame({
+        name: "Pending Game",
+        publicSlug: "pending-game",
+      });
+
+      nodeRepository.create({
+        gameId: game.id,
+        title: "Start",
+        isStart: true,
+        activated: true,
+      });
+
+      nodeRepository.create({
+        gameId: game.id,
+        title: "End",
+        isEnd: true,
+        activated: true,
+      });
+
+      // First open the game (set to pending)
+      const opened = gameService.openGame(game.id);
+      expect(opened?.status).toBe("pending");
+
+      // Then activate it
+      const activated = gameService.activateGame(game.id);
+      expect(activated?.status).toBe("active");
+    });
+
+    it("should not activate game that is already active", () => {
+      const game = gameService.createGame({
+        name: "Already Active",
+        publicSlug: "already-active",
+      });
+
+      nodeRepository.create({
+        gameId: game.id,
+        title: "Start",
+        isStart: true,
+        activated: true,
+      });
+
+      nodeRepository.create({
+        gameId: game.id,
+        title: "End",
+        isEnd: true,
+        activated: true,
+      });
+
+      // First activate
+      gameService.activateGame(game.id);
+
+      // Try to activate again
+      expect(() => {
+        gameService.activateGame(game.id);
+      }).toThrow("Can only activate games that are in draft or pending status");
+    });
+
+    it("should not activate completed game", () => {
+      const game = gameService.createGame({
+        name: "Completed Game",
+        publicSlug: "completed-game",
+      });
+
+      nodeRepository.create({
+        gameId: game.id,
+        title: "Start",
+        isStart: true,
+        activated: true,
+      });
+
+      nodeRepository.create({
+        gameId: game.id,
+        title: "End",
+        isEnd: true,
+        activated: true,
+      });
+
+      // Activate then complete
+      gameService.activateGame(game.id);
+      gameService.completeGame(game.id);
+
+      // Try to activate again
+      expect(() => {
+        gameService.activateGame(game.id);
+      }).toThrow("Can only activate games that are in draft or pending status");
     });
   });
 

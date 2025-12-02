@@ -21,8 +21,8 @@ export class AuthService {
       return { success: false, message: "Game not found" };
     }
 
-    if (game.status !== "active") {
-      return { success: false, message: "Game is not currently active" };
+    if (game.status !== "active" && game.status !== "pending") {
+      return { success: false, message: "Game is not currently open for joining" };
     }
 
     const team = teamRepository.findByCode(game.id, teamCode.toUpperCase());

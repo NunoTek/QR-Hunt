@@ -1,3 +1,5 @@
+import { Z_CLASS } from "~/config/constants";
+
 interface SpinnerProps {
   size?: "sm" | "md" | "lg";
   className?: string;
@@ -23,7 +25,7 @@ interface LoadingOverlayProps {
 
 export function LoadingOverlay({ message = "Loading..." }: LoadingOverlayProps) {
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-overlay backdrop-blur-sm">
+    <div className={`fixed inset-0 ${Z_CLASS.CRITICAL} flex items-center justify-center bg-overlay backdrop-blur-sm`}>
       <div className="flex flex-col items-center gap-4 p-6 sm:p-8 bg-elevated rounded-xl shadow-xl">
         <Spinner size="lg" />
         <p className="text-sm sm:text-base font-medium text-primary">{message}</p>
