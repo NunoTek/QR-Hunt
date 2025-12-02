@@ -265,6 +265,42 @@ function getMigrations(): Migration[] {
         CREATE INDEX idx_hint_usages_node_id ON hint_usages(node_id);
       `,
     },
+    {
+      name: "009_add_pending_status",
+      sql: `
+        -- SQLite doesn't support ALTER CONSTRAINT, so we need to:
+        -- 1. Create a new table with the updated constraint
+        -- 2. Copy data from the old table
+        -- 3. Drop the old table
+        -- 4. Rename the new table
+
+        -- Create new games table with pending status in constraint
+        CREATE TABLE games_new (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          public_slug TEXT NOT NULL UNIQUE,
+          status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'pending', 'active', 'completed')),
+          settings TEXT DEFAULT '{}',
+          logo_url TEXT,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        -- Copy existing data
+        INSERT INTO games_new (id, name, public_slug, status, settings, logo_url, created_at, updated_at)
+        SELECT id, name, public_slug, status, settings, logo_url, created_at, updated_at FROM games;
+
+        -- Drop old table
+        DROP TABLE games;
+
+        -- Rename new table
+        ALTER TABLE games_new RENAME TO games;
+
+        -- Recreate indexes
+        CREATE INDEX idx_games_public_slug ON games(public_slug);
+        CREATE INDEX idx_games_status ON games(status);
+      `,
+    },
   ];
 }
 

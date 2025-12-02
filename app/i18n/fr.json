@@ -24,6 +24,7 @@
     "admin": "Admin",
     "status": {
       "draft": "Brouillon",
+      "pending": "En attente",
       "active": "Actif",
       "completed": "Terminé"
     },
@@ -502,6 +503,8 @@
       "gameEditor": {
         "title": "Modifier le jeu",
         "backToGames": "← Retour aux jeux",
+        "openGame": "Ouvrir le jeu",
+        "startGame": "Démarrer le jeu",
         "activateGame": "Activer le jeu",
         "completeGame": "Terminer le jeu",
         "viewLeaderboard": "Voir le classement",
@@ -741,6 +744,7 @@
         "toasts": {
           "gameLogoUpdated": "Logo du jeu mis à jour",
           "gameStatusUpdated": "Statut du jeu mis à jour",
+          "gameOpened": "Jeu ouvert - les équipes peuvent maintenant rejoindre et attendre",
           "gameActivated": "Jeu activé avec succès",
           "gameCompleted": "Jeu marqué comme terminé",
           "nodeCreated": "Nœud créé",

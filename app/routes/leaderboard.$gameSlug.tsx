@@ -81,10 +81,11 @@ export default function Leaderboard() {
   const { t } = useTranslation();
 
   // Game phase state for waiting room and countdown
+  // Show waiting room for both draft and pending status
   const [gamePhase, setGamePhase] = useState<"waiting" | "countdown" | "playing">(
-    loaderData.game.status === "draft" ? "waiting" : "playing"
+    loaderData.game.status === "draft" || loaderData.game.status === "pending" ? "waiting" : "playing"
   );
-  const [isRevealed, setIsRevealed] = useState(loaderData.game.status !== "draft");
+  const [isRevealed, setIsRevealed] = useState(loaderData.game.status !== "draft" && loaderData.game.status !== "pending");
 
   // Handle back navigation - go back in history if available, otherwise go home
   const handleBack = useCallback(() => {
@@ -339,7 +340,7 @@ export default function Leaderboard() {
     };
   };
 
-  // Show waiting room when game is in draft mode
+  // Show waiting room when game is in draft or pending mode (spectators wait for the game to start)
   if (gamePhase === "waiting") {
     return (
       <WaitingRoom

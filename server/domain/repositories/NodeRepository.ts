@@ -64,6 +64,7 @@ export class NodeRepository {
     hint?: string;
     adminComment?: string;
     metadata?: Record<string, unknown>;
+    activated?: boolean;
   }): Node {
     const db = getDatabase();
     const id = nanoid();
@@ -71,8 +72,8 @@ export class NodeRepository {
 
     db.prepare(
       `INSERT INTO nodes (id, game_id, node_key, title, content, content_type, media_url,
-       password_required, password_hash, is_start, is_end, points, hint, admin_comment, metadata)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       password_required, password_hash, is_start, is_end, points, hint, admin_comment, metadata, activated)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       id,
       data.gameId,
@@ -88,7 +89,8 @@ export class NodeRepository {
       data.points ?? 100,
       data.hint || null,
       data.adminComment || null,
-      JSON.stringify(data.metadata || {})
+      JSON.stringify(data.metadata || {}),
+      data.activated ? 1 : 0
     );
 
     return this.findById(id)!;

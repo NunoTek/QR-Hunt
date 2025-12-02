@@ -137,7 +137,28 @@ export async function adminRoutes(fastify: FastifyInstance) {
     }
   );
 
-  // Activate game
+  // Open game (set to pending - allows teams to join and wait)
+  fastify.post(
+    "/games/:id/open",
+    async (
+      request: FastifyRequest<{ Params: { id: string } }>,
+      reply: FastifyReply
+    ) => {
+      try {
+        const game = gameService.openGame(request.params.id);
+        if (!game) {
+          return reply.status(404).send({ error: "Game not found" });
+        }
+        return reply.send({ game });
+      } catch (error) {
+        return reply.status(400).send({
+          error: error instanceof Error ? error.message : "Failed to open game",
+        });
+      }
+    }
+  );
+
+  // Activate game (start the game)
   fastify.post(
     "/games/:id/activate",
     async (

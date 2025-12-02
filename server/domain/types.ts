@@ -1,4 +1,4 @@
-export type GameStatus = "draft" | "active" | "completed";
+export type GameStatus = "draft" | "pending" | "active" | "completed";
 export type ContentType = "text" | "image" | "video" | "audio" | "link";
 
 export interface Game {

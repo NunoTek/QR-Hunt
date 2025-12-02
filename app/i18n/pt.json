@@ -24,6 +24,7 @@
     "admin": "Admin",
     "status": {
       "draft": "Rascunho",
+      "pending": "Pendente",
       "active": "Ativo",
       "completed": "Concluído"
     },
@@ -502,6 +503,8 @@
       "gameEditor": {
         "title": "Editar jogo",
         "backToGames": "← Voltar aos jogos",
+        "openGame": "Abrir jogo",
+        "startGame": "Iniciar jogo",
         "activateGame": "Ativar jogo",
         "completeGame": "Concluir jogo",
         "viewLeaderboard": "Ver ranking",
@@ -741,6 +744,7 @@
         "toasts": {
           "gameLogoUpdated": "Logótipo do jogo atualizado",
           "gameStatusUpdated": "Estado do jogo atualizado",
+          "gameOpened": "Jogo aberto - as equipas podem agora entrar e aguardar",
           "gameActivated": "Jogo ativado com sucesso",
           "gameCompleted": "Jogo marcado como concluído",
           "nodeCreated": "Nó criado",

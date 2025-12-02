@@ -24,6 +24,7 @@
     "admin": "Admin",
     "status": {
       "draft": "Draft",
+      "pending": "Pending",
       "active": "Active",
       "completed": "Completed"
     },
@@ -502,6 +503,8 @@
       "gameEditor": {
         "title": "Edit Game",
         "backToGames": "← Back to games",
+        "openGame": "Open Game",
+        "startGame": "Start Game",
         "activateGame": "Activate Game",
         "completeGame": "Complete Game",
         "viewLeaderboard": "View Leaderboard",
@@ -741,6 +744,7 @@
         "toasts": {
           "gameLogoUpdated": "Game logo updated",
           "gameStatusUpdated": "Game status updated",
+          "gameOpened": "Game opened - teams can now join and wait",
           "gameActivated": "Game activated successfully",
           "gameCompleted": "Game marked as completed",
           "nodeCreated": "Node created",

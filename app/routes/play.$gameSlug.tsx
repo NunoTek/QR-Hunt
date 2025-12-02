@@ -259,7 +259,9 @@ function PlayGameContent() {
         setIsLoading(false);
 
         // Set game phase based on status
-        if (gameData.status === "draft") {
+        // pending: teams can join and wait in the waiting room
+        // draft: game is not ready, but we still show waiting room if user somehow joined
+        if (gameData.status === "draft" || gameData.status === "pending") {
           setGamePhase("waiting");
         } else {
           setGamePhase("playing");
@@ -635,7 +637,7 @@ function PlayGameContent() {
     );
   }
 
-  // Waiting room - show when game is in draft mode
+  // Waiting room - show when game is in pending mode (teams can join and wait)
   if (gamePhase === "waiting") {
     return (
       <WaitingRoom

@@ -6,6 +6,7 @@ interface StatusBadgeProps {
 export function StatusBadge({ status, t }: StatusBadgeProps) {
   const colors: Record<string, string> = {
     draft: "badge-warning",
+    pending: "badge-primary",
     active: "badge-info",
     completed: "badge-success",
   };

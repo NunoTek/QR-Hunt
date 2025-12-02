@@ -144,8 +144,8 @@ describe("Index Page", () => {
       const Index = module.default;
       const result = Index();
 
-      // The Index component should have 7 children (all section components)
-      expect(result.props.children).toHaveLength(7);
+      // The Index component should have 8 children (all section components)
+      expect(result.props.children).toHaveLength(8);
     });
   });
 

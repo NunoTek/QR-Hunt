@@ -17,7 +17,7 @@ import { StatusBadge } from "~/components/admin/game-editor/StatusBadge";
 import { Button } from "~/components/Button";
 import { Chat } from "~/components/Chat";
 import { ClueDisplay } from "~/components/ClueDisplay";
-import { Camera, Check, CheckCircle, Circle, Close, Download, Edit, Eye, Loader, Play, Trash, Upload } from "~/components/icons";
+import { Camera, Check, CheckCircle, Circle, Clock, Close, Download, Edit, Eye, Loader, Play, Trash, Upload } from "~/components/icons";
 import { QRCodeGenerator } from "~/components/QRCodeGenerator";
 import { QRIdentifyScanner } from "~/components/QRIdentifyScanner";
 import { ToastProvider, useToast } from "~/components/Toast";
@@ -306,6 +306,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
         break;
       }
 
+      case "openGame": {
+        const response = await fetch(`${baseUrl}/api/v1/admin/games/${gameId}/open`, {
+          method: "POST",
+          headers: { "x-admin-code": adminCode },
+        });
+        if (!response.ok) {
+          const data = await response.json();
+          return json({ error: data.error || "Failed to open game" });
+        }
+        break;
+      }
+
       case "activateGame": {
         const response = await fetch(`${baseUrl}/api/v1/admin/games/${gameId}/activate`, {
           method: "POST",
@@ -328,7 +340,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
       case "setStatus": {
         const newStatus = formData.get("status")?.toString();
-        if (!newStatus || !["draft", "active", "completed"].includes(newStatus)) {
+        if (!newStatus || !["draft", "pending", "active", "completed"].includes(newStatus)) {
           return json({ error: "Invalid status" });
         }
         const response = await fetch(`${baseUrl}/api/v1/admin/games/${gameId}`, {
@@ -600,6 +612,9 @@ function AdminGameDetailContent() {
         case "setStatus":
           toast.success(t("pages.admin.gameEditor.toasts.gameStatusUpdated"));
           break;
+        case "openGame":
+          toast.success(t("pages.admin.gameEditor.toasts.gameOpened"));
+          break;
         case "activateGame":
           toast.success(t("pages.admin.gameEditor.toasts.gameActivated"));
           break;
@@ -720,14 +735,23 @@ function AdminGameDetailContent() {
 
             {data.game.status === "draft" && (
               <Form method="post" className="inline">
-                <input type="hidden" name="_action" value="activateGame" />
+                <input type="hidden" name="_action" value="openGame" />
                 <Button
                   type="submit"
                   variant="primary"
                   disabled={isSubmitting || !canActivate}
                   title={!canActivate ? t("pages.admin.gameEditor.activationWarning.title") : ""}
                 >
-                  {t("pages.admin.gameEditor.activateGame")}
+                  {t("pages.admin.gameEditor.openGame")}
+                </Button>
+              </Form>
+            )}
+
+            {data.game.status === "pending" && (
+              <Form method="post" className="inline">
+                <input type="hidden" name="_action" value="activateGame" />
+                <Button type="submit" variant="primary" disabled={isSubmitting}>
+                  {t("pages.admin.gameEditor.startGame")}
                 </Button>
               </Form>
             )}
@@ -1360,19 +1384,24 @@ function AdminGameDetailContent() {
 
             <div className="flex items-center gap-4 p-4 rounded-lg border mb-4" style={{
               backgroundColor: data.game.status === "draft" ? "var(--color-warning)" + "10" :
+                             data.game.status === "pending" ? "var(--color-primary)" + "10" :
                              data.game.status === "active" ? "var(--color-success)" + "10" :
                              "var(--color-info)" + "10",
               borderColor: data.game.status === "draft" ? "var(--color-warning)" + "30" :
+                          data.game.status === "pending" ? "var(--color-primary)" + "30" :
                           data.game.status === "active" ? "var(--color-success)" + "30" :
                           "var(--color-info)" + "30"
             }}>
               <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
                 data.game.status === "draft" ? "bg-[var(--color-warning)]/20 text-[var(--color-warning)]" :
+                data.game.status === "pending" ? "bg-[var(--color-primary)]/20 text-[var(--color-primary)]" :
                 data.game.status === "active" ? "bg-[var(--color-success)]/20 text-[var(--color-success)]" :
                 "bg-[var(--color-info)]/20 text-[var(--color-info)]"
               }`}>
                 {data.game.status === "draft" ? (
                   <Edit size={24} />
+                ) : data.game.status === "pending" ? (
+                  <Clock size={24} />
                 ) : data.game.status === "active" ? (
                   <Play size={24} />
                 ) : (
@@ -1382,11 +1411,13 @@ function AdminGameDetailContent() {
               <div className="flex-1">
                 <p className="font-semibold text-primary">
                   {data.game.status === "draft" ? "Draft" :
+                   data.game.status === "pending" ? "Pending" :
                    data.game.status === "active" ? "Active" : "Completed"}
                 </p>
                 <p className="text-sm text-secondary">
                   {data.game.status === "draft" ? "Game is being set up and not yet playable." :
-                   data.game.status === "active" ? "Game is live! Teams can join and play." :
+                   data.game.status === "pending" ? "Teams can join and wait in the waiting room." :
+                   data.game.status === "active" ? "Game is live! Teams can play." :
                    "Game has ended. Results are final."}
                 </p>
               </div>
@@ -1412,9 +1443,28 @@ function AdminGameDetailContent() {
                 </button>
               </Form>
 
+              {/* Pending button */}
+              <Form method="post" className="inline">
+                <input type="hidden" name="_action" value={data.game.status === "draft" ? "openGame" : "setStatus"} />
+                <input type="hidden" name="status" value="pending" />
+                <button
+                  type="submit"
+                  className={`inline-flex items-center gap-2 px-4 py-2 font-medium rounded-lg transition-colors disabled:opacity-50 ${
+                    data.game.status === "pending"
+                      ? "bg-[var(--color-primary)] text-white cursor-default"
+                      : "bg-[var(--color-primary)]/15 text-[var(--color-primary)] border border-[var(--color-primary)]/30 hover:bg-[var(--color-primary)]/25"
+                  }`}
+                  disabled={isSubmitting || data.game.status === "pending" || (data.game.status === "draft" && !canActivate)}
+                  title={data.game.status === "draft" && !canActivate ? "Complete setup requirements first" : undefined}
+                >
+                  <Clock size={18} />
+                  Pending
+                </button>
+              </Form>
+
               {/* Active button */}
               <Form method="post" className="inline">
-                <input type="hidden" name="_action" value={data.game.status === "draft" ? "activateGame" : "setStatus"} />
+                <input type="hidden" name="_action" value={(data.game.status === "draft" || data.game.status === "pending") ? "activateGame" : "setStatus"} />
                 <input type="hidden" name="status" value="active" />
                 <button
                   type="submit"
