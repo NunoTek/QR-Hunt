@@ -54,17 +54,28 @@ QR Hunt is an interactive treasure hunt game where teams race to find hidden QR 
 - **Multilingual** — Built-in support for English, French, and Portuguese
 - **Flexible gameplay** — Linear paths, random exploration, or collect-them-all modes
 
+## Screenshots
+
+<p align="center">
+  <img src="public/screenshots/mobile-dark-play-scan.jpg" width="150" alt="QR Scanner"/>
+  <img src="public/screenshots/mobile-dark-play-clue.jpg" width="150" alt="Clue Display"/>
+  <img src="public/screenshots/mobile-dark-play-progress.jpg" width="150" alt="Progress Tracking"/>
+  <img src="public/screenshots/mobile-dark-leaderboard.jpg" width="150" alt="Live Leaderboard"/>
+  <img src="public/screenshots/mobile-dark-play-chat.jpg" width="150" alt="Team Chat"/>
+</p>
+
 ## Features
 
 ### For Players
 | Feature | Description |
 |---------|-------------|
 | Instant Join | 6-character code auto-submits — no signup required |
+| Pre-filled Join | Share links with `?teamCode=ABC123` for animated auto-fill |
 | Browser Scanner | Camera-based QR scanning, works on any device |
 | Clue Navigation | Each scan reveals the next clue |
 | Progress Tracking | See X/Y codes found, points always visible |
 | Offline Mode | Cached clues visible without network, syncs when back online |
-| Waiting Room | See other teams, connection status before game starts |
+| Waiting Room | See "X of Y ready" teams with real-time connection status |
 | Team Chat | Message organizers for hints |
 | Dark/Light Theme | User preference |
 
@@ -74,6 +85,7 @@ QR Hunt is an interactive treasure hunt game where teams race to find hidden QR 
 | Visual Builder | Drag-and-drop node creation |
 | Multi-game Support | Run multiple hunts simultaneously |
 | QR Generator | Built-in with logo embedding and error correction |
+| Share Links | Copy team join links with pre-filled codes |
 | Real-time Monitor | Watch team progress live |
 | Performance Charts | Analyze team timing per clue |
 | Team Presence | See which teams are online in waiting room |
@@ -99,7 +111,7 @@ QR Hunt is an interactive treasure hunt game where teams race to find hidden QR 
 - **SQLite** — No external database needed
 - **Docker + Caddy** — One-command deploy with auto HTTPS
 - **i18n Support** — English, French, Portuguese translations
-- **414 tests** — Comprehensive test coverage
+- **671 tests** — Comprehensive test coverage
 
 ## Quick Start
 
@@ -118,7 +130,7 @@ docker compose up -d
 ```bash
 npm install
 npm run dev
-# App: http://localhost:5173 | API: http://localhost:3002
+# App: http://localhost:3000 | API: http://localhost:3002
 ```
 
 ## How It Works
@@ -146,12 +158,18 @@ npm run dev
 
 ```
 app/                  # Remix frontend (React)
-├── components/       # QRScanner, Chat, ClueDisplay...
+├── components/       # UI components
+│   ├── Button.tsx    # Polymorphic button (button/link/anchor)
+│   ├── Modal.tsx     # Centralized modal with header/footer
+│   ├── Card.tsx      # Card container
+│   ├── WaitingRoom.tsx # Pre-game lobby with team presence
+│   └── ...           # QRScanner, Chat, ClueDisplay, etc.
 ├── routes/           # Pages: play, join, admin, leaderboard
-└── hooks/            # Shared logic (useQRScanner)
+├── hooks/            # Shared logic (useQRScanner, useSSE)
+└── i18n/             # Translations (en, fr, pt)
 
 server/               # Fastify backend
-├── api/routes/       # REST endpoints
+├── api/routes/       # REST endpoints + SSE streams
 ├── domain/           # Business logic & repositories
 └── db/               # SQLite migrations
 ```
@@ -169,7 +187,7 @@ npm run typecheck    # Type checking
 ## Tech Stack
 
 **Backend:** Node.js 20+, Fastify 5, TypeScript, SQLite
-**Frontend:** Remix 2, React 18, Vite 6
+**Frontend:** Remix 2, React 18, Vite 6, Tailwind
 **Real-time:** Server-Sent Events
 **Deploy:** Docker, Caddy
 

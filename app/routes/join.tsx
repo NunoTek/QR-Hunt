@@ -1,6 +1,8 @@
 import type { MetaFunction } from "@remix-run/node";
 import { useNavigate, useSearchParams } from "@remix-run/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "~/components/Button";
+import { AlertCircle, ArrowLeft, Hexagon, LogIn, Play, Users } from "~/components/icons";
 import { Spinner } from "~/components/Loading";
 import { useToast } from "~/components/Toast";
 import { Version } from "~/components/Version";
@@ -118,10 +120,12 @@ export default function JoinGame() {
   const [searchParams] = useSearchParams();
   const prefillGame = searchParams.get("game") || "";
   const pendingScan = searchParams.get("scan") || "";
+  const prefillTeamCode = searchParams.get("teamCode") || searchParams.get("code") || "";
   const { t } = useTranslation();
 
   const [gameSlugInput, setGameSlugInput] = useState(prefillGame);
   const [teamCode, setTeamCode] = useState("");
+  const [isTypingAnimation, setIsTypingAnimation] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ gameSlug?: string; teamCode?: string }>({});
@@ -136,7 +140,38 @@ export default function JoinGame() {
 
   const submitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const sessionCheckedRef = useRef(false);
+  const typingAnimationRef = useRef(false);
   const toast = useToast();
+
+  // Animate typing the prefilled team code slowly
+  // Only start after session check completes and we're showing the form
+  useEffect(() => {
+    if (checkingSession || existingSession || !prefillTeamCode || typingAnimationRef.current) return;
+    typingAnimationRef.current = true;
+
+    const cleanCode = prefillTeamCode.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, CODE_LENGTH);
+    if (!cleanCode) return;
+
+    setIsTypingAnimation(true);
+    let currentIndex = 0;
+
+    const typeNextChar = () => {
+      if (currentIndex < cleanCode.length) {
+        setTeamCode(cleanCode.slice(0, currentIndex + 1));
+        currentIndex++;
+        setTimeout(typeNextChar, 150); // 150ms delay between characters
+      } else {
+        setIsTypingAnimation(false);
+      }
+    };
+
+    // Start typing after a small delay
+    const startTimeout = setTimeout(typeNextChar, 300);
+
+    return () => {
+      clearTimeout(startTimeout);
+    };
+  }, [prefillTeamCode, checkingSession, existingSession]);
 
   // Check for existing session on mount
   useEffect(() => {
@@ -317,30 +352,24 @@ export default function JoinGame() {
           </div>
 
           {/* Action Buttons */}
-          <div className="space-y-3">
-            <button
-              type="button"
+          <div className="space-y-3 gap-3 flex flex-col">
+            <Button
+              variant="primary"
               onClick={handleResumeGame}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 sm:py-4 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white font-semibold rounded-xl hover:opacity-90 transition-all shadow-lg"
+              leftIcon={<Play size={20} />}
+              className="w-full"
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polygon points="5 3 19 12 5 21 5 3" />
-              </svg>
               {t("pages.join.resumeGame")}
-            </button>
+            </Button>
 
-            <button
-              type="button"
+            <Button
+              variant="outline"
               onClick={handleJoinDifferent}
-              className="w-full mt-4 flex items-center justify-center gap-2 px-6 py-3 text-secondary border hover:border-strong rounded-xl transition-colors"
+              leftIcon={<LogIn size={20} />}
+              className="w-full"
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                <polyline points="10 17 15 12 10 7" />
-                <line x1="15" y1="12" x2="3" y2="12" />
-              </svg>
               {t("pages.join.joinDifferent")}
-            </button>
+            </Button>
           </div>
 
           {/* Info text */}
@@ -354,10 +383,7 @@ export default function JoinGame() {
               href="/"
               className="inline-flex items-center gap-2 text-tertiary hover:text-[var(--color-primary)] text-sm transition-colors"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="19" y1="12" x2="5" y2="12" />
-                <polyline points="12 19 5 12 12 5" />
-              </svg>
+              <ArrowLeft size={16} />
               {t("pages.join.backToHome")}
             </a>
           </div>
@@ -383,11 +409,7 @@ export default function JoinGame() {
         {/* Error Alert */}
         {error && (
           <div className="flex items-center gap-3 bg-[var(--color-error)]/10 border border-[var(--color-error)]/30 text-[var(--color-error)] px-4 py-3 rounded-xl mb-4 sm:mb-6 animate-slide-in-down">
-            <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
+            <AlertCircle size={20} className="flex-shrink-0" />
             <span className="text-sm">{error}</span>
           </div>
         )}
@@ -396,9 +418,7 @@ export default function JoinGame() {
           {/* Game ID Field */}
           <div>
             <label htmlFor="gameSlug" className="flex items-center gap-2 text-sm font-medium text-secondary mb-2">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-              </svg>
+              <Hexagon size={16} />
               {t("pages.join.form.gameId")}
             </label>
             <input
@@ -419,12 +439,7 @@ export default function JoinGame() {
           {/* Team Code Field */}
           <div className="mt-4">
             <label className="flex items-center gap-2 text-sm font-medium text-secondary mb-3">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
+              <Users size={16} />
               {t("pages.join.form.teamCode")}
             </label>
             <TeamCodeInput
@@ -436,7 +451,7 @@ export default function JoinGame() {
                 }
               }}
               onComplete={handleCodeComplete}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isTypingAnimation}
             />
             <p className="mt-3 text-xs sm:text-sm text-muted text-center">
               {t("pages.join.form.teamCodeHint")}
@@ -447,27 +462,16 @@ export default function JoinGame() {
           </div>
 
           {/* Submit Button */}
-          <button
+          <Button
             type="submit"
-            className="w-full mt-4 flex items-center justify-center gap-2 px-6 py-3 sm:py-4 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white font-semibold rounded-xl hover:opacity-90 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed min-h-[3rem]"
+            variant="primary"
             disabled={isSubmitting}
+            isLoading={isSubmitting}
+            leftIcon={!isSubmitting ? <LogIn size={20} /> : undefined}
+            className="w-full mt-4"
           >
-            {isSubmitting ? (
-              <>
-                <Spinner size="sm" />
-                <span>{t("pages.join.form.joining")}</span>
-              </>
-            ) : (
-              <>
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                  <polyline points="10 17 15 12 10 7" />
-                  <line x1="15" y1="12" x2="3" y2="12" />
-                </svg>
-                {t("pages.join.form.joinButton")}
-              </>
-            )}
-          </button>
+            {isSubmitting ? t("pages.join.form.joining") : t("pages.join.form.joinButton")}
+          </Button>
         </form>
 
         {/* Back Link */}
@@ -476,10 +480,7 @@ export default function JoinGame() {
             href="/"
             className="inline-flex items-center gap-2 text-tertiary hover:text-[var(--color-primary)] text-sm transition-colors"
           >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="19" y1="12" x2="5" y2="12" />
-              <polyline points="12 19 5 12 12 5" />
-            </svg>
+            <ArrowLeft size={16} />
             {t("pages.join.backToHome")}
           </a>
         </div>

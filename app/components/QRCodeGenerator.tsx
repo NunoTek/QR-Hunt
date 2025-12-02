@@ -1,5 +1,7 @@
 import QRCode from "qrcode";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Button } from "./Button";
+import { Modal } from "./Modal";
 import { useToast } from "./Toast";
 
 interface QRCodeGeneratorProps {
@@ -170,117 +172,113 @@ export function QRCodeGenerator({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-3 sm:p-4">
-      <div className="rounded-lg max-w-[700px] w-full max-h-[90vh] overflow-y-auto shadow-lg sm:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)]" style={{ backgroundColor: 'var(--bg-elevated)' }}>
-        <div className="flex justify-between items-center p-4 sm:p-4 sm:px-6 border-b border-border" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-          <h3 className="m-0 text-base sm:text-lg font-semibold text-primary">QR Code Generator</h3>
-          {onClose && (
-            <button onClick={onClose} className="bg-transparent border-0 text-2xl cursor-pointer text-muted hover:text-primary p-0 leading-none transition-colors min-h-[2.5rem] min-w-[2.5rem] flex items-center justify-center" aria-label="Close">
-              &times;
-            </button>
-          )}
+    <Modal
+      isOpen={true}
+      onClose={onClose || (() => {})}
+      title="QR Code Generator"
+      maxWidth="max-w-[700px]"
+      showCloseButton={!!onClose}
+      footer={
+        <div className="flex gap-2 sm:gap-3 flex-wrap">
+          <Button variant="secondary" onClick={() => downloadQRCode("png")} className="flex-1 min-w-[110px]">
+            Download PNG
+          </Button>
+          <Button variant="secondary" onClick={() => downloadQRCode("svg")} className="flex-1 min-w-[110px]">
+            Download SVG
+          </Button>
+          <Button variant="secondary" onClick={printQRCode} className="flex-1 min-w-[110px]">
+            Print
+          </Button>
+          <Button variant="secondary" onClick={copyUrl} className="flex-1 min-w-[110px]">
+            Copy URL
+          </Button>
+        </div>
+      }
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
+        <div className="flex flex-col items-center text-center">
+          <h4 className="m-0 mb-3 sm:mb-4 text-sm sm:text-base font-medium text-primary">{title}</h4>
+          <canvas ref={canvasRef} width={size} height={size} className="border rounded bg-white max-w-full h-auto" />
+          <p className="mt-3 text-xs text-muted break-all max-w-full">{url}</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 p-4 sm:p-6">
-          <div className="flex flex-col items-center text-center">
-            <h4 className="m-0 mb-3 sm:mb-4 text-sm sm:text-base font-medium text-primary">{title}</h4>
-            <canvas ref={canvasRef} width={size} height={size} className="border rounded bg-white max-w-full h-auto" />
-            <p className="mt-3 text-xs text-muted break-all max-w-full">{url}</p>
-          </div>
-
-          <div className="flex flex-col gap-3.5 sm:gap-4">
-            <div className="flex flex-col gap-2">
-              <label className="text-xs sm:text-sm font-medium text-secondary">Foreground Color</label>
-              <div className="flex gap-2 items-center">
-                <input
-                  type="color"
-                  value={foregroundColor}
-                  onChange={(e) => setForegroundColor(e.target.value)}
-                  className="w-10 h-10 p-0.5 border rounded cursor-pointer"
-                />
-                <input
-                  type="text"
-                  value={foregroundColor}
-                  onChange={(e) => setForegroundColor(e.target.value)}
-                  className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base bg-[var(--bg-secondary)] text-[var(--text-primary)] border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent min-h-[2.75rem] sm:min-h-[3rem]"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-xs sm:text-sm font-medium text-secondary">Background Color</label>
-              <div className="flex gap-2 items-center">
-                <input
-                  type="color"
-                  value={backgroundColor}
-                  onChange={(e) => setBackgroundColor(e.target.value)}
-                  className="w-10 h-10 p-0.5 border rounded cursor-pointer"
-                />
-                <input
-                  type="text"
-                  value={backgroundColor}
-                  onChange={(e) => setBackgroundColor(e.target.value)}
-                  className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base bg-[var(--bg-secondary)] text-[var(--text-primary)] border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent min-h-[2.75rem] sm:min-h-[3rem]"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-xs sm:text-sm font-medium text-secondary">Logo URL (optional)</label>
+        <div className="flex flex-col gap-3.5 sm:gap-4">
+          <div className="flex flex-col gap-2">
+            <label className="text-xs sm:text-sm font-medium text-secondary">Foreground Color</label>
+            <div className="flex gap-2 items-center">
               <input
-                type="url"
-                value={logoUrl}
-                onChange={(e) => setLogoUrl(e.target.value)}
-                className="px-3 sm:px-4 py-2 text-sm sm:text-base bg-[var(--bg-secondary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent min-h-[2.75rem] sm:min-h-[3rem]"
-                placeholder="https://example.com/logo.png"
+                type="color"
+                value={foregroundColor}
+                onChange={(e) => setForegroundColor(e.target.value)}
+                className="w-10 h-10 p-0.5 border rounded cursor-pointer"
+              />
+              <input
+                type="text"
+                value={foregroundColor}
+                onChange={(e) => setForegroundColor(e.target.value)}
+                className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base bg-secondary text-primary border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
               />
             </div>
+          </div>
 
-            {logoUrl && (
-              <div className="flex flex-col gap-2">
-                <label className="text-xs sm:text-sm font-medium text-secondary">Logo Size: {logoSize}px</label>
-                <input
-                  type="range"
-                  min="30"
-                  max="100"
-                  value={logoSize}
-                  onChange={(e) => setLogoSize(Number(e.target.value))}
-                  className="w-full cursor-pointer"
-                />
-              </div>
-            )}
-
-            <div className="flex flex-col gap-2">
-              <label className="text-xs sm:text-sm font-medium text-secondary">Error Correction Level</label>
-              <select
-                value={errorCorrectionLevel}
-                onChange={(e) => setErrorCorrectionLevel(e.target.value as "L" | "M" | "Q" | "H")}
-                className="px-3 sm:px-4 py-2 text-sm sm:text-base bg-[var(--bg-secondary)] text-[var(--text-primary)] border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent cursor-pointer min-h-[2.75rem] sm:min-h-[3rem]"
-              >
-                <option value="L">Low (7%)</option>
-                <option value="M">Medium (15%)</option>
-                <option value="Q">Quartile (25%)</option>
-                <option value="H">High (30%) - Best for logos</option>
-              </select>
+          <div className="flex flex-col gap-2">
+            <label className="text-xs sm:text-sm font-medium text-secondary">Background Color</label>
+            <div className="flex gap-2 items-center">
+              <input
+                type="color"
+                value={backgroundColor}
+                onChange={(e) => setBackgroundColor(e.target.value)}
+                className="w-10 h-10 p-0.5 border rounded cursor-pointer"
+              />
+              <input
+                type="text"
+                value={backgroundColor}
+                onChange={(e) => setBackgroundColor(e.target.value)}
+                className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base bg-secondary text-primary border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+              />
             </div>
           </div>
-        </div>
 
-        <div className="flex gap-2 sm:gap-3 p-4 sm:p-4 sm:px-6 border-t border-border flex-wrap" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-          <button onClick={() => downloadQRCode("png")} className="flex-1 min-w-[110px] sm:min-w-[120px] inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium text-primary bg-tertiary rounded-lg hover:bg-tertiary/80 transition-colors border min-h-[2.75rem] sm:min-h-[3rem]">
-            Download PNG
-          </button>
-          <button onClick={() => downloadQRCode("svg")} className="flex-1 min-w-[110px] sm:min-w-[120px] inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium text-primary bg-tertiary rounded-lg hover:bg-tertiary/80 transition-colors border min-h-[2.75rem] sm:min-h-[3rem]">
-            Download SVG
-          </button>
-          <button onClick={printQRCode} className="flex-1 min-w-[110px] sm:min-w-[120px] inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium text-primary bg-tertiary rounded-lg hover:bg-tertiary/80 transition-colors border min-h-[2.75rem] sm:min-h-[3rem]">
-            Print
-          </button>
-          <button onClick={copyUrl} className="flex-1 min-w-[110px] sm:min-w-[120px] inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2 text-sm font-medium text-primary bg-tertiary rounded-lg hover:bg-tertiary/80 transition-colors border min-h-[2.75rem] sm:min-h-[3rem]">
-            Copy URL
-          </button>
+          <div className="flex flex-col gap-2">
+            <label className="text-xs sm:text-sm font-medium text-secondary">Logo URL (optional)</label>
+            <input
+              type="url"
+              value={logoUrl}
+              onChange={(e) => setLogoUrl(e.target.value)}
+              className="px-3 sm:px-4 py-2 text-sm sm:text-base bg-secondary text-primary placeholder-muted border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+              placeholder="https://example.com/logo.png"
+            />
+          </div>
+
+          {logoUrl && (
+            <div className="flex flex-col gap-2">
+              <label className="text-xs sm:text-sm font-medium text-secondary">Logo Size: {logoSize}px</label>
+              <input
+                type="range"
+                min="30"
+                max="100"
+                value={logoSize}
+                onChange={(e) => setLogoSize(Number(e.target.value))}
+                className="w-full cursor-pointer"
+              />
+            </div>
+          )}
+
+          <div className="flex flex-col gap-2">
+            <label className="text-xs sm:text-sm font-medium text-secondary">Error Correction Level</label>
+            <select
+              value={errorCorrectionLevel}
+              onChange={(e) => setErrorCorrectionLevel(e.target.value as "L" | "M" | "Q" | "H")}
+              className="px-3 sm:px-4 py-2 text-sm sm:text-base bg-secondary text-primary border rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent cursor-pointer"
+            >
+              <option value="L">Low (7%)</option>
+              <option value="M">Medium (15%)</option>
+              <option value="Q">Quartile (25%)</option>
+              <option value="H">High (30%) - Best for logos</option>
+            </select>
+          </div>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

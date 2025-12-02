@@ -4,6 +4,7 @@ import { Spinner } from "~/components/Loading";
 import { useToast } from "~/components/Toast";
 import { QR_SCANNER } from "~/config/constants";
 import { playCoinSound, playErrorSound, playSuccessSound } from "~/lib/sounds";
+import { Lock, Check, Close, AlertCircle, Camera, CameraOff } from "./icons";
 
 interface QRScannerProps {
   gameSlug: string;
@@ -349,10 +350,7 @@ export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false, onSca
       <div className="p-5 sm:p-6 bg-elevated rounded-lg border shadow-sm animate-slide-up">
         <div className="flex items-center gap-3 mb-4 sm:mb-5">
           <div className="flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-full flex-shrink-0 bg-warning/10 text-warning-dark">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="sm:w-6 sm:h-6">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-            </svg>
+            <Lock size={22} className="sm:w-6 sm:h-6" />
           </div>
           <div>
             <h3 className="text-base sm:text-lg font-semibold text-primary">Password Required</h3>
@@ -412,13 +410,9 @@ export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false, onSca
         <div className="text-center">
           <div className={`inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full mb-4 ${scanResult.success ? "bg-success/10 text-success" : "bg-error/10 text-error"}`}>
             {scanResult.success ? (
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="sm:w-12 sm:h-12">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
+              <Check size={40} className="sm:w-12 sm:h-12" />
             ) : (
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="sm:w-12 sm:h-12">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <Close size={40} className="sm:w-12 sm:h-12" />
             )}
           </div>
           <p className="font-semibold text-base sm:text-lg mt-4 text-primary">
@@ -455,11 +449,7 @@ export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false, onSca
     <div className="w-full flex flex-col items-center">
       {(error || cameraError) && (
         <div className="flex items-center gap-3 p-4 mb-4 bg-error/10 text-error border border-error/20 rounded-lg w-full max-w-md">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
+          <AlertCircle size={20} className="flex-shrink-0" />
           <span className="text-sm font-medium">{error || cameraError}</span>
         </div>
       )}
@@ -534,11 +524,7 @@ export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false, onSca
             className="w-full mt-2 inline-flex items-center justify-center gap-2.5 px-5 sm:px-6 py-3 sm:py-3.5 text-base font-semibold text-white bg-[var(--color-error)] hover:bg-red-700 rounded-xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isProcessing}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="sm:w-6 sm:h-6">
-              <path d="M1 1l22 22" />
-              <path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34" />
-              <path d="M15 11a3 3 0 1 0-5.5 1.5" />
-            </svg>
+            <CameraOff size={20} className="sm:w-6 sm:h-6" />
             Close Camera
           </button>
         </div>
@@ -547,10 +533,7 @@ export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false, onSca
           onClick={startCamera}
           className="w-full max-w-md inline-flex items-center justify-center gap-2.5 sm:gap-3 px-5 sm:px-6 py-3 sm:py-4 text-base sm:text-lg font-semibold text-white bg-gradient-to-r from-primary to-primary-dark rounded-lg hover:shadow-lg hover:scale-[1.02] transition-all min-h-[3.5rem] sm:min-h-[4rem]"
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="sm:w-7 sm:h-7">
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-            <circle cx="12" cy="13" r="4" />
-          </svg>
+          <Camera size={24} className="sm:w-7 sm:h-7" />
           Start QR Scanner
         </button>
       )}

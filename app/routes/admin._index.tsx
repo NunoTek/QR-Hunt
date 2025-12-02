@@ -2,6 +2,9 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Link, useLoaderData, useNavigate } from "@remix-run/react";
 import { useState } from "react";
+import { StatusBadge } from "~/components/admin/game-editor/StatusBadge";
+import { Button } from "~/components/Button";
+import { Plus, Trash, Upload } from "~/components/icons";
 import { useTranslation } from "~/i18n/I18nContext";
 import { getApiUrl } from "~/lib/api";
 
@@ -147,19 +150,11 @@ export default function AdminDashboard() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-primary">{t("pages.admin.dashboard.title")}</h1>
         <div className="flex gap-2">
-          <Link to="/admin/games/new" className="btn btn-primary">
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
+          <Button as="link" to="/admin/games/new" variant="primary" leftIcon={<Plus size={20} />}>
             {t("pages.admin.dashboard.createGame")}
-          </Link>
+          </Button>
           <label className={`btn btn-secondary cursor-pointer ${isImporting ? "opacity-50 pointer-events-none" : ""}`}>
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="17 8 12 3 7 8" />
-              <line x1="12" y1="3" x2="12" y2="15" />
-            </svg>
+            <Upload size={20} />
             {isImporting ? t("pages.admin.dashboard.importing") : t("pages.admin.dashboard.import")}
             <input
               type="file"
@@ -231,42 +226,31 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-4 sm:px-6 py-4 text-secondary hidden sm:table-cell">{game.publicSlug}</td>
                     <td className="px-4 sm:px-6 py-4">
-                      <span
-                        className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
-                          game.status === "active"
-                            ? "bg-[var(--color-success)]/15 text-[var(--color-success)]"
-                            : game.status === "completed"
-                              ? "bg-[var(--color-info)]/15 text-[var(--color-info)]"
-                              : "bg-[var(--color-warning)]/15 text-[var(--color-warning)]"
-                        }`}
-                      >
-                        {t(`common.status.${game.status}`)}
-                      </span>
+                      <StatusBadge status={game.status} t={t} />
                     </td>
                     <td className="px-4 sm:px-6 py-4 text-secondary hidden md:table-cell">
                       {new Date(game.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-4 sm:px-6 py-4">
                       <div className="flex gap-2 justify-end">
-                        <Link
+                        <Button
+                          as="link"
                           to={`/admin/games/${game.id}`}
-                          className="inline-flex items-center px-3 py-1.5 text-sm text-[var(--color-primary)] border border-[var(--color-primary)]/30 hover:border-[var(--color-primary)]/50 rounded-lg transition-colors"
+                          variant="outline"
+                          size="small"
                         >
                           {t("pages.admin.dashboard.manage")}
-                        </Link>
+                        </Button>
                         {(game.status === "draft" || game.status === "completed") && (
-                          <button
-                            type="button"
+                          <Button
+                            variant="danger"
+                            size="small"
                             onClick={() => handleDelete(game)}
                             disabled={isDeleting === game.id}
-                            className="inline-flex items-center px-2 py-1.5 text-sm text-[var(--color-error)] border border-[var(--color-error)]/30 hover:bg-[var(--color-error)]/10 rounded-lg transition-colors disabled:opacity-50"
                             title={t("common.delete")}
                           >
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polyline points="3 6 5 6 21 6" />
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                            </svg>
-                          </button>
+                            <Trash size={16} />
+                          </Button>
                         )}
                       </div>
                     </td>

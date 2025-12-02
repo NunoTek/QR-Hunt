@@ -144,6 +144,41 @@
       "cta": {
         "title": "Pronto para começar a sua caça?",
         "subtitle": "Crie a sua primeira caça ao tesouro em minutos. Não é necessário cartão de crédito."
+      },
+      "screenshots": {
+        "title": "Veja em Ação",
+        "subtitle": "Uma experiência mobile-first elegante que funciona perfeitamente em qualquer dispositivo",
+        "items": {
+          "scan": {
+            "title": "Scanner QR",
+            "description": "Aponte a câmara para qualquer código QR. Reconhecimento instantâneo com feedback visual."
+          },
+          "clue": {
+            "title": "Exibição de Pistas",
+            "description": "Belos cartões de pistas com suporte para texto, imagens, vídeos e áudio."
+          },
+          "progress": {
+            "title": "Acompanhamento de Progresso",
+            "description": "Veja a sua jornada a desenrolar-se. Acompanhe os códigos QR encontrados e pontos ganhos."
+          },
+          "leaderboard": {
+            "title": "Ranking ao Vivo",
+            "description": "As classificações atualizam-se instantaneamente quando as equipas encontram pistas."
+          },
+          "chat": {
+            "title": "Chat de Equipa",
+            "description": "Envie mensagens aos organizadores para dicas ou coordene com os colegas de equipa."
+          },
+          "resume": {
+            "title": "Retomar Jogo",
+            "description": "Volte a qualquer momento. O seu progresso está sempre guardado."
+          }
+        },
+        "features": {
+          "darkMode": "Modo Escuro",
+          "mobile": "Mobile-First",
+          "realtime": "Atualizações em Tempo Real"
+        }
       }
     },
     "join": {
@@ -732,6 +767,7 @@
       "yourTeam": "A sua equipa",
       "ready": "Pronto",
       "teamsReady": "Equipas prontas",
+      "of": "de",
       "noTeamsYet": "Ainda não entraram equipas",
       "you": "Você",
       "connected": "Ligado",

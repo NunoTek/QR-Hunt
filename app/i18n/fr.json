@@ -144,6 +144,41 @@
       "cta": {
         "title": "Prêt à commencer votre chasse ?",
         "subtitle": "Créez votre première chasse au trésor en quelques minutes. Pas de carte de crédit requise."
+      },
+      "screenshots": {
+        "title": "Voyez par vous-même",
+        "subtitle": "Une expérience mobile-first élégante qui fonctionne parfaitement sur tous les appareils",
+        "items": {
+          "scan": {
+            "title": "Scanner QR",
+            "description": "Pointez votre caméra vers n'importe quel code QR. Reconnaissance instantanée avec retour visuel."
+          },
+          "clue": {
+            "title": "Affichage des indices",
+            "description": "De belles cartes d'indices avec support pour texte, images, vidéos et audio."
+          },
+          "progress": {
+            "title": "Suivi de progression",
+            "description": "Visualisez votre parcours. Suivez les codes QR trouvés et les points gagnés."
+          },
+          "leaderboard": {
+            "title": "Classement en direct",
+            "description": "Le classement se met à jour instantanément quand les équipes trouvent des indices."
+          },
+          "chat": {
+            "title": "Chat d'équipe",
+            "description": "Envoyez des messages aux organisateurs pour des indices ou coordonnez avec vos coéquipiers."
+          },
+          "resume": {
+            "title": "Reprendre le jeu",
+            "description": "Revenez à tout moment. Votre progression est toujours sauvegardée."
+          }
+        },
+        "features": {
+          "darkMode": "Mode sombre",
+          "mobile": "Mobile-First",
+          "realtime": "Mises à jour en temps réel"
+        }
       }
     },
     "join": {
@@ -732,6 +767,7 @@
       "yourTeam": "Votre équipe",
       "ready": "Prêt",
       "teamsReady": "Équipes prêtes",
+      "of": "sur",
       "noTeamsYet": "Aucune équipe n'a encore rejoint",
       "you": "Vous",
       "connected": "Connecté",

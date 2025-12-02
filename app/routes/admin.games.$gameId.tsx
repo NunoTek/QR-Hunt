@@ -4,8 +4,20 @@ import { Form, Link, useActionData, useLoaderData, useNavigation, useRevalidator
 import JSZip from "jszip";
 import QRCode from "qrcode";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  type Edge,
+  type Feedback,
+  type Game,
+  inputClasses,
+  type Node,
+  type Team,
+} from "~/components/admin/game-editor";
+import { NodeBadge } from "~/components/admin/game-editor/NodeBadge";
+import { StatusBadge } from "~/components/admin/game-editor/StatusBadge";
+import { Button } from "~/components/Button";
 import { Chat } from "~/components/Chat";
 import { ClueDisplay } from "~/components/ClueDisplay";
+import { Camera, Check, CheckCircle, Circle, Close, Download, Edit, Eye, Loader, Play, Trash, Upload } from "~/components/icons";
 import { QRCodeGenerator } from "~/components/QRCodeGenerator";
 import { QRIdentifyScanner } from "~/components/QRIdentifyScanner";
 import { ToastProvider, useToast } from "~/components/Toast";
@@ -15,57 +27,6 @@ import { getApiUrl } from "~/lib/api";
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   return [{ title: data?.game?.name ? `${data.game.name} - QR Hunt Admin` : "Game - QR Hunt Admin" }];
 };
-
-interface Node {
-  id: string;
-  nodeKey: string;
-  title: string;
-  content: string | null;
-  contentType: string;
-  mediaUrl: string | null;
-  passwordRequired: boolean;
-  isStart: boolean;
-  isEnd: boolean;
-  points: number;
-  hint: string | null;
-  adminComment: string | null;
-  activated: boolean;
-}
-
-interface Edge {
-  id: string;
-  fromNodeId: string;
-  toNodeId: string;
-}
-
-interface Team {
-  id: string;
-  code: string;
-  name: string;
-  startNodeId: string | null;
-  logoUrl: string | null;
-}
-
-interface Feedback {
-  id: string;
-  teamName: string;
-  rating: number;
-  comment: string | null;
-  createdAt: string;
-}
-
-interface Game {
-  id: string;
-  name: string;
-  publicSlug: string;
-  status: string;
-  logoUrl: string | null;
-  settings: {
-    rankingMode: string;
-    basePoints: number;
-    randomMode?: boolean;
-  };
-}
 
 interface LoaderData {
   game: Game;
@@ -411,31 +372,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 }
 
-// Reusable components
-const StatusBadge = ({ status, t }: { status: string; t: (key: string) => string }) => (
-  <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
-    status === "active" ? "bg-[var(--color-success)]/15 text-[var(--color-success)]" :
-    status === "completed" ? "bg-[var(--color-info)]/15 text-[var(--color-info)]" :
-    "bg-[var(--color-warning)]/15 text-[var(--color-warning)]"
-  }`}>
-    {t(`common.status.${status}`)}
-  </span>
-);
-
-const NodeBadge = ({ type, t }: { type: "start" | "end"; t: (key: string) => string }) => (
-  <span className={`ml-2 inline-flex px-2 py-0.5 rounded text-xs font-medium ${
-    type === "start" ? "bg-[var(--color-success)]/15 text-[var(--color-success)]" : "bg-[var(--color-error)]/15 text-[var(--color-error)]"
-  }`}>
-    {t(`pages.admin.gameEditor.nodeBadges.${type}`)}
-  </span>
-);
-
-const inputClasses = "w-full px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent text-sm";
-const btnPrimary = "px-4 py-2 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white font-medium rounded-lg hover:opacity-90 transition-all text-sm disabled:opacity-50 shadow-sm";
-const btnSecondary = "px-4 py-2 text-secondary border hover:border-strong rounded-lg transition-colors text-sm disabled:opacity-50";
-const btnDanger = "px-4 py-2 bg-[var(--color-error)]/15 text-[var(--color-error)] border border-[var(--color-error)]/30 hover:bg-[var(--color-error)]/25 rounded-lg transition-colors text-sm disabled:opacity-50";
-const btnSmall = "px-2 py-1 text-xs rounded";
-
 export default function AdminGameDetail() {
   return (
     <ToastProvider>
@@ -468,6 +404,7 @@ function AdminGameDetailContent() {
   const [downloadingQRCodes, setDownloadingQRCodes] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState({ current: 0, total: 0 });
   const [nodeFilter, setNodeFilter] = useState({ title: "", activated: "all" as "all" | "activated" | "not-activated" });
+  const [formResetKey, setFormResetKey] = useState(0);
   const [qrFilter, setQrFilter] = useState({ title: "", activated: "all" as "all" | "activated" | "not-activated" });
   const deleteTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const lastActionDataRef = useRef<typeof actionData | null>(null);
@@ -741,7 +678,7 @@ function AdminGameDetailContent() {
   const isSubmitting = navigation.state === "submitting";
 
   const copyTeamShareInfo = async (team: Team) => {
-    const joinLink = `${data.baseUrl}/join?game=${data.game.publicSlug}`;
+    const joinLink = `${data.baseUrl}/join?game=${data.game.publicSlug}&teamCode=${team.code}`;
     const shareText = `Join ${team.name} in ${data.game.name}!\n\nJoin Link: ${joinLink}\nTeam Code: ${team.code}`;
 
     try {
@@ -784,29 +721,29 @@ function AdminGameDetailContent() {
             {data.game.status === "draft" && (
               <Form method="post" className="inline">
                 <input type="hidden" name="_action" value="activateGame" />
-                <button
+                <Button
                   type="submit"
-                  className={`${btnPrimary} ${!canActivate ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  variant="primary"
                   disabled={isSubmitting || !canActivate}
                   title={!canActivate ? t("pages.admin.gameEditor.activationWarning.title") : ""}
                 >
                   {t("pages.admin.gameEditor.activateGame")}
-                </button>
+                </Button>
               </Form>
             )}
 
             {data.game.status === "active" && (
               <Form method="post" className="inline">
                 <input type="hidden" name="_action" value="completeGame" />
-                <button type="submit" className={btnPrimary} disabled={isSubmitting}>
+                <Button type="submit" variant="primary" disabled={isSubmitting}>
                   {t("pages.admin.gameEditor.completeGame")}
-                </button>
+                </Button>
               </Form>
             )}
 
-            <Link to={`/leaderboard/${data.game.publicSlug}`} target="_blank" className={btnSecondary}>
+            <Button as="link" to={`/leaderboard/${data.game.publicSlug}`} variant="secondary" target="_blank">
               {t("pages.admin.gameEditor.viewLeaderboard")}
-            </Link>
+            </Button>
           </div>
         </div>
       </div>
@@ -935,28 +872,20 @@ function AdminGameDetailContent() {
                             title={node.activated ? "Click to deactivate" : "Click to activate"}
                           >
                             {node.activated ? (
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M20 6L9 17l-5-5" />
-                              </svg>
+                              <Check size={16} />
                             ) : (
-                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="10" />
-                              </svg>
+                              <Circle size={16} />
                             )}
                           </button>
                         </Form>
                       </td>
                       <td className="px-4 py-3 bg-elevated group-hover:bg-secondary">
                         <div className="flex gap-1 justify-end">
-                          <button onClick={() => setPreviewNode(node)} className={`${btnSecondary} ${btnSmall}`} title={t("pages.admin.gameEditor.nodes.buttons.preview")}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                              <circle cx="12" cy="12" r="3" />
-                            </svg>
-                            <span className="hidden">{t("pages.admin.gameEditor.nodes.buttons.preview")}</span>
-                          </button>
-                          <button onClick={() => setEditingNode(node)} className={`${btnSecondary} ${btnSmall}`}>{t("pages.admin.gameEditor.nodes.buttons.edit")}</button>
-                          <button onClick={() => handleDelete("node", node.id, node.title)} className={`${btnDanger} ${btnSmall}`}>{t("pages.admin.gameEditor.nodes.buttons.delete")}</button>
+                          <Button variant="secondary" size="small" onClick={() => setPreviewNode(node)} title={t("pages.admin.gameEditor.nodes.buttons.preview")}>
+                            <Eye size={14} />
+                          </Button>
+                          <Button variant="secondary" size="small" onClick={() => setEditingNode(node)}>{t("pages.admin.gameEditor.nodes.buttons.edit")}</Button>
+                          <Button variant="danger" size="small" onClick={() => handleDelete("node", node.id, node.title)}>{t("pages.admin.gameEditor.nodes.buttons.delete")}</Button>
                         </div>
                       </td>
                     </tr>
@@ -978,17 +907,17 @@ function AdminGameDetailContent() {
 
               <div>
                 <label className="block text-sm font-medium text-secondary mb-1">Title</label>
-                <input type="text" name="title" className={inputClasses} required defaultValue={editingNode?.title || ""} key={editingNode?.id || "new"} />
+                <input type="text" name="title" className={inputClasses} required defaultValue={editingNode?.title || ""} key={editingNode?.id || `new-${formResetKey}`} />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-secondary mb-1">Content</label>
-                <textarea name="content" className={inputClasses} rows={6} defaultValue={editingNode?.content || ""} key={`content-${editingNode?.id || "new"}`} />
+                <textarea name="content" className={inputClasses} rows={6} defaultValue={editingNode?.content || ""} key={`content-${editingNode?.id || `new-${formResetKey}`}`} />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-secondary mb-1">Content Type</label>
-                <select name="contentType" className={inputClasses} defaultValue={editingNode?.contentType || "text"} key={`type-${editingNode?.id || "new"}`}>
+                <select name="contentType" className={inputClasses} defaultValue={editingNode?.contentType || "text"} key={`type-${editingNode?.id || `new-${formResetKey}`}`}>
                   <option value="text">Text</option>
                   <option value="image">Image</option>
                   <option value="video">Video</option>
@@ -1001,13 +930,13 @@ function AdminGameDetailContent() {
                 <label className="block text-sm font-medium text-secondary mb-1">
                   Media URL
                   <span className="ml-2 text-xs text-muted font-normal">(optional)</span>
-                </label>                
-                <input type="url" name="mediaUrl" className={inputClasses} defaultValue={editingNode?.mediaUrl || ""} key={`media-${editingNode?.id || "new"}`} />
+                </label>
+                <input type="url" name="mediaUrl" className={inputClasses} defaultValue={editingNode?.mediaUrl || ""} key={`media-${editingNode?.id || `new-${formResetKey}`}`} />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-secondary mb-1">Points</label>
-                <input type="number" name="points" className={inputClasses} defaultValue={editingNode?.points || 100} key={`points-${editingNode?.id || "new"}`} />
+                <input type="number" name="points" className={inputClasses} defaultValue={editingNode?.points || 100} key={`points-${editingNode?.id || `new-${formResetKey}`}`} />
               </div>
 
               <div>
@@ -1015,7 +944,7 @@ function AdminGameDetailContent() {
                   Hint
                   <span className="ml-2 text-xs text-muted font-normal">(optional, costs half points)</span>
                 </label>
-                <textarea name="hint" className={inputClasses} rows={2} placeholder="A hint players can request for half the points..." defaultValue={editingNode?.hint || ""} key={`hint-${editingNode?.id || "new"}`} />
+                <textarea name="hint" className={inputClasses} rows={2} placeholder="A hint players can request for half the points..." defaultValue={editingNode?.hint || ""} key={`hint-${editingNode?.id || `new-${formResetKey}`}`} />
               </div>
 
               <div>
@@ -1023,33 +952,33 @@ function AdminGameDetailContent() {
                   Admin Comment
                   <span className="ml-2 text-xs text-muted font-normal">(only visible to admins)</span>
                 </label>
-                <textarea name="adminComment" className={inputClasses} rows={2} placeholder="Internal notes about this node..." defaultValue={editingNode?.adminComment || ""} key={`comment-${editingNode?.id || "new"}`} />
+                <textarea name="adminComment" className={inputClasses} rows={2} placeholder="Internal notes about this node..." defaultValue={editingNode?.adminComment || ""} key={`comment-${editingNode?.id || `new-${formResetKey}`}`} />
               </div>
 
               <div className="flex items-center gap-2">
-                <input type="checkbox" name="passwordRequired" id="pwReq" defaultChecked={editingNode?.passwordRequired || false} key={`pwreq-${editingNode?.id || "new"}`} className="rounded bg-secondary border-border" />
+                <input type="checkbox" name="passwordRequired" id="pwReq" defaultChecked={editingNode?.passwordRequired || false} key={`pwreq-${editingNode?.id || `new-${formResetKey}`}`} className="rounded bg-secondary border-border" />
                 <label htmlFor="pwReq" className="text-sm text-secondary">Password Required</label>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-secondary mb-1">Password</label>
-                <input type="text" name="password" className={inputClasses} placeholder={editingNode ? "(leave empty to keep current)" : ""} />
+                <input type="text" name="password" className={inputClasses} placeholder={editingNode ? "(leave empty to keep current)" : ""} key={`password-${editingNode?.id || `new-${formResetKey}`}`} />
               </div>
 
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 text-sm text-secondary">
-                  <input type="checkbox" name="isStart" defaultChecked={editingNode?.isStart || false} key={`start-${editingNode?.id || "new"}`} className="rounded bg-secondary border-border" />
+                  <input type="checkbox" name="isStart" defaultChecked={editingNode?.isStart || false} key={`start-${editingNode?.id || `new-${formResetKey}`}`} className="rounded bg-secondary border-border" />
                   Start Node
                 </label>
                 <label className="flex items-center gap-2 text-sm text-secondary">
-                  <input type="checkbox" name="isEnd" defaultChecked={editingNode?.isEnd || false} key={`end-${editingNode?.id || "new"}`} className="rounded bg-secondary border-border" />
+                  <input type="checkbox" name="isEnd" defaultChecked={editingNode?.isEnd || false} key={`end-${editingNode?.id || `new-${formResetKey}`}`} className="rounded bg-secondary border-border" />
                   End Node
                 </label>
               </div>
 
               <div className="flex gap-2 pt-2">
-                <button type="submit" className={btnPrimary} disabled={isSubmitting}>{editingNode ? "Update Node" : "Add Node"}</button>
-                <button type="button" className={btnSecondary} onClick={() => setEditingNode(null)}>{editingNode ? "Cancel" : "Clear"}</button>
+                <Button type="submit" variant="primary" disabled={isSubmitting}>{editingNode ? "Update Node" : "Add Node"}</Button>
+                <Button variant="secondary" onClick={() => { setEditingNode(null); setFormResetKey(k => k + 1); }}>{editingNode ? "Cancel" : "Clear"}</Button>
               </div>
             </Form>
           </div>
@@ -1080,8 +1009,8 @@ function AdminGameDetailContent() {
                       <td className="px-4 py-3 text-primary">{toNode?.title || "Unknown"}</td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1 justify-end">
-                          <button onClick={() => setEditingEdge(edge)} className={`${btnSecondary} ${btnSmall}`}>Edit</button>
-                          <button onClick={() => handleDelete("edge", edge.id, `${fromNode?.title} → ${toNode?.title}`)} className={`${btnDanger} ${btnSmall}`}>Delete</button>
+                          <Button variant="secondary" size="small" onClick={() => setEditingEdge(edge)}>Edit</Button>
+                          <Button variant="danger" size="small" onClick={() => handleDelete("edge", edge.id, `${fromNode?.title} → ${toNode?.title}`)}>Delete</Button>
                         </div>
                       </td>
                     </tr>
@@ -1126,8 +1055,8 @@ function AdminGameDetailContent() {
               </div>
 
               <div className="flex gap-2 pt-2">
-                <button type="submit" className={btnPrimary} disabled={isSubmitting}>{editingEdge ? "Update Edge" : "Add Edge"}</button>
-                <button type="button" className={btnSecondary} onClick={() => setEditingEdge(null)}>{editingEdge ? "Cancel" : "Clear"}</button>
+                <Button type="submit" variant="primary" disabled={isSubmitting}>{editingEdge ? "Update Edge" : "Add Edge"}</Button>
+                <Button variant="secondary" onClick={() => setEditingEdge(null)}>{editingEdge ? "Cancel" : "Clear"}</Button>
               </div>
             </Form>
           </div>
@@ -1143,40 +1072,21 @@ function AdminGameDetailContent() {
               <p className="text-secondary text-sm mt-1">Generate, customize, and download QR codes for each node.</p>
             </div>
             <div className="flex gap-2 flex-wrap">
-              <button
+              <Button
+                variant="primary"
                 onClick={downloadAllQRCodes}
                 disabled={downloadingQRCodes || data.qrCodes.length === 0}
-                className={`${btnPrimary} inline-flex items-center gap-2`}
+                leftIcon={downloadingQRCodes ? <Loader size={16} /> : <Download size={16} />}
               >
-                {downloadingQRCodes ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    {downloadProgress.current}/{downloadProgress.total}
-                  </>
-                ) : (
-                  <>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="7 10 12 15 17 10" />
-                      <line x1="12" y1="15" x2="12" y2="3" />
-                    </svg>
-                    Download All (ZIP)
-                  </>
-                )}
-              </button>
-              <button
+                {downloadingQRCodes ? `${downloadProgress.current}/${downloadProgress.total}` : "Download All (ZIP)"}
+              </Button>
+              <Button
+                variant="secondary"
                 onClick={() => setShowQRIdentifyScanner(true)}
-                className={`${btnSecondary} inline-flex items-center gap-2`}
+                leftIcon={<Camera size={16} />}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                  <circle cx="12" cy="13" r="4" />
-                </svg>
                 Scan to Identify / Activate
-              </button>
+              </Button>
             </div>
           </div>
           {/* Filters */}
@@ -1241,28 +1151,24 @@ function AdminGameDetailContent() {
                           title={qr.activated ? "Click to deactivate" : "Click to activate"}
                         >
                           {qr.activated ? (
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M20 6L9 17l-5-5" />
-                            </svg>
+                            <Check size={16} />
                           ) : (
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <circle cx="12" cy="12" r="10" />
-                            </svg>
+                            <Circle size={16} />
                           )}
                         </button>
                       </Form>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2 justify-end">
-                        <button onClick={() => setSelectedQR({ url: qr.url, title: qr.title })} className={btnPrimary}>Generate QR</button>
-                        <button onClick={async () => {
+                        <Button variant="primary" onClick={() => setSelectedQR({ url: qr.url, title: qr.title })}>Generate QR</Button>
+                        <Button variant="secondary" className="hidden sm:flex" onClick={async () => {
                           try {
                             await navigator.clipboard.writeText(qr.url);
                             toast.success("URL copied to clipboard!");
                           } catch {
                             toast.error("Failed to copy URL");
                           }
-                        }} className={`${btnSecondary} hidden sm:flex`}>Copy URL</button>
+                        }}>Copy URL</Button>
                       </div>
                     </td>
                   </tr>
@@ -1307,9 +1213,9 @@ function AdminGameDetailContent() {
                         <td className="px-4 py-3 text-secondary">{startNode?.title || "Default"}</td>
                         <td className="px-4 py-3">
                           <div className="flex gap-1 justify-end">
-                            <button onClick={() => copyTeamShareInfo(team)} className={`${btnSecondary} ${btnSmall}`}>Share</button>
-                            <button onClick={() => setEditingTeam(team)} className={`${btnSecondary} ${btnSmall}`}>Edit</button>
-                            <button onClick={() => handleDelete("team", team.id, team.name)} className={`${btnDanger} ${btnSmall}`}>Delete</button>
+                            <Button variant="secondary" size="small" onClick={() => copyTeamShareInfo(team)}>Share</Button>
+                            <Button variant="secondary" size="small" onClick={() => setEditingTeam(team)}>Edit</Button>
+                            <Button variant="danger" size="small" onClick={() => handleDelete("team", team.id, team.name)}>Delete</Button>
                           </div>
                         </td>
                       </tr>
@@ -1366,8 +1272,8 @@ function AdminGameDetailContent() {
               )}
 
               <div className="flex gap-2 pt-2">
-                <button type="submit" className={btnPrimary} disabled={isSubmitting}>{editingTeam ? "Update Team" : "Add Team"}</button>
-                {editingTeam && <button type="button" className={btnSecondary} onClick={() => { setEditingTeam(null); setTeamLogoUrl(""); }}>Cancel</button>}
+                <Button type="submit" variant="primary" disabled={isSubmitting}>{editingTeam ? "Update Team" : "Add Team"}</Button>
+                {editingTeam && <Button variant="secondary" onClick={() => { setEditingTeam(null); setTeamLogoUrl(""); }}>Cancel</Button>}
               </div>
             </Form>
           </div>
@@ -1428,14 +1334,14 @@ function AdminGameDetailContent() {
                         {new Date(fb.createdAt).toLocaleDateString()} at {new Date(fb.createdAt).toLocaleTimeString()}
                       </p>
                     </div>
-                    <button
-                      type="button"
+                    <Button
+                      variant="danger"
+                      size="small"
                       onClick={() => handleDeleteFeedback(fb.id, fb.teamName)}
-                      className={`${btnDanger} ${btnSmall}`}
                       title="Delete feedback"
                     >
                       Delete
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -1466,19 +1372,11 @@ function AdminGameDetailContent() {
                 "bg-[var(--color-info)]/20 text-[var(--color-info)]"
               }`}>
                 {data.game.status === "draft" ? (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                  </svg>
+                  <Edit size={24} />
                 ) : data.game.status === "active" ? (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polygon points="5 3 19 12 5 21 5 3" />
-                  </svg>
+                  <Play size={24} />
                 ) : (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                    <polyline points="22 4 12 14.01 9 11.01" />
-                  </svg>
+                  <CheckCircle size={24} />
                 )}
               </div>
               <div className="flex-1">
@@ -1509,10 +1407,7 @@ function AdminGameDetailContent() {
                   }`}
                   disabled={isSubmitting || data.game.status === "draft"}
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                  </svg>
+                  <Edit size={18} />
                   Draft
                 </button>
               </Form>
@@ -1531,9 +1426,7 @@ function AdminGameDetailContent() {
                   disabled={isSubmitting || data.game.status === "active" || (data.game.status === "draft" && !canActivate)}
                   title={data.game.status === "draft" && !canActivate ? "Complete setup requirements first" : undefined}
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polygon points="5 3 19 12 5 21 5 3" />
-                  </svg>
+                  <Play size={18} />
                   Active
                 </button>
               </Form>
@@ -1551,10 +1444,7 @@ function AdminGameDetailContent() {
                   }`}
                   disabled={isSubmitting || data.game.status === "completed"}
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                    <polyline points="22 4 12 14.01 9 11.01" />
-                  </svg>
+                  <CheckCircle size={18} />
                   Completed
                 </button>
               </Form>
@@ -1599,9 +1489,9 @@ function AdminGameDetailContent() {
                 ))}
               </div>
 
-              <button type="submit" className={btnPrimary} disabled={isSubmitting}>
+              <Button type="submit" variant="primary" disabled={isSubmitting}>
                 {isSubmitting ? t("common.saving") : t("common.save")}
-              </button>
+              </Button>
             </Form>
           </div>
 
@@ -1632,9 +1522,9 @@ function AdminGameDetailContent() {
                 </div>
               </div>
 
-              <button type="submit" className={btnPrimary} disabled={isSubmitting}>
+              <Button type="submit" variant="primary" disabled={isSubmitting}>
                 {isSubmitting ? "Saving..." : "Save Setting"}
-              </button>
+              </Button>
             </Form>
           </div>
 
@@ -1653,7 +1543,7 @@ function AdminGameDetailContent() {
                 <label className="block text-sm font-medium text-secondary mb-1">Logo URL</label>
                 <input type="url" name="logoUrl" className={inputClasses} placeholder="https://example.com/logo.png" defaultValue={data.game.logoUrl || ""} />
               </div>
-              <button type="submit" className={btnPrimary} disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save Logo"}</button>
+              <Button type="submit" variant="primary" disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save Logo"}</Button>
             </Form>
           </div>
 
@@ -1663,24 +1553,17 @@ function AdminGameDetailContent() {
             <p className="text-secondary text-sm mb-4">Export your game data to a JSON file, or import from a previous export to overwrite settings, nodes, edges, and teams.</p>
 
             <div className="flex flex-wrap gap-3">
-              <a
+              <Button
+                as="a"
                 href={`${data.baseUrl}/api/v1/admin/games/${data.game.id}/export`}
-                className={`${btnSecondary} cursor-pointer`}
+                variant="secondary"
                 download={`${data.game.publicSlug}-export.json`}
+                leftIcon={<Download size={16} />}
               >
-                <svg className="w-4 h-4 mr-2 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
                 Export Game
-              </a>
-              <label className={`${btnSecondary} cursor-pointer`}>
-                <svg className="w-4 h-4 mr-2 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
+              </Button>
+              <label className="btn btn-secondary cursor-pointer">
+                <Upload size={16} className="mr-2 inline-block" />
                 Import & Overwrite
                 <input
                   type="file"
@@ -1727,14 +1610,13 @@ function AdminGameDetailContent() {
             <p className="text-secondary text-sm mb-4">
               Deleting this game will permanently remove all nodes, edges, teams, and scan data. This action cannot be undone.
             </p>
-            <button
-              type="button"
+            <Button
+              variant="danger"
               onClick={() => setShowDeleteModal(true)}
-              className={btnDanger}
               disabled={isSubmitting}
             >
               Delete Game
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -1764,20 +1646,14 @@ function AdminGameDetailContent() {
           <div className="rounded-xl max-w-md w-full shadow-xl animate-fade-in" style={{ backgroundColor: 'var(--bg-elevated)' }}>
             <div className="p-4 border-b border-border flex items-center justify-between" style={{ backgroundColor: 'var(--bg-secondary)' }}>
               <div className="flex items-center gap-2">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--color-primary)]">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
+                <Eye size={20} className="text-[var(--color-primary)]" />
                 <h3 className="text-lg font-semibold text-primary">Clue Preview</h3>
               </div>
               <button
                 onClick={() => setPreviewNode(null)}
                 className="text-muted hover:text-primary transition-colors p-1"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+                <Close size={20} />
               </button>
             </div>
 
@@ -1821,12 +1697,12 @@ function AdminGameDetailContent() {
             </div>
 
             <div className="p-4 border-t border-border flex justify-end gap-2" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-              <button onClick={() => setPreviewNode(null)} className={btnSecondary}>
+              <Button variant="secondary" onClick={() => setPreviewNode(null)}>
                 Close
-              </button>
-              <button onClick={() => { setEditingNode(previewNode); setPreviewNode(null); }} className={btnPrimary}>
+              </Button>
+              <Button variant="primary" onClick={() => { setEditingNode(previewNode); setPreviewNode(null); }}>
                 Edit Node
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -1839,9 +1715,7 @@ function AdminGameDetailContent() {
             <div className="p-6 border-b border-border" style={{ backgroundColor: 'var(--bg-secondary)' }}>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[var(--color-error)]/15 flex items-center justify-center">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-error)" strokeWidth="2">
-                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" />
-                  </svg>
+                  <Trash size={20} stroke="var(--color-error)" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-[var(--color-error)]">Delete Game</h3>
@@ -1887,25 +1761,24 @@ function AdminGameDetailContent() {
             </div>
 
             <div className="p-4 border-t border-border flex gap-3 justify-end" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-              <button
-                type="button"
+              <Button
+                variant="secondary"
                 onClick={() => {
                   setShowDeleteModal(false);
                   setDeleteConfirmText("");
                 }}
-                className={btnSecondary}
               >
                 Cancel
-              </button>
+              </Button>
               <Form method="post" className="inline">
                 <input type="hidden" name="_action" value="deleteGame" />
-                <button
+                <Button
                   type="submit"
+                  variant="danger"
                   disabled={deleteConfirmText !== data.game.name || isSubmitting}
-                  className="px-4 py-2 bg-[var(--color-error)] text-white font-medium rounded-lg hover:bg-[var(--color-error)]/90 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? "Deleting..." : "Delete Forever"}
-                </button>
+                </Button>
               </Form>
             </div>
           </div>

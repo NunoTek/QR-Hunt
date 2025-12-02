@@ -2,7 +2,18 @@ import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { StatusBadge } from "~/components/admin/game-editor/StatusBadge";
 import { GameCountdown } from "~/components/GameCountdown";
+import { ArrowLeft, BarChart, ChevronDown, ChevronUp, Clock, RefreshCw } from "~/components/icons";
+import {
+  type FeedbackData,
+  type LeaderboardData,
+  type LeaderboardEntry,
+  type PerformanceData,
+  type RankChange,
+  FeedbackSection,
+} from "~/components/leaderboard";
+import "~/components/leaderboard/leaderboard.css";
 import { Spinner } from "~/components/Loading";
 import { RevealAnimation } from "~/components/RevealAnimation";
 import { useToast } from "~/components/Toast";
@@ -16,42 +27,6 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     { title: data?.game?.name ? `Leaderboard - ${data.game.name}` : "Leaderboard - QR Hunt" },
   ];
 };
-
-interface LeaderboardEntry {
-  rank: number;
-  teamName: string;
-  teamLogoUrl: string | null;
-  nodesFound: number;
-  totalPoints: number;
-  isFinished: boolean;
-  currentClue: string | null;
-}
-
-interface LeaderboardData {
-  game: {
-    id: string;
-    name: string;
-    slug: string;
-    status: string;
-    logoUrl: string | null;
-  };
-  leaderboard: LeaderboardEntry[];
-  updatedAt: string;
-}
-
-interface FeedbackEntry {
-  id: string;
-  teamName: string;
-  rating: number;
-  comment: string | null;
-  createdAt: string;
-}
-
-interface FeedbackData {
-  feedback: FeedbackEntry[];
-  averageRating: number | null;
-  count: number;
-}
 
 interface LoaderData {
   game: {
@@ -83,30 +58,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   const streamUrl = `${url.origin}/api/v1/game/${gameSlug}/leaderboard/stream`;
 
   return json<LoaderData>({ ...data, streamUrl });
-}
-
-interface RankChange {
-  teamName: string;
-  direction: "up" | "down";
-  positions: number;
-}
-
-interface PerformanceData {
-  game: { id: string; name: string; slug: string };
-  nodes: Array<{ id: string; title: string }>;
-  teams: Array<{
-    teamId: string;
-    teamName: string;
-    teamLogoUrl: string | null;
-    clueTimings: Array<{
-      nodeId: string;
-      nodeTitle: string;
-      timestamp: string;
-      timeFromStart: number;
-      timeFromPrevious: number;
-    }>;
-    totalTime: number;
-  }>;
 }
 
 export default function Leaderboard() {
@@ -343,16 +294,12 @@ export default function Leaderboard() {
       <span className={`rank-change-indicator ${change.direction}`}>
         {change.direction === "up" ? (
           <>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-              <polyline points="18 15 12 9 6 15" />
-            </svg>
+            <ChevronUp size={12} strokeWidth={3} />
             <span>{change.positions}</span>
           </>
         ) : (
           <>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
+            <ChevronDown size={12} strokeWidth={3} />
             <span>{change.positions}</span>
           </>
         )}
@@ -450,9 +397,7 @@ export default function Leaderboard() {
               </p>
             </div>
           </div>
-          <span className={`badge ${data.game.status === "active" ? "badge-success" : data.game.status === "completed" ? "badge-info" : "badge-warning"}`}>
-            {t(`common.status.${data.game.status}`)}
-          </span>
+          <StatusBadge status={data.game.status} t={t} />
         </div>
 
         {/* Live scan notification */}
@@ -474,9 +419,7 @@ export default function Leaderboard() {
                 : "border-transparent text-muted hover:text-secondary hover:border-border"
             }`}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M8 21V11M16 21V3M4 21h16M12 21V7" />
-            </svg>
+            <BarChart size={18} />
             <span>{t("pages.leaderboard.title")}</span>
           </button>
           <button
@@ -488,9 +431,7 @@ export default function Leaderboard() {
                 : "border-transparent text-muted hover:text-secondary hover:border-border"
             }`}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 20V10M18 20V4M6 20v-4" />
-            </svg>
+            <BarChart size={18} />
             <span>{t("pages.leaderboard.performance")}</span>
           </button>
         </div>
@@ -600,10 +541,7 @@ export default function Leaderboard() {
                       {/* Time per Clue Chart */}
                       <div className="bg-elevated rounded-lg border p-3 sm:p-4">
                         <h3 className="text-base sm:text-lg font-semibold text-primary mb-3 sm:mb-4 flex items-center gap-2">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="12" cy="12" r="10" />
-                            <polyline points="12 6 12 12 16 14" />
-                          </svg>
+                          <Clock size={18} />
                           {t("pages.leaderboard.timePerClue")}
                         </h3>
                         {performanceData.nodes.length === 0 ? (
@@ -668,9 +606,7 @@ export default function Leaderboard() {
                       {/* Total Time Comparison */}
                       <div className="bg-elevated rounded-lg border p-3 sm:p-4">
                         <h3 className="text-base sm:text-lg font-semibold text-primary mb-3 sm:mb-4 flex items-center gap-2">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                          </svg>
+                          <Clock size={18} />
                           {t("pages.leaderboard.totalTime")}
                         </h3>
                         {teamsWithScans.length === 0 ? (
@@ -742,11 +678,7 @@ export default function Leaderboard() {
                 </>
               ) : (
                 <>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M23 4v6h-6" />
-                    <path d="M1 20v-6h6" />
-                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-                  </svg>
+                  <RefreshCw size={16} />
                   {t("pages.leaderboard.refresh")}
                 </>
               )}
@@ -755,372 +687,21 @@ export default function Leaderboard() {
 
           <div className="text-center mt-4">
             <button type="button" onClick={handleBack} className="back-link">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="19" y1="12" x2="5" y2="12" />
-                <polyline points="12 19 5 12 12 5" />
-              </svg>
+              <ArrowLeft size={16} />
               {t("common.back")}
             </button>
           </div>
         </div>
 
-         {/* Feedback Section - Show for active and completed games */}
-        {feedbackData && feedbackData.count > 0 && (
-          <div className="mt-8">
-            <button
-              type="button"
-              onClick={() => setShowFeedback(!showFeedback)}
-              className="w-full flex items-center justify-between p-4 bg-elevated rounded-lg border hover:border-strong transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">⭐</span>
-                <div className="text-left">
-                  <span className="font-semibold text-primary">{t("pages.leaderboard.teamFeedback")}</span>
-                  <div className="flex items-center gap-2 text-sm text-muted">
-                    <span>{feedbackData.averageRating?.toFixed(1) || "N/A"} {t("pages.leaderboard.average")}</span>
-                    <span>•</span>
-                    <span>{feedbackData.count} {feedbackData.count === 1 ? t("pages.leaderboard.review") : t("pages.leaderboard.reviews")}</span>
-                  </div>
-                </div>
-              </div>
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className={`text-muted transition-transform ${showFeedback ? "rotate-180" : ""}`}
-              >
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
-
-            {showFeedback && (
-              <div className="mt-4 space-y-3">
-                {feedbackData.feedback.map((fb) => (
-                  <div key={fb.id} className="p-4 bg-elevated rounded-lg border">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold text-primary">{fb.teamName}</span>
-                      <div className="flex items-center gap-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <span key={star} className="text-sm">
-                            {star <= fb.rating ? "⭐" : "☆"}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    {fb.comment && (
-                      <p className="text-secondary text-sm">{fb.comment}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+        {/* Feedback Section - Show for active and completed games */}
+        {feedbackData && (
+          <FeedbackSection
+            feedbackData={feedbackData}
+            showFeedback={showFeedback}
+            onToggle={() => setShowFeedback(!showFeedback)}
+          />
         )}
       </div>
-
-      <style>{`
-        .leaderboard-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          flex-wrap: wrap;
-          gap: 0.75rem;
-        }
-        .leaderboard-title {
-          font-size: 1.5rem;
-          font-weight: 800;
-          color: var(--text-primary);
-        }
-        .leaderboard-subtitle {
-          display: flex;
-          align-items: center;
-          color: var(--text-muted);
-          font-size: 0.875rem;
-        }
-        .pulse-dot.connected {
-          animation: pulse-glow 2s infinite;
-        }
-        @keyframes pulse-glow {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
-          50% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
-        }
-        .scan-notification {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          padding: 0.875rem 1rem;
-          background: var(--color-info-bg);
-          border: 1px solid var(--color-info-border);
-          border-radius: var(--radius-lg);
-          margin-bottom: 1rem;
-          font-size: 0.875rem;
-          color: var(--text-primary);
-        }
-        .scan-icon {
-          font-size: 1.25rem;
-        }
-        .scan-notification .points {
-          color: var(--color-primary);
-          font-weight: 700;
-        }
-        .leaderboard-list {
-          display: flex;
-          flex-direction: column;
-          gap: 0.75rem;
-        }
-        .leaderboard-item {
-          display: flex;
-          align-items: center;
-          gap: 0.875rem;
-          padding: 0.875rem 1rem;
-          background: var(--bg-elevated);
-          border-radius: var(--radius-lg);
-          border: 1px solid var(--border-color);
-          box-shadow: var(--shadow);
-          animation: slideInUp var(--transition-normal) ease backwards;
-          transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast);
-        }
-        .leaderboard-item:hover {
-          transform: translateX(4px);
-          box-shadow: var(--shadow-md);
-          border-color: var(--border-color-strong);
-        }
-        .leaderboard-item.first-place {
-          border: 2px solid var(--color-warning);
-        }
-        .leaderboard-item.finished {
-          background: var(--color-success-bg);
-        }
-        .leaderboard-item.just-scored {
-          animation: highlight-pulse 1s ease;
-        }
-        @keyframes highlight-pulse {
-          0% { background: var(--color-info-bg); transform: scale(1.02); }
-          100% { background: var(--bg-elevated); transform: scale(1); }
-        }
-        .rank-badge-container {
-          position: relative;
-          display: flex;
-          align-items: center;
-          flex-shrink: 0;
-        }
-        .rank-badge {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 2.25rem;
-          height: 2.25rem;
-          border-radius: 50%;
-          font-weight: 700;
-          font-size: 0.75rem;
-          flex-shrink: 0;
-        }
-        .rank-change-indicator {
-          position: absolute;
-          left: 100%;
-          margin-left: 4px;
-          display: flex;
-          align-items: center;
-          gap: 2px;
-          font-size: 0.7rem;
-          font-weight: 700;
-          padding: 2px 6px;
-          border-radius: 10px;
-          white-space: nowrap;
-          animation: fadeSlideIn 0.3s ease;
-        }
-        .rank-change-indicator.up {
-          color: #16a34a;
-          background: rgba(22, 163, 74, 0.15);
-        }
-        .rank-change-indicator.down {
-          color: #dc2626;
-          background: rgba(220, 38, 38, 0.15);
-        }
-        @keyframes fadeSlideIn {
-          0% { opacity: 0; transform: translateX(-10px); }
-          100% { opacity: 1; transform: translateX(0); }
-        }
-        .leaderboard-item.rank-up {
-          animation: rankUpAnimation 0.6s ease;
-        }
-        .leaderboard-item.rank-down {
-          animation: rankDownAnimation 0.6s ease;
-        }
-        @keyframes rankUpAnimation {
-          0% { transform: translateY(20px); opacity: 0.5; background: rgba(22, 163, 74, 0.1); }
-          50% { transform: translateY(-5px); background: rgba(22, 163, 74, 0.2); }
-          100% { transform: translateY(0); opacity: 1; background: var(--bg-elevated); }
-        }
-        @keyframes rankDownAnimation {
-          0% { transform: translateY(-20px); opacity: 0.5; background: rgba(220, 38, 38, 0.1); }
-          50% { transform: translateY(5px); background: rgba(220, 38, 38, 0.15); }
-          100% { transform: translateY(0); opacity: 1; background: var(--bg-elevated); }
-        }
-        .team-info {
-          flex: 1;
-          min-width: 0;
-        }
-        .team-name-lb {
-          display: block;
-          font-weight: 600;
-          color: var(--text-primary);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          font-size: 0.9375rem;
-        }
-        .team-status {
-          display: block;
-          margin-top: 0.125rem;
-        }
-        .current-clue {
-          font-size: 0.75rem;
-          color: var(--text-muted);
-        }
-        .team-stats {
-          display: flex;
-          gap: 0.875rem;
-          flex-shrink: 0;
-        }
-        .stat-box {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          min-width: 2.75rem;
-        }
-        .stat-box.clues {
-          margin-top: 0.5rem;
-        }
-        .stat-box.points {
-          background: var(--bg-tertiary);
-          padding: 0.5rem 0.75rem;
-          border-radius: var(--radius);
-        }
-        .stat-num {
-          font-size: 1.0625rem;
-          font-weight: 700;
-          color: var(--text-primary);
-          line-height: 1;
-        }
-        .stat-box.points .stat-num {
-          color: var(--color-primary);
-        }
-        .stat-lbl {
-          font-size: 0.625rem;
-          text-transform: uppercase;
-          color: var(--text-muted);
-          letter-spacing: 0.05em;
-        }
-        .back-link {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.5rem;
-          color: var(--text-muted);
-          font-size: 0.875rem;
-          transition: color var(--transition-fast);
-        }
-        .back-link:hover {
-          color: var(--color-primary);
-          text-decoration: none;
-        }
-
-        /* Tablet (640px+) */
-        @media (min-width: 640px) {
-          .leaderboard-title {
-            font-size: 1.75rem;
-          }
-          .leaderboard-item {
-            padding: 1rem 1.25rem;
-            gap: 1rem;
-          }
-          .rank-badge {
-            width: 2.5rem;
-            height: 2.5rem;
-            font-size: 0.875rem;
-          }
-          .team-name-lb {
-            font-size: 1rem;
-          }
-          .stat-num {
-            font-size: 1.125rem;
-          }
-          .team-stats {
-            gap: 1rem;
-          }
-          .stat-box {
-            min-width: 3rem;
-          }
-          .scan-notification {
-            padding: 1rem 1.25rem;
-            font-size: 0.9375rem;
-          }
-          .scan-icon {
-            font-size: 1.5rem;
-          }
-        }
-
-        /* Desktop (1024px+) */
-        @media (min-width: 1024px) {
-          .leaderboard-title {
-            font-size: 2rem;
-          }
-          .leaderboard-item {
-            padding: 1.25rem 1.5rem;
-          }
-          .stat-num {
-            font-size: 1.25rem;
-          }
-        }
-
-        /* Mobile adjustments for team stats */
-        @media (max-width: 639px) {
-          .leaderboard-item {
-            padding: 0.75rem;
-            gap: 0.5rem;
-          }
-          .rank-badge {
-            width: 2rem;
-            height: 2rem;
-            font-size: 0.7rem;
-          }
-          .team-info {
-            flex: 1;
-            min-width: 0;
-          }
-          .team-name-lb {
-            font-size: 0.875rem;
-          }
-          .team-stats {
-            gap: 0.5rem;
-          }
-          .stat-box {
-            min-width: 2.25rem;
-          }
-          .stat-box.points {
-            padding: 0.375rem 0.5rem;
-          }
-          .stat-num {
-            font-size: 0.9375rem;
-          }
-          .stat-lbl {
-            font-size: 0.5625rem;
-          }
-          .stat-box.clues {
-            margin-top: 0.25rem;
-          }
-          .current-clue {
-            font-size: 0.6875rem;
-          }
-          .team-status .badge {
-            font-size: 0.625rem;
-            padding: 0.125rem 0.375rem;
-          }
-        }
-      `}</style>
     </div>
     </RevealAnimation>
   );

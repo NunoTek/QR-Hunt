@@ -2,6 +2,8 @@ import type { ActionFunctionArgs, LoaderFunctionArgs, MetaFunction } from "@remi
 import { json, redirect } from "@remix-run/node";
 import { Form, Link, Outlet, useActionData, useLoaderData, useLocation, useNavigation } from "@remix-run/react";
 import { useEffect, useRef } from "react";
+import { Button } from "~/components/Button";
+import { LogOut } from "~/components/icons";
 import { useToast } from "~/components/Toast";
 import { Version } from "~/components/Version";
 import { useTranslation } from "~/i18n/I18nContext";
@@ -110,13 +112,15 @@ function AdminLogin() {
             />
           </div>
 
-          <button
+          <Button
             type="submit"
-            className="mt-4 w-full px-6 py-3 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white font-semibold rounded-xl hover:opacity-90 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed min-h-[3rem]"
+            variant="primary"
             disabled={isSubmitting}
+            isLoading={isSubmitting}
+            className="mt-4 w-full"
           >
             {isSubmitting ? t("pages.admin.login.signingIn") : t("pages.admin.login.signIn")}
-          </button>
+          </Button>
         </Form>
 
         <div className="mt-8 text-center mt-5 sm:mt-6">
@@ -177,18 +181,15 @@ function AdminLayout() {
             {/* Logout */}
             <Form method="post">
               <input type="hidden" name="_action" value="logout" />
-              <button
+              <Button
                 type="submit"
-                className="px-3 py-2 sm:px-4 text-sm text-tertiary hover:text-primary border hover:border-strong rounded-lg transition-all"
+                variant="outline"
+                size="small"
+                leftIcon={<LogOut size={16} />}
                 title={t("pages.admin.nav.signOut")}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                  <polyline points="16 17 21 12 16 7" />
-                  <line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
                 <span className="hidden sm:inline-flex">{t("pages.admin.nav.signOut")}</span>
-              </button>
+              </Button>
             </Form>
           </div>
         </div>

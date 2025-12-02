@@ -1,0 +1,380 @@
+.waiting-room {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.waiting-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.waiting-bg-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--color-primary);
+  opacity: 0.1;
+  animation: float 20s ease-in-out infinite;
+}
+
+.waiting-bg-circle.c1 {
+  width: 400px;
+  height: 400px;
+  top: -100px;
+  right: -100px;
+  animation-delay: 0s;
+}
+
+.waiting-bg-circle.c2 {
+  width: 300px;
+  height: 300px;
+  bottom: -50px;
+  left: -50px;
+  animation-delay: -7s;
+}
+
+.waiting-bg-circle.c3 {
+  width: 200px;
+  height: 200px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation-delay: -14s;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -30px) scale(1.05);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.95);
+  }
+}
+
+.waiting-content {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.waiting-header {
+  margin-bottom: 2rem;
+}
+
+.waiting-game-logo {
+  width: 80px;
+  height: 80px;
+  border-radius: 1rem;
+  object-fit: cover;
+  margin: 0 auto 1rem;
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3);
+}
+
+.waiting-game-logo-placeholder {
+  width: 80px;
+  height: 80px;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  font-size: 2.5rem;
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3);
+}
+
+.waiting-game-name {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.waiting-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.waiting-pulse-ring {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.waiting-pulse-ring::before,
+.waiting-pulse-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--color-primary);
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+.waiting-pulse-ring::after {
+  animation-delay: 1s;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+.waiting-pulse-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+.waiting-message {
+  font-size: 1.125rem;
+  color: var(--text-secondary);
+  margin: 0;
+  min-width: 280px;
+}
+
+.waiting-player-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  margin-bottom: 1.5rem;
+}
+
+.waiting-player-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white;
+  overflow: hidden;
+}
+
+.waiting-player-badge img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.waiting-player-info {
+  flex: 1;
+  text-align: left;
+}
+
+.waiting-player-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.waiting-player-name {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.waiting-ready-badge {
+  padding: 0.25rem 0.75rem;
+  background: var(--color-success);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  text-transform: uppercase;
+}
+
+.waiting-teams {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+}
+
+.waiting-teams-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 1rem;
+}
+
+.waiting-teams-icon {
+  font-size: 1rem;
+}
+
+.waiting-teams-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.waiting-teams-empty {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.waiting-team-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius);
+  transition: opacity 0.3s, background 0.3s;
+}
+
+.waiting-team-item.disconnected {
+  opacity: 0.5;
+  background: var(--bg-secondary);
+}
+
+.waiting-team-status-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: background 0.3s;
+}
+
+.status-dot.online {
+  background: var(--color-success);
+  box-shadow: 0 0 4px var(--color-success);
+  animation: pulse-online 2s ease-in-out infinite;
+}
+
+.status-dot.offline {
+  background: var(--color-gray-400);
+}
+
+@keyframes pulse-online {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.waiting-team-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  overflow: hidden;
+}
+
+.waiting-team-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.waiting-team-name {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.waiting-team-you {
+  padding: 0.125rem 0.375rem;
+  background: var(--color-primary);
+  color: white;
+  font-size: 0.625rem;
+  font-weight: 600;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.waiting-connection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.waiting-connection-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-warning);
+  transition: background 0.3s;
+}
+
+.waiting-connection-dot.connected {
+  background: var(--color-success);
+}
+
+.waiting-connection-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}

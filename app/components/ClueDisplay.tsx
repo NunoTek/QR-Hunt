@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Spinner } from "~/components/Loading";
 import { YouTubeEmbed, isYouTubeUrl } from "~/components/YouTubeEmbed";
+import { Close, HelpCircle, Image, Music, ExternalLink, ZoomIn, ZoomOut, RotateCcw } from "./icons";
 
 interface ClueNode {
   id: string;
@@ -141,11 +142,7 @@ export function ClueDisplay({ node, hideTitle = false, headerText = "Next Clue" 
             )}
             {mediaError && (
               <div className="flex flex-col items-center justify-center gap-2 h-[150px] bg-tertiary rounded-lg text-muted">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <polyline points="21 15 16 10 5 21" />
-                </svg>
+                <Image size={24} />
                 <span>Image failed to load</span>
               </div>
             )}
@@ -186,11 +183,7 @@ export function ClueDisplay({ node, hideTitle = false, headerText = "Next Clue" 
           <div className="mb-4">
             <div className="flex items-center gap-4 p-4 bg-tertiary rounded-lg">
               <div className="flex items-center justify-center w-12 h-12 rounded-full bg-[var(--color-primary)] text-white flex-shrink-0">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M9 18V5l12-2v13" />
-                  <circle cx="6" cy="18" r="3" />
-                  <circle cx="18" cy="16" r="3" />
-                </svg>
+                <Music size={24} />
               </div>
               <audio src={node.mediaUrl} controls className="w-full" />
             </div>
@@ -215,11 +208,7 @@ export function ClueDisplay({ node, hideTitle = false, headerText = "Next Clue" 
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 w-full px-4 py-3 text-base font-medium text-[var(--color-primary)] bg-secondary rounded-lg hover:bg-tertiary transition-colors"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
+              <ExternalLink size={20} />
               Open Link
             </a>
           </div>
@@ -235,11 +224,7 @@ export function ClueDisplay({ node, hideTitle = false, headerText = "Next Clue" 
       {!hideTitle && (
         <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-5">
           <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white flex-shrink-0">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="sm:w-6 sm:h-6">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-              <line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
+            <HelpCircle size={20} className="sm:w-6 sm:h-6" />
           </div>
           <div className="flex-1 flex items-center justify-between flex-wrap gap-2">
             <div>
@@ -276,10 +261,7 @@ export function ClueDisplay({ node, hideTitle = false, headerText = "Next Clue" 
             className="absolute top-4 right-4 z-50 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
             aria-label="Close"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <Close size={24} />
           </button>
 
           {/* Zoom controls */}
@@ -293,11 +275,7 @@ export function ClueDisplay({ node, hideTitle = false, headerText = "Next Clue" 
               className="p-2 rounded-full hover:bg-white/20 text-white transition-colors"
               aria-label="Zoom out"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                <line x1="8" y1="11" x2="14" y2="11" />
-              </svg>
+              <ZoomOut size={20} />
             </button>
             <span className="text-white text-sm min-w-[3rem] text-center">{Math.round(imageZoom * 100)}%</span>
             <button
@@ -309,12 +287,7 @@ export function ClueDisplay({ node, hideTitle = false, headerText = "Next Clue" 
               className="p-2 rounded-full hover:bg-white/20 text-white transition-colors"
               aria-label="Zoom in"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                <line x1="11" y1="8" x2="11" y2="14" />
-                <line x1="8" y1="11" x2="14" y2="11" />
-              </svg>
+              <ZoomIn size={20} />
             </button>
             <button
               type="button"
@@ -326,10 +299,7 @@ export function ClueDisplay({ node, hideTitle = false, headerText = "Next Clue" 
               className="p-2 rounded-full hover:bg-white/20 text-white transition-colors ml-2"
               aria-label="Reset zoom"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                <path d="M3 3v5h5" />
-              </svg>
+              <RotateCcw size={20} />
             </button>
           </div>
 

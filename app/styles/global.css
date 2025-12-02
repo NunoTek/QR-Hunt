@@ -9,11 +9,12 @@
 
 /* CSS Custom Properties - Light Theme (default) */
 :root {
-    /* Primary colors */
+  /* Primary colors */
   --color-primary: #6366f1;
   --color-primary-dark: #4f46e5;
   --color-primary-light: #818cf8;
   --color-primary-rgb: 99, 102, 241;
+
   /* Primary colors - Cyan/Teal */
   /* --color-primary: #06b6d4;
   --color-primary-dark: #0891b2;
@@ -78,8 +79,8 @@
   --border-color-subtle: #f1f5f9;
 
   /* Gradient colors */
-  --gradient-primary: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
-  --gradient-accent: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+  --gradient-primary: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+  --gradient-accent: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
   --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
   --gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%);
   --gradient-hero: linear-gradient(135deg, #f0fdfa 0%, #f5f3ff 50%, #fdf4ff 100%);
@@ -541,7 +542,8 @@ button {
 }
 
 .btn-primary {
-  background: var(--gradient-primary);
+  /* background: var(--gradient-primary); */
+  background: var(--color-primary);
   color: white;
   box-shadow: 0 4px 14px rgba(var(--color-primary-rgb), 0.35);
 }
@@ -616,14 +618,15 @@ button {
 }
 
 .btn-outline {
-  background: transparent;
-  color: var(--color-primary);
-  border: 2px solid var(--color-primary);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 2px solid var(--text-primary);
 }
 
 .btn-outline:hover:not(:disabled) {
   background: var(--color-primary);
   color: white;
+  border: 2px solid white;
   text-decoration: none;
 }
 
@@ -1015,7 +1018,7 @@ button {
   font-size: 0.75rem;
   font-weight: 600;
   border-radius: var(--radius-full);
-  text-transform: uppercase;
+  text-transform: capitalize;
   letter-spacing: 0.05em;
 }
 
