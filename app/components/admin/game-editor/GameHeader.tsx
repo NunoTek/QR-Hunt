@@ -35,14 +35,23 @@ export function GameHeader({ game, canActivate, isSubmitting, t }: GameHeaderPro
 
           {game.status === "draft" && (
             <Form method="post" className="inline">
-              <input type="hidden" name="_action" value="activateGame" />
+              <input type="hidden" name="_action" value="openGame" />
               <Button
                 type="submit"
                 variant="primary"
                 disabled={isSubmitting || !canActivate}
                 title={!canActivate ? t("pages.admin.gameEditor.activationWarning.title") : ""}
               >
-                {t("pages.admin.gameEditor.activateGame")}
+                {t("pages.admin.gameEditor.openGame")}
+              </Button>
+            </Form>
+          )}
+
+          {game.status === "pending" && (
+            <Form method="post" className="inline">
+              <input type="hidden" name="_action" value="activateGame" />
+              <Button type="submit" variant="primary" disabled={isSubmitting}>
+                {t("pages.admin.gameEditor.startGame")}
               </Button>
             </Form>
           )}

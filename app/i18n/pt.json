@@ -6,7 +6,9 @@
     "success": "Sucesso",
     "cancel": "Cancelar",
     "save": "Guardar",
+    "saving": "A guardar...",
     "delete": "Eliminar",
+    "deleting": "A eliminar...",
     "edit": "Editar",
     "back": "Voltar",
     "next": "Seguinte",
@@ -22,6 +24,7 @@
     "game": "Jogo",
     "player": "Jogador",
     "admin": "Admin",
+    "unknown": "Desconhecido",
     "status": {
       "draft": "Rascunho",
       "pending": "Pendente",
@@ -465,6 +468,22 @@
           "readFailed": "Falha ao ler ficheiro: {{error}}"
         }
       },
+      "deleteGameModal": {
+        "title": "Eliminar jogo",
+        "subtitle": "Esta ação não pode ser desfeita",
+        "description": "Isto irá eliminar permanentemente \"{{name}}\" e todos os dados associados, incluindo:",
+        "items": {
+          "nodes": "Todos os pontos de controlo e códigos QR",
+          "edges": "Todas as ligações",
+          "teams": "Todas as equipas e o seu progresso",
+          "history": "Todo o histórico de scans e mensagens de chat"
+        },
+        "confirmLabel": "Escreva \"{{name}}\" para confirmar:",
+        "confirmPlaceholder": "Introduza o nome do jogo",
+        "cancel": "Cancelar",
+        "deleting": "A eliminar...",
+        "deleteForever": "Eliminar permanentemente"
+      },
       "newGame": {
         "meta": {
           "title": "Criar jogo - QR Hunt Admin"
@@ -520,6 +539,7 @@
           "teams": "Equipas",
           "qrcodes": "Códigos QR",
           "feedback": "Feedback",
+          "analytics": "Análise",
           "settings": "Definições"
         },
         "nodeBadges": {
@@ -577,10 +597,14 @@
             "preview": "Pré-visualizar",
             "edit": "Editar",
             "delete": "Eliminar",
-            "addNode": "Adicionar nó",
-            "updateNode": "Atualizar",
+            "add": "Adicionar nó",
+            "update": "Atualizar",
             "cancel": "Cancelar",
             "clear": "Limpar"
+          },
+          "activation": {
+            "clickToDeactivate": "Clique para desativar",
+            "clickToActivate": "Clique para ativar"
           }
         },
         "edges": {
@@ -591,6 +615,7 @@
           "noEdges": "Ainda não há ligações. Conecte os seus nós.",
           "addEdge": "Adicionar ligação",
           "editEdge": "Editar ligação",
+          "unknown": "Desconhecido",
           "randomModeInfo": "O modo aleatório está ativado para este jogo. As ligações não são usadas em modo aleatório - cada equipa recebe uma pista aleatória dos nós não visitados.",
           "form": {
             "fromNode": "Do nó",
@@ -598,8 +623,10 @@
             "select": "Selecionar..."
           },
           "buttons": {
-            "addEdge": "Adicionar ligação",
-            "updateEdge": "Atualizar",
+            "edit": "Editar",
+            "delete": "Eliminar",
+            "add": "Adicionar ligação",
+            "update": "Atualizar",
             "cancel": "Cancelar",
             "clear": "Limpar"
           }
@@ -636,6 +663,11 @@
           "description": "Gere, personalize e transfira códigos QR para cada nó.",
           "downloadAll": "Transferir todos (ZIP)",
           "scanToIdentify": "Ler para identificar / ativar",
+          "filterByTitle": "Filtrar por título...",
+          "allStatus": "Todos os estados",
+          "activated": "Ativado",
+          "notActivated": "Não ativado",
+          "count": "{{filtered}} / {{total}} códigos QR",
           "tableHeaders": {
             "node": "Nó",
             "url": "URL",
@@ -645,6 +677,10 @@
           "buttons": {
             "generateQR": "Gerar QR",
             "copyUrl": "Copiar URL"
+          },
+          "activation": {
+            "clickToDeactivate": "Clique para desativar",
+            "clickToActivate": "Clique para ativar"
           },
           "messages": {
             "urlCopied": "URL copiado para a área de transferência!",
@@ -662,8 +698,42 @@
           "noFeedbackHelp": "As equipas podem enviar feedback durante ou após o jogo.",
           "review": "avaliação",
           "reviews": "avaliações",
+          "delete": "Eliminar",
+          "deleteFeedback": "Eliminar feedback",
           "deleted": "Feedback de \"{{teamName}}\" eliminado",
           "deleteFailed": "Falha ao eliminar feedback"
+        },
+        "analytics": {
+          "loading": "A carregar análises...",
+          "noData": "Ainda não há dados de análise",
+          "noDataDescription": "As análises aparecerão quando as equipas começarem a escanear pistas.",
+          "teamsWithScans": "Equipas com scans",
+          "finishedTeams": "Equipas terminadas",
+          "avgCompletionTime": "Tempo médio de conclusão",
+          "bottlenecks": "Pistas mais lentas (gargalos)",
+          "avgLabel": "Méd:",
+          "teamPerformance": "Desempenho das equipas",
+          "tableHeaders": {
+            "rank": "Pos.",
+            "team": "Equipa",
+            "cluesFound": "Pistas encontradas",
+            "totalTime": "Tempo total",
+            "status": "Estado"
+          },
+          "finished": "Terminado",
+          "inProgress": "Em curso",
+          "noTeamsScanned": "Ainda nenhuma equipa escaneou pistas.",
+          "timePerClue": "Tempo por pista",
+          "timePerClueDescription": "Tempo médio que as equipas passaram a encontrar cada pista",
+          "clueTableHeaders": {
+            "clue": "Pista",
+            "avgTime": "Tempo méd.",
+            "fastest": "Mais rápido",
+            "slowest": "Mais lento",
+            "completions": "Conclusões"
+          },
+          "noCluesScanned": "Ainda nenhuma pista foi escaneada.",
+          "na": "N/D"
         },
         "settings": {
           "rankingModeDescription": "Escolha como as equipas são classificadas na tabela de classificação.",
@@ -672,13 +742,18 @@
             "description": "Controle o estado atual do seu jogo.",
             "changeStatus": "Alterar o estado do jogo:",
             "completeSetup": "Complete a checklist de configuração acima antes de ativar o jogo.",
+            "completeSetupFirst": "Complete primeiro os pré-requisitos de configuração",
             "draft": {
               "label": "Rascunho",
               "description": "O jogo está a ser configurado e ainda não está jogável."
             },
+            "pending": {
+              "label": "Pendente",
+              "description": "As equipas podem entrar e aguardar na sala de espera."
+            },
             "active": {
               "label": "Ativo",
-              "description": "O jogo está ao vivo! As equipas podem entrar e jogar."
+              "description": "O jogo está ao vivo! As equipas podem jogar."
             },
             "completed": {
               "label": "Concluído",
@@ -707,7 +782,15 @@
             "confirmOverwrite": "Isto vai substituir todos os nós, ligações e equipas com os dados de \"{{name}}\". Continuar?",
             "importSuccess": "Importação bem sucedida! A página vai atualizar.",
             "importFailed": "Falha na importação: {{error}}",
-            "readFailed": "Falha ao ler ficheiro: {{error}}"
+            "readFailed": "Falha ao ler ficheiro: {{error}}",
+            "csvTitle": "Importar CSV",
+            "csvDescription": "Importe nós e ligações a partir de um ficheiro CSV. Descarregue o exemplo para ver o formato esperado.",
+            "downloadExample": "Descarregar exemplo CSV",
+            "importCsv": "Importar CSV",
+            "csvConfirmImport": "Isto vai adicionar {{nodes}} nós e {{edges}} ligações ao seu jogo. Continuar?",
+            "csvImportSuccess": "CSV importado com sucesso! {{nodes}} nós e {{edges}} ligações adicionados.",
+            "csvParseError": "Falha ao analisar CSV: {{error}}",
+            "csvNoData": "Nenhum dado válido encontrado no ficheiro CSV"
           },
           "dangerZone": {
             "title": "Zona de perigo",

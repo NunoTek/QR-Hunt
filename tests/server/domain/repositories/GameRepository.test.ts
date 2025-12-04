@@ -32,6 +32,9 @@ describe("GameRepository", () => {
         timeBonusEnabled: true,
         timeBonusMultiplier: 1.5,
         randomMode: false,
+        autoStartEnabled: false,
+        expectedTeamCount: 0,
+        scanCooldownMs: 0,
       });
     });
 
@@ -165,6 +168,9 @@ describe("GameRepository", () => {
         timeBonusEnabled: false,
         timeBonusMultiplier: 2.0,
         randomMode: false,
+        autoStartEnabled: false,
+        expectedTeamCount: 0,
+        scanCooldownMs: 0,
       };
 
       const updated = gameRepository.update(game.id, { settings: newSettings });

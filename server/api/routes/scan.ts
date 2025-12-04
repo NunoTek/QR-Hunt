@@ -28,6 +28,21 @@ export async function scanRoutes(fastify: FastifyInstance) {
         });
       }
 
+      // Check rate limiting
+      const game = gameRepository.findById(request.team!.gameId);
+      if (game) {
+        const cooldownMs = game.settings.scanCooldownMs || 0;
+        const rateCheck = gameEvents.canTeamScan(request.team!.id, cooldownMs);
+        if (!rateCheck.allowed) {
+          return reply.status(429).send({
+            success: false,
+            message: "Too many scan attempts. Please wait before scanning again.",
+            remainingMs: rateCheck.remainingMs,
+            retryAfter: Math.ceil(rateCheck.remainingMs / 1000),
+          });
+        }
+      }
+
       const { nodeKey, password } = parseResult.data;
       const clientIp = request.ip;
       const userAgent = request.headers["user-agent"];
@@ -50,23 +65,26 @@ export async function scanRoutes(fastify: FastifyInstance) {
         });
       }
 
+      // Record successful scan for rate limiting
+      gameEvents.recordTeamScan(request.team!.id);
+
       // Invalidate leaderboard cache and emit real-time update
-      const game = gameRepository.findById(request.team!.gameId);
-      if (game) {
-        invalidateLeaderboardCache(game.publicSlug);
+      const gameForUpdate = gameRepository.findById(request.team!.gameId);
+      if (gameForUpdate) {
+        invalidateLeaderboardCache(gameForUpdate.publicSlug);
 
         // Emit scan event for live notifications
         gameEvents.emitScan(
-          game.publicSlug,
+          gameForUpdate.publicSlug,
           request.team!.name,
           result.node?.title || "Unknown",
           result.pointsAwarded || 0
         );
 
         // Emit updated leaderboard data
-        const leaderboardData = getLeaderboardData(game.publicSlug);
+        const leaderboardData = getLeaderboardData(gameForUpdate.publicSlug);
         if (leaderboardData) {
-          gameEvents.emitLeaderboardUpdate(game.publicSlug, leaderboardData);
+          gameEvents.emitLeaderboardUpdate(gameForUpdate.publicSlug, leaderboardData);
         }
       }
 

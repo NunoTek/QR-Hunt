@@ -11,6 +11,7 @@ interface FeedbackTabProps {
   feedbackStats: FeedbackStats;
   feedbackLoading: boolean;
   onDeleteFeedback: (id: string, teamName: string) => void;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }
 
 export function FeedbackTab({
@@ -18,13 +19,14 @@ export function FeedbackTab({
   feedbackStats,
   feedbackLoading,
   onDeleteFeedback,
+  t,
 }: FeedbackTabProps) {
   return (
     <div className="bg-elevated rounded-xl border overflow-hidden shadow-sm">
       <div className="p-4 border-b border-border">
-        <h3 className="text-lg font-semibold text-primary">Team Feedback</h3>
+        <h3 className="text-lg font-semibold text-primary">{t("pages.admin.gameEditor.feedback.title")}</h3>
         <p className="text-secondary text-sm mt-1">
-          View feedback submitted by teams during or after the game.
+          {t("pages.admin.gameEditor.feedback.description")}
         </p>
         {feedbackStats.averageRating !== null && (
           <div className="flex items-center gap-3 mt-3">
@@ -36,18 +38,18 @@ export function FeedbackTab({
               ))}
             </div>
             <span className="text-primary font-semibold">{feedbackStats.averageRating?.toFixed(1)}</span>
-            <span className="text-muted">({feedbackStats.count} {feedbackStats.count === 1 ? "review" : "reviews"})</span>
+            <span className="text-muted">({feedbackStats.count} {feedbackStats.count === 1 ? t("pages.admin.gameEditor.feedback.review") : t("pages.admin.gameEditor.feedback.reviews")})</span>
           </div>
         )}
       </div>
 
       {feedbackLoading ? (
-        <div className="p-8 text-center text-muted">Loading feedback...</div>
+        <div className="p-8 text-center text-muted">{t("pages.admin.gameEditor.feedback.loading")}</div>
       ) : feedbackList.length === 0 ? (
         <div className="p-8 text-center text-muted">
           <div className="text-4xl mb-2">📝</div>
-          <p>No feedback yet.</p>
-          <p className="text-sm mt-1">Teams can submit feedback during or after the game.</p>
+          <p>{t("pages.admin.gameEditor.feedback.noFeedback")}</p>
+          <p className="text-sm mt-1">{t("pages.admin.gameEditor.feedback.noFeedbackHelp")}</p>
         </div>
       ) : (
         <div className="divide-y divide-border">
@@ -76,9 +78,9 @@ export function FeedbackTab({
                   variant="danger"
                   size="small"
                   onClick={() => onDeleteFeedback(fb.id, fb.teamName)}
-                  title="Delete feedback"
+                  title={t("pages.admin.gameEditor.feedback.deleteFeedback")}
                 >
-                  Delete
+                  {t("pages.admin.gameEditor.feedback.delete")}
                 </Button>
               </div>
             </div>

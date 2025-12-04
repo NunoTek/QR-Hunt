@@ -6,7 +6,9 @@
     "success": "Succès",
     "cancel": "Annuler",
     "save": "Enregistrer",
+    "saving": "Enregistrement...",
     "delete": "Supprimer",
+    "deleting": "Suppression...",
     "edit": "Modifier",
     "back": "Retour",
     "next": "Suivant",
@@ -22,6 +24,7 @@
     "game": "Jeu",
     "player": "Joueur",
     "admin": "Admin",
+    "unknown": "Inconnu",
     "status": {
       "draft": "Brouillon",
       "pending": "En attente",
@@ -465,6 +468,22 @@
           "readFailed": "Échec de la lecture du fichier : {{error}}"
         }
       },
+      "deleteGameModal": {
+        "title": "Supprimer le jeu",
+        "subtitle": "Cette action est irréversible",
+        "description": "Cela supprimera définitivement \"{{name}}\" et toutes les données associées, y compris :",
+        "items": {
+          "nodes": "Tous les points de contrôle et codes QR",
+          "edges": "Toutes les connexions",
+          "teams": "Toutes les équipes et leur progression",
+          "history": "Tout l'historique des scans et messages de chat"
+        },
+        "confirmLabel": "Tapez \"{{name}}\" pour confirmer :",
+        "confirmPlaceholder": "Entrez le nom du jeu",
+        "cancel": "Annuler",
+        "deleting": "Suppression...",
+        "deleteForever": "Supprimer définitivement"
+      },
       "newGame": {
         "meta": {
           "title": "Créer un jeu - QR Hunt Admin"
@@ -520,6 +539,7 @@
           "teams": "Équipes",
           "qrcodes": "Codes QR",
           "feedback": "Avis",
+          "analytics": "Analytique",
           "settings": "Paramètres"
         },
         "nodeBadges": {
@@ -577,10 +597,14 @@
             "preview": "Aperçu",
             "edit": "Modifier",
             "delete": "Supprimer",
-            "addNode": "Ajouter le nœud",
-            "updateNode": "Mettre à jour",
+            "add": "Ajouter le nœud",
+            "update": "Mettre à jour",
             "cancel": "Annuler",
             "clear": "Effacer"
+          },
+          "activation": {
+            "clickToDeactivate": "Cliquez pour désactiver",
+            "clickToActivate": "Cliquez pour activer"
           }
         },
         "edges": {
@@ -591,6 +615,7 @@
           "noEdges": "Pas encore de liens. Connectez vos nœuds.",
           "addEdge": "Ajouter un lien",
           "editEdge": "Modifier le lien",
+          "unknown": "Inconnu",
           "randomModeInfo": "Le mode aléatoire est activé pour ce jeu. Les liens ne sont pas utilisés en mode aléatoire - chaque équipe reçoit un indice aléatoire parmi les nœuds non visités.",
           "form": {
             "fromNode": "Depuis le nœud",
@@ -598,8 +623,10 @@
             "select": "Sélectionner..."
           },
           "buttons": {
-            "addEdge": "Ajouter le lien",
-            "updateEdge": "Mettre à jour",
+            "edit": "Modifier",
+            "delete": "Supprimer",
+            "add": "Ajouter le lien",
+            "update": "Mettre à jour",
             "cancel": "Annuler",
             "clear": "Effacer"
           }
@@ -636,6 +663,11 @@
           "description": "Générez, personnalisez et téléchargez les codes QR pour chaque nœud.",
           "downloadAll": "Tout télécharger (ZIP)",
           "scanToIdentify": "Scanner pour identifier / activer",
+          "filterByTitle": "Filtrer par titre...",
+          "allStatus": "Tous les statuts",
+          "activated": "Activé",
+          "notActivated": "Non activé",
+          "count": "{{filtered}} / {{total}} codes QR",
           "tableHeaders": {
             "node": "Nœud",
             "url": "URL",
@@ -645,6 +677,10 @@
           "buttons": {
             "generateQR": "Générer QR",
             "copyUrl": "Copier l'URL"
+          },
+          "activation": {
+            "clickToDeactivate": "Cliquez pour désactiver",
+            "clickToActivate": "Cliquez pour activer"
           },
           "messages": {
             "urlCopied": "URL copiée dans le presse-papiers !",
@@ -662,8 +698,42 @@
           "noFeedbackHelp": "Les équipes peuvent soumettre des avis pendant ou après le jeu.",
           "review": "avis",
           "reviews": "avis",
+          "delete": "Supprimer",
+          "deleteFeedback": "Supprimer l'avis",
           "deleted": "Avis de \"{{teamName}}\" supprimé",
           "deleteFailed": "Échec de la suppression de l'avis"
+        },
+        "analytics": {
+          "loading": "Chargement des analytiques...",
+          "noData": "Pas encore de données analytiques",
+          "noDataDescription": "Les analytiques apparaîtront une fois que les équipes commenceront à scanner les indices.",
+          "teamsWithScans": "Équipes avec scans",
+          "finishedTeams": "Équipes terminées",
+          "avgCompletionTime": "Temps moyen de complétion",
+          "bottlenecks": "Indices goulots d'étranglement (les plus lents)",
+          "avgLabel": "Moy :",
+          "teamPerformance": "Performance des équipes",
+          "tableHeaders": {
+            "rank": "Rang",
+            "team": "Équipe",
+            "cluesFound": "Indices trouvés",
+            "totalTime": "Temps total",
+            "status": "Statut"
+          },
+          "finished": "Terminé",
+          "inProgress": "En cours",
+          "noTeamsScanned": "Aucune équipe n'a encore scanné d'indices.",
+          "timePerClue": "Temps par indice",
+          "timePerClueDescription": "Temps moyen passé par les équipes pour trouver chaque indice",
+          "clueTableHeaders": {
+            "clue": "Indice",
+            "avgTime": "Temps moy.",
+            "fastest": "Plus rapide",
+            "slowest": "Plus lent",
+            "completions": "Complétions"
+          },
+          "noCluesScanned": "Aucun indice n'a encore été scanné.",
+          "na": "N/D"
         },
         "settings": {
           "rankingModeDescription": "Choisissez comment les équipes sont classées au classement.",
@@ -672,13 +742,18 @@
             "description": "Contrôlez le statut actuel de votre jeu.",
             "changeStatus": "Changer le statut du jeu :",
             "completeSetup": "Complétez la checklist de configuration ci-dessus avant d'activer le jeu.",
+            "completeSetupFirst": "Complétez d'abord les prérequis de configuration",
             "draft": {
               "label": "Brouillon",
               "description": "Le jeu est en cours de configuration et n'est pas encore jouable."
             },
+            "pending": {
+              "label": "En attente",
+              "description": "Les équipes peuvent rejoindre et attendre dans la salle d'attente."
+            },
             "active": {
               "label": "Actif",
-              "description": "Le jeu est en direct ! Les équipes peuvent rejoindre et jouer."
+              "description": "Le jeu est en direct ! Les équipes peuvent jouer."
             },
             "completed": {
               "label": "Terminé",
@@ -707,7 +782,15 @@
             "confirmOverwrite": "Cela va écraser tous les nœuds, liens et équipes avec les données de \"{{name}}\". Continuer ?",
             "importSuccess": "Importation réussie ! La page va se rafraîchir.",
             "importFailed": "Échec de l'importation : {{error}}",
-            "readFailed": "Échec de la lecture du fichier : {{error}}"
+            "readFailed": "Échec de la lecture du fichier : {{error}}",
+            "csvTitle": "Import CSV",
+            "csvDescription": "Importez des nœuds et des liens depuis un fichier CSV. Téléchargez l'exemple pour voir le format attendu.",
+            "downloadExample": "Télécharger l'exemple CSV",
+            "importCsv": "Importer CSV",
+            "csvConfirmImport": "Cela va ajouter {{nodes}} nœuds et {{edges}} liens à votre jeu. Continuer ?",
+            "csvImportSuccess": "CSV importé avec succès ! {{nodes}} nœuds et {{edges}} liens ajoutés.",
+            "csvParseError": "Échec de l'analyse du CSV : {{error}}",
+            "csvNoData": "Aucune donnée valide trouvée dans le fichier CSV"
           },
           "dangerZone": {
             "title": "Zone de danger",

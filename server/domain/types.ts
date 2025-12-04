@@ -18,6 +18,11 @@ export interface GameSettings {
   timeBonusEnabled: boolean;
   timeBonusMultiplier: number;
   randomMode: boolean;
+  // Auto-start when all teams are connected
+  autoStartEnabled: boolean;
+  expectedTeamCount: number;
+  // Rate limiting for scans (cooldown in milliseconds)
+  scanCooldownMs: number;
 }
 
 export interface Team {

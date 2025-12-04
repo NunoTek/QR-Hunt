@@ -320,6 +320,183 @@ export class GameService {
       finishedTeams,
     };
   }
+
+  /**
+   * Checks if a game should auto-start based on connected teams.
+   * Called when a team connects via heartbeat.
+   */
+  checkAutoStart(gameSlug: string): boolean {
+    const game = gameRepository.findBySlug(gameSlug);
+    if (!game) return false;
+
+    // Only auto-start games in pending status
+    if (game.status !== "pending") return false;
+
+    // Check if auto-start is enabled
+    if (!game.settings.autoStartEnabled) return false;
+
+    const expectedCount = game.settings.expectedTeamCount;
+    if (expectedCount <= 0) return false;
+
+    // Get total teams in the game
+    const teams = teamRepository.findByGameId(game.id);
+    if (teams.length < expectedCount) return false;
+
+    // Get connected team count
+    const connectedCount = gameEvents.getConnectedTeamCount(gameSlug);
+
+    // If all expected teams are connected, auto-start the game
+    if (connectedCount >= expectedCount) {
+      try {
+        this.activateGame(game.id);
+        console.log(`Auto-started game ${gameSlug} - all ${expectedCount} teams connected`);
+        return true;
+      } catch (error) {
+        console.error(`Failed to auto-start game ${gameSlug}:`, error);
+        return false;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Gets detailed analytics for a game.
+   * Returns time spent per node per team, bottleneck analysis, etc.
+   */
+  getGameAnalytics(gameId: string): {
+    teams: Array<{
+      teamId: string;
+      teamName: string;
+      teamLogoUrl: string | null;
+      totalTime: number;
+      nodeTimings: Array<{
+        nodeId: string;
+        nodeTitle: string;
+        timeSpentMs: number;
+        timestamp: string;
+      }>;
+      isFinished: boolean;
+      rank: number;
+    }>;
+    nodeStats: Array<{
+      nodeId: string;
+      nodeTitle: string;
+      averageTimeMs: number;
+      minTimeMs: number;
+      maxTimeMs: number;
+      completionCount: number;
+    }>;
+    bottlenecks: Array<{
+      nodeId: string;
+      nodeTitle: string;
+      averageTimeMs: number;
+    }>;
+  } | null {
+    const game = gameRepository.findById(gameId);
+    if (!game) return null;
+
+    const teams = teamRepository.findByGameId(gameId);
+    const allNodes = nodeRepository.findByGameId(gameId);
+    const nodesMap = new Map(allNodes.map((n) => [n.id, n]));
+    const leaderboard = this.getLeaderboard(gameId);
+    const rankMap = new Map(leaderboard.map((e) => [e.teamId, e.rank]));
+
+    // Build team analytics with timings
+    const teamsAnalytics = teams.map((team) => {
+      const scans = scanRepository.findByTeamId(team.id);
+      const sortedScans = [...scans].sort(
+        (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+
+      const nodeTimings: Array<{
+        nodeId: string;
+        nodeTitle: string;
+        timeSpentMs: number;
+        timestamp: string;
+      }> = [];
+
+      // Calculate time between consecutive scans
+      for (let i = 0; i < sortedScans.length; i++) {
+        const scan = sortedScans[i];
+        const prevScan = sortedScans[i - 1];
+        const node = nodesMap.get(scan.nodeId);
+
+        // Time spent = time from previous scan (or game start for first scan)
+        const timeSpentMs = prevScan
+          ? new Date(scan.timestamp).getTime() - new Date(prevScan.timestamp).getTime()
+          : 0;
+
+        nodeTimings.push({
+          nodeId: scan.nodeId,
+          nodeTitle: node?.title || "Unknown",
+          timeSpentMs,
+          timestamp: scan.timestamp,
+        });
+      }
+
+      const totalTime = nodeTimings.reduce((sum, t) => sum + t.timeSpentMs, 0);
+      const entry = leaderboard.find((e) => e.teamId === team.id);
+
+      return {
+        teamId: team.id,
+        teamName: team.name,
+        teamLogoUrl: team.logoUrl,
+        totalTime,
+        nodeTimings,
+        isFinished: entry?.isFinished || false,
+        rank: rankMap.get(team.id) || 0,
+      };
+    });
+
+    // Calculate node statistics
+    const nodeTimeMap = new Map<string, number[]>();
+    for (const teamData of teamsAnalytics) {
+      for (const timing of teamData.nodeTimings) {
+        if (timing.timeSpentMs > 0) {
+          if (!nodeTimeMap.has(timing.nodeId)) {
+            nodeTimeMap.set(timing.nodeId, []);
+          }
+          nodeTimeMap.get(timing.nodeId)!.push(timing.timeSpentMs);
+        }
+      }
+    }
+
+    const nodeStats = allNodes.map((node) => {
+      const times = nodeTimeMap.get(node.id) || [];
+      const sum = times.reduce((a, b) => a + b, 0);
+      const avg = times.length > 0 ? sum / times.length : 0;
+      const min = times.length > 0 ? Math.min(...times) : 0;
+      const max = times.length > 0 ? Math.max(...times) : 0;
+
+      return {
+        nodeId: node.id,
+        nodeTitle: node.title,
+        averageTimeMs: Math.round(avg),
+        minTimeMs: min,
+        maxTimeMs: max,
+        completionCount: times.length,
+      };
+    });
+
+    // Find bottlenecks (nodes with highest average time)
+    const bottlenecks = [...nodeStats]
+      .filter((n) => n.completionCount > 0)
+      .sort((a, b) => b.averageTimeMs - a.averageTimeMs)
+      .slice(0, 5);
+
+    return {
+      teams: teamsAnalytics,
+      nodeStats,
+      bottlenecks,
+    };
+  }
 }
 
+// Create the service instance
 export const gameService = new GameService();
+
+// Register auto-start callback with event emitter
+gameEvents.setAutoStartCallback((gameSlug: string) => {
+  gameService.checkAutoStart(gameSlug);
+});

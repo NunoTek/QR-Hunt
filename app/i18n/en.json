@@ -6,7 +6,9 @@
     "success": "Success",
     "cancel": "Cancel",
     "save": "Save",
+    "saving": "Saving...",
     "delete": "Delete",
+    "deleting": "Deleting...",
     "edit": "Edit",
     "back": "Back",
     "next": "Next",
@@ -22,6 +24,7 @@
     "game": "Game",
     "player": "Player",
     "admin": "Admin",
+    "unknown": "Unknown",
     "status": {
       "draft": "Draft",
       "pending": "Pending",
@@ -465,6 +468,22 @@
           "readFailed": "Failed to read file: {{error}}"
         }
       },
+      "deleteGameModal": {
+        "title": "Delete Game",
+        "subtitle": "This action cannot be undone",
+        "description": "This will permanently delete \"{{name}}\" and all associated data including:",
+        "items": {
+          "nodes": "All nodes and QR codes",
+          "edges": "All edges/connections",
+          "teams": "All teams and their progress",
+          "history": "All scan history and chat messages"
+        },
+        "confirmLabel": "Type \"{{name}}\" to confirm:",
+        "confirmPlaceholder": "Enter game name",
+        "cancel": "Cancel",
+        "deleting": "Deleting...",
+        "deleteForever": "Delete Forever"
+      },
       "newGame": {
         "meta": {
           "title": "Create Game - QR Hunt Admin"
@@ -520,6 +539,7 @@
           "teams": "Teams",
           "qrcodes": "QR Codes",
           "feedback": "Feedback",
+          "analytics": "Analytics",
           "settings": "Settings"
         },
         "nodeBadges": {
@@ -577,10 +597,14 @@
             "preview": "Preview",
             "edit": "Edit",
             "delete": "Delete",
-            "addNode": "Add Node",
-            "updateNode": "Update Node",
+            "add": "Add Node",
+            "update": "Update Node",
             "cancel": "Cancel",
             "clear": "Clear"
+          },
+          "activation": {
+            "clickToDeactivate": "Click to deactivate",
+            "clickToActivate": "Click to activate"
           }
         },
         "edges": {
@@ -591,6 +615,7 @@
           "noEdges": "No edges yet. Connect your nodes.",
           "addEdge": "Add Edge",
           "editEdge": "Edit Edge",
+          "unknown": "Unknown",
           "randomModeInfo": "Random Mode is enabled for this game. Edges are not used in random mode - each team gets a random next clue from unvisited nodes.",
           "form": {
             "fromNode": "From Node",
@@ -598,8 +623,10 @@
             "select": "Select..."
           },
           "buttons": {
-            "addEdge": "Add Edge",
-            "updateEdge": "Update Edge",
+            "edit": "Edit",
+            "delete": "Delete",
+            "add": "Add Edge",
+            "update": "Update Edge",
             "cancel": "Cancel",
             "clear": "Clear"
           }
@@ -636,6 +663,11 @@
           "description": "Generate, customize, and download QR codes for each node.",
           "downloadAll": "Download All (ZIP)",
           "scanToIdentify": "Scan to Identify / Activate",
+          "filterByTitle": "Filter by title...",
+          "allStatus": "All Status",
+          "activated": "Activated",
+          "notActivated": "Not Activated",
+          "count": "{{filtered}} / {{total}} QR codes",
           "tableHeaders": {
             "node": "Node",
             "url": "URL",
@@ -645,6 +677,10 @@
           "buttons": {
             "generateQR": "Generate QR",
             "copyUrl": "Copy URL"
+          },
+          "activation": {
+            "clickToDeactivate": "Click to deactivate",
+            "clickToActivate": "Click to activate"
           },
           "messages": {
             "urlCopied": "URL copied to clipboard!",
@@ -662,8 +698,42 @@
           "noFeedbackHelp": "Teams can submit feedback during or after the game.",
           "review": "review",
           "reviews": "reviews",
+          "delete": "Delete",
+          "deleteFeedback": "Delete feedback",
           "deleted": "Feedback from \"{{teamName}}\" deleted",
           "deleteFailed": "Failed to delete feedback"
+        },
+        "analytics": {
+          "loading": "Loading analytics...",
+          "noData": "No Analytics Data Yet",
+          "noDataDescription": "Analytics will appear once teams start scanning clues.",
+          "teamsWithScans": "Teams with Scans",
+          "finishedTeams": "Finished Teams",
+          "avgCompletionTime": "Avg Completion Time",
+          "bottlenecks": "Bottleneck Clues (Slowest)",
+          "avgLabel": "Avg:",
+          "teamPerformance": "Team Performance",
+          "tableHeaders": {
+            "rank": "Rank",
+            "team": "Team",
+            "cluesFound": "Clues Found",
+            "totalTime": "Total Time",
+            "status": "Status"
+          },
+          "finished": "Finished",
+          "inProgress": "In Progress",
+          "noTeamsScanned": "No teams have scanned any clues yet.",
+          "timePerClue": "Time per Clue",
+          "timePerClueDescription": "Average time teams spent finding each clue",
+          "clueTableHeaders": {
+            "clue": "Clue",
+            "avgTime": "Avg Time",
+            "fastest": "Fastest",
+            "slowest": "Slowest",
+            "completions": "Completions"
+          },
+          "noCluesScanned": "No clues have been scanned yet.",
+          "na": "N/A"
         },
         "settings": {
           "rankingModeDescription": "Choose how teams are ranked on the leaderboard.",
@@ -672,13 +742,18 @@
             "description": "Control the current status of your game.",
             "changeStatus": "Change the game status:",
             "completeSetup": "Complete the setup checklist above before activating the game.",
+            "completeSetupFirst": "Complete setup requirements first",
             "draft": {
               "label": "Draft",
               "description": "Game is being set up and not yet playable."
             },
+            "pending": {
+              "label": "Pending",
+              "description": "Teams can join and wait in the waiting room."
+            },
             "active": {
               "label": "Active",
-              "description": "Game is live! Teams can join and play."
+              "description": "Game is live! Teams can play."
             },
             "completed": {
               "label": "Completed",
@@ -707,7 +782,15 @@
             "confirmOverwrite": "This will overwrite all nodes, edges, and teams with data from \"{{name}}\". Continue?",
             "importSuccess": "Import successful! Page will refresh.",
             "importFailed": "Import failed: {{error}}",
-            "readFailed": "Failed to read file: {{error}}"
+            "readFailed": "Failed to read file: {{error}}",
+            "csvTitle": "CSV Import",
+            "csvDescription": "Import nodes and edges from a CSV file. Download the example to see the expected format.",
+            "downloadExample": "Download CSV Example",
+            "importCsv": "Import CSV",
+            "csvConfirmImport": "This will add {{nodes}} nodes and {{edges}} edges to your game. Continue?",
+            "csvImportSuccess": "CSV imported successfully! Added {{nodes}} nodes and {{edges}} edges.",
+            "csvParseError": "Failed to parse CSV: {{error}}",
+            "csvNoData": "No valid data found in CSV file"
           },
           "dangerZone": {
             "title": "Danger Zone",

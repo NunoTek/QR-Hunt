@@ -8,6 +8,9 @@ interface TeamConnection {
   isConnected: boolean;
 }
 
+// Callback type for auto-start check
+type AutoStartCallback = (gameSlug: string) => void;
+
 // Connection timeout in milliseconds (15 seconds)
 const CONNECTION_TIMEOUT_MS = 15000;
 
@@ -16,11 +19,18 @@ class GameEventEmitter extends EventEmitter {
   private static instance: GameEventEmitter;
   private teamConnections: Map<string, Map<string, TeamConnection>> = new Map(); // gameSlug -> teamId -> connection
   private cleanupInterval: NodeJS.Timeout | null = null;
+  private autoStartCallback: AutoStartCallback | null = null;
+  private lastScanTimestamps: Map<string, number> = new Map(); // teamId -> timestamp
 
   private constructor() {
     super();
     this.setMaxListeners(1000); // Allow many concurrent SSE connections
     this.startConnectionCleanup();
+  }
+
+  // Register callback for auto-start checks
+  setAutoStartCallback(callback: AutoStartCallback): void {
+    this.autoStartCallback = callback;
   }
 
   // Periodically check for disconnected teams
@@ -130,7 +140,19 @@ class GameEventEmitter extends EventEmitter {
     // Emit connection status if team just reconnected
     if (wasDisconnected) {
       this.emitTeamConnectionStatus(gameSlug, { teamId, teamName, isConnected: true });
+
+      // Trigger auto-start check when a team connects
+      if (this.autoStartCallback) {
+        this.autoStartCallback(gameSlug);
+      }
     }
+  }
+
+  // Check if all expected teams are connected
+  getConnectedTeamCount(gameSlug: string): number {
+    const teams = this.teamConnections.get(gameSlug);
+    if (!teams) return 0;
+    return Array.from(teams.values()).filter((t) => t.isConnected).length;
   }
 
   getTeamConnections(gameSlug: string): Array<{ teamId: string; teamName: string; isConnected: boolean }> {
@@ -164,6 +186,33 @@ class GameEventEmitter extends EventEmitter {
     callback: (data: { teamId: string; teamName: string; isConnected: boolean; timestamp: string }) => void
   ): void {
     this.off(`teamconnection:${gameSlug}`, callback);
+  }
+
+  // Rate limiting for scans
+  canTeamScan(teamId: string, cooldownMs: number): { allowed: boolean; remainingMs: number } {
+    if (cooldownMs <= 0) {
+      return { allowed: true, remainingMs: 0 };
+    }
+
+    const lastScan = this.lastScanTimestamps.get(teamId);
+    if (!lastScan) {
+      return { allowed: true, remainingMs: 0 };
+    }
+
+    const elapsed = Date.now() - lastScan;
+    if (elapsed >= cooldownMs) {
+      return { allowed: true, remainingMs: 0 };
+    }
+
+    return { allowed: false, remainingMs: cooldownMs - elapsed };
+  }
+
+  recordTeamScan(teamId: string): void {
+    this.lastScanTimestamps.set(teamId, Date.now());
+  }
+
+  clearTeamScanHistory(teamId: string): void {
+    this.lastScanTimestamps.delete(teamId);
   }
 }
 

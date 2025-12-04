@@ -7,4 +7,7 @@ export { QRCodesTab } from "./QRCodesTab";
 export { EdgesTab } from "./EdgesTab";
 export { TeamsTab } from "./TeamsTab";
 export { FeedbackTab } from "./FeedbackTab";
+export { AnalyticsTab } from "./AnalyticsTab";
 export { SettingsTab } from "./SettingsTab";
+export { DeleteGameModal } from "./DeleteGameModal";
+export { NodePreviewModal } from "./NodePreviewModal";
