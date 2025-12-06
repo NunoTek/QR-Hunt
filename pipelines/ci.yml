@@ -79,3 +79,43 @@ stages:
               artifact: 'dist'
               publishLocation: 'pipeline'
             condition: succeeded()
+
+  - stage: E2E
+    displayName: 'E2E Tests'
+    dependsOn: Build
+    jobs:
+      - job: PlaywrightTests
+        displayName: 'Playwright E2E Tests'
+        steps:
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(NODE_VERSION)'
+            inputs:
+              versionSpec: '$(NODE_VERSION)'
+
+          - script: npm ci
+            displayName: 'Install dependencies'
+
+          - script: npx playwright install --with-deps chromium
+            displayName: 'Install Playwright browsers'
+
+          - script: npm run test:e2e
+            displayName: 'Run Playwright E2E tests'
+            env:
+              CI: true
+              NODE_ENV: test
+
+          - task: PublishTestResults@2
+            displayName: 'Publish E2E test results'
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'test-results/e2e-results.xml'
+              testRunTitle: 'Playwright E2E Tests'
+            condition: always()
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Playwright report'
+            inputs:
+              targetPath: '$(System.DefaultWorkingDirectory)/playwright-report'
+              artifact: 'playwright-report'
+              publishLocation: 'pipeline'
+            condition: always()

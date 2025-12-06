@@ -128,14 +128,14 @@ export const Button = forwardRef<
     );
   }
 
-  const { as: _, ...buttonProps } = rest as ButtonAsButton & { as?: "button" };
+  const { as: _, type, ...otherButtonProps } = rest as ButtonAsButton & { as?: "button"; type?: "button" | "submit" | "reset" };
   return (
     <button
       ref={ref as React.Ref<HTMLButtonElement>}
-      type="button"
+      type={type || "button"}
       className={classes}
-      disabled={isLoading || buttonProps.disabled}
-      {...buttonProps}
+      disabled={isLoading || otherButtonProps.disabled}
+      {...otherButtonProps}
     >
       {content}
     </button>

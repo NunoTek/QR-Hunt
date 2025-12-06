@@ -3,20 +3,67 @@ import { Button } from "~/components/Button";
 import { CheckCircle, Clock, Download, Edit, Play, Upload } from "~/components/icons";
 import { inputClasses, type Game } from "./types";
 
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    const nextChar = line[i + 1];
+
+    if (inQuotes) {
+      if (char === '"') {
+        if (nextChar === '"') {
+          // Escaped quote
+          current += '"';
+          i++;
+        } else {
+          // End of quoted field
+          inQuotes = false;
+        }
+      } else {
+        current += char;
+      }
+    } else {
+      if (char === '"') {
+        // Start of quoted field
+        inQuotes = true;
+      } else if (char === ",") {
+        // End of field
+        result.push(current.trim());
+        current = "";
+      } else {
+        current += char;
+      }
+    }
+  }
+
+  // Push the last field
+  result.push(current.trim());
+
+  return result;
+}
+
 function parseCSV(csvText: string): { nodes: Array<Record<string, string>>; edges: Array<{ from: string; to: string }> } {
   const lines = csvText.split(/\r?\n/).filter(line => line.trim());
   if (lines.length < 2) return { nodes: [], edges: [] };
 
-  const headers = lines[0].split(",").map(h => h.trim().toLowerCase());
+  const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/^"|"$/g, ""));
   const nodes: Array<Record<string, string>> = [];
   const edgesMap: Array<{ from: string; to: string }> = [];
 
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(",").map(v => v.trim());
+    const values = parseCSVLine(lines[i]);
     const row: Record<string, string> = {};
 
     headers.forEach((header, idx) => {
-      row[header] = values[idx] || "";
+      // Remove surrounding quotes if present
+      let value = values[idx] || "";
+      if (value.startsWith('"') && value.endsWith('"')) {
+        value = value.slice(1, -1);
+      }
+      row[header] = value;
     });
 
     // Only add if there's a title

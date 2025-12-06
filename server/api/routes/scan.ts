@@ -102,6 +102,7 @@ export async function scanRoutes(fastify: FastifyInstance) {
         isGameComplete: result.isGameComplete,
         pointsAwarded: result.pointsAwarded,
         isWinner: winStatus?.isWinner ?? false,
+        hasWinner: winStatus?.hasWinner ?? false,
       });
     }
   );
@@ -149,9 +150,9 @@ export async function scanRoutes(fastify: FastifyInstance) {
       }
     }
 
-    // Get total nodes count for this game
-    const allNodes = nodeRepository.findByGameId(progress.team.gameId);
-    const totalNodes = allNodes.length;
+    // Get total activated nodes count for this game
+    const activatedNodes = nodeRepository.findActivatedByGameId(progress.team.gameId);
+    const totalNodes = activatedNodes.length;
 
     // Check if random mode is enabled
     const game = gameRepository.findById(progress.team.gameId);
@@ -225,6 +226,7 @@ export async function scanRoutes(fastify: FastifyInstance) {
       hintPointsDeducted,
       isFinished: progress.isFinished,
       isWinner: winStatus?.isWinner ?? false,
+      hasWinner: winStatus?.hasWinner ?? false,
       scansCount: progress.scans.length,
       isRandomMode,
     });

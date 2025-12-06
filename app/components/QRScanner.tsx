@@ -549,8 +549,8 @@ export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false, onSca
             e.preventDefault();
             const form = e.target as HTMLFormElement;
             const input = form.elements.namedItem("nodeKey") as HTMLInputElement;
-            if (input.value) {
-              submitScan(input.value);
+            if (input.value.trim()) {
+              submitScan(input.value.trim());
             }
           }}
         >
@@ -561,9 +561,29 @@ export function QRScanner({ gameSlug: _gameSlug, token, autoStart = false, onSca
               className="flex-1 px-4 py-2 text-sm sm:text-base bg-secondary text-primary border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed min-h-[2.75rem] sm:min-h-[3rem]"
               placeholder="Enter QR code"
               disabled={isProcessing}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  const form = e.currentTarget.form;
+                  if (form) {
+                    form.requestSubmit();
+                  }
+                }
+              }}
             />
-            <button type="submit" className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[2.75rem] sm:min-h-[3rem]" disabled={isProcessing}>
-              {isProcessing ? <Spinner size="sm" /> : "Submit"}
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[2.75rem] sm:min-h-[3rem]"
+              disabled={isProcessing}
+            >
+              {isProcessing ? (
+                <Spinner size="sm" />
+              ) : (
+                <>
+                  <Check size={16} />
+                  <span>Validate</span>
+                </>
+              )}
             </button>
           </div>
         </form>

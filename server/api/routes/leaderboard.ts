@@ -308,10 +308,13 @@ export async function leaderboardRoutes(fastify: FastifyInstance) {
 
       const teams = teamRepository.findByGameId(game.id);
       const allScans = scanRepository.findByGameId(game.id);
-      const nodes = nodeRepository.findByGameId(game.id);
+      // Use all nodes for lookups (to display titles for scans that already happened)
+      const allNodes = nodeRepository.findByGameId(game.id);
+      // Use only activated nodes for ordered nodes display
+      const activatedNodes = nodeRepository.findActivatedByGameId(game.id);
 
-      // Create node map for quick lookup
-      const nodeMap = new Map(nodes.map(n => [n.id, n]));
+      // Create node map for quick lookup (includes all nodes for historical scans)
+      const nodeMap = new Map(allNodes.map(n => [n.id, n]));
 
       // Group scans by team and calculate time per clue
       const teamPerformance = teams.map(team => {
@@ -348,12 +351,20 @@ export async function leaderboardRoutes(fastify: FastifyInstance) {
           teamName: team.name,
           teamLogoUrl: team.logoUrl,
           clueTimings,
+          cluesFound: clueTimings.length,
           totalTime: clueTimings.length > 0 ? clueTimings[clueTimings.length - 1].timeFromStart : 0,
         };
-      });
+      })
+        // Sort by most clues found (descending), then by least time (ascending)
+        .sort((a, b) => {
+          if (b.cluesFound !== a.cluesFound) {
+            return b.cluesFound - a.cluesFound; // More clues = better
+          }
+          return a.totalTime - b.totalTime; // Less time = better
+        });
 
-      // Get ordered list of nodes for consistent chart display
-      const orderedNodes = nodes
+      // Get ordered list of activated nodes for consistent chart display
+      const orderedNodes = activatedNodes
         .filter(n => !n.isStart)
         .sort((a, b) => {
           // Sort by most common scan order

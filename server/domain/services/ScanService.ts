@@ -1,12 +1,13 @@
 import { createHash } from "crypto";
-import { gameRepository } from "../repositories/GameRepository.js";
-import { teamRepository } from "../repositories/TeamRepository.js";
-import { nodeRepository } from "../repositories/NodeRepository.js";
 import { edgeRepository } from "../repositories/EdgeRepository.js";
-import { scanRepository } from "../repositories/ScanRepository.js";
 import { hintUsageRepository } from "../repositories/HintUsageRepository.js";
-import type { Scan, Node, TeamProgress, HintUsage } from "../types.js";
-import { GAME } from "../../config/constants.js";
+import { nodeRepository } from "../repositories/NodeRepository.js";
+import { scanRepository } from "../repositories/ScanRepository.js";
+import { teamRepository } from "../repositories/TeamRepository.js";
+import type { HintUsage, Node, Scan, TeamProgress } from "../types.js";
+import { gameProgressValidator } from "./GameProgressValidator.js";
+import { nodeStatusCalculator } from "./NodeStatusCalculator.js";
+import { pointsCalculator } from "./PointsCalculator.js";
 
 export interface ScanResult {
   success: boolean;
@@ -34,21 +35,21 @@ export class ScanService {
     clientIp?: string;
     userAgent?: string;
   }): ScanResult {
-    // Validate team and game
-    const entityValidation = this.validateTeamAndGame(data.teamId);
-    if (!entityValidation.valid) {
-      return { success: false, message: entityValidation.message };
+    // Validate team and game using shared validator
+    const validation = gameProgressValidator.validateTeamAndGameActive(data.teamId);
+    if (!validation.valid || !validation.data) {
+      return { success: false, message: validation.message };
     }
-    const { team, game: _game } = entityValidation;
+    const { team, game } = validation.data;
 
     // Find and validate node
-    const node = nodeRepository.findByNodeKey(team!.gameId, data.nodeKey);
+    const node = nodeRepository.findByNodeKey(team.gameId, data.nodeKey);
     if (!node) {
       return { success: false, message: "Invalid QR code" };
     }
 
     // Check if this is a valid scan based on team progress
-    const scanValidation = this.validateScan(team!.id, node);
+    const scanValidation = this.validateScan(team.id, node);
     if (!scanValidation.valid) {
       return { success: false, message: scanValidation.message };
     }
@@ -68,10 +69,13 @@ export class ScanService {
       };
     }
 
-    // Calculate points and record scan
-    const pointsAwarded = this.calculatePoints(data.teamId, node);
+    // Calculate points using shared calculator
+    const lastScan = scanRepository.findLastScanByTeam(data.teamId);
+    const pointsAwarded = pointsCalculator.calculateScanPoints(node, game, lastScan);
+
+    // Record scan
     const scan = scanRepository.create({
-      gameId: team!.gameId,
+      gameId: team.gameId,
       teamId: data.teamId,
       nodeId: node.id,
       clientIp: data.clientIp,
@@ -79,45 +83,54 @@ export class ScanService {
       pointsAwarded,
     });
 
-    // Check completion status and build response
-    const completionStatus = this.checkCompletionStatus(team!.gameId, data.teamId, node);
+    // Get completion status using shared calculator
+    const status = nodeStatusCalculator.getCompletionStatus(data.teamId, team.gameId);
+    const isGameComplete = status.allNodesScanned && node.isEnd;
+    const message = this.constructSuccessMessage(isGameComplete, status.allNodesScanned, node.isEnd, status.remainingCount);
 
     return {
       success: true,
-      message: completionStatus.message,
+      message,
       node: this.sanitizeNode(node),
-      nextNodes: completionStatus.remainingNodes.map(this.sanitizeNode),
-      isGameComplete: completionStatus.isGameComplete,
+      nextNodes: status.remainingNodes.map(this.sanitizeNode),
+      isGameComplete,
       pointsAwarded,
       scan,
     };
   }
 
-  /** Validates that team exists and game is active */
-  private validateTeamAndGame(teamId: string): {
-    valid: boolean;
-    message: string;
-    team?: ReturnType<typeof teamRepository.findById>;
-    game?: ReturnType<typeof gameRepository.findById>;
-  } {
+  private validateScan(teamId: string, node: Node): { valid: boolean; message: string } {
     const team = teamRepository.findById(teamId);
     if (!team) {
       return { valid: false, message: "Team not found" };
     }
 
-    const game = gameRepository.findById(team.gameId);
-    if (!game) {
-      return { valid: false, message: "Game not found" };
+    const { scans, scannedNodeIds } = nodeStatusCalculator.getTeamScanStatus(teamId);
+
+    // First scan - must match team's start node or any start node
+    if (scans.length === 0) {
+      if (team.startNodeId) {
+        if (node.id !== team.startNodeId) {
+          return { valid: false, message: "This is not your starting QR code" };
+        }
+      } else if (!node.isStart) {
+        return { valid: false, message: "You must start with a starting QR code" };
+      }
+      return { valid: true, message: "" };
     }
 
-    if (game.status !== "active") {
-      return { valid: false, message: "Game is not active" };
+    // Check if all activated nodes have been scanned
+    const { activatedNodes } = nodeStatusCalculator.getNodeSets(team.gameId);
+    const allNodesScanned = activatedNodes.every((n) => scannedNodeIds.has(n.id));
+
+    // If all activated nodes scanned, only allow end nodes to finish the game
+    if (allNodesScanned && !node.isEnd) {
+      return { valid: false, message: "You've found all QR codes! Find an end point to finish." };
     }
 
-    return { valid: true, message: "", team, game };
+    return { valid: true, message: "" };
   }
 
-  /** Validates password if node requires one */
   private validatePasswordIfRequired(
     node: Node,
     password?: string
@@ -147,30 +160,6 @@ export class ScanService {
     return { valid: true };
   }
 
-  /** Checks game completion status and generates appropriate message */
-  private checkCompletionStatus(
-    gameId: string,
-    teamId: string,
-    lastNode: Node
-  ): {
-    isGameComplete: boolean;
-    allNodesScanned: boolean;
-    remainingNodes: Node[];
-    message: string;
-  } {
-    const allNodes = nodeRepository.findActivatedByGameId(gameId);
-    const teamScans = scanRepository.findByTeamId(teamId);
-    const scannedNodeIds = new Set(teamScans.map((s) => s.nodeId));
-    const allNodesScanned = allNodes.every((n) => scannedNodeIds.has(n.id));
-    const isGameComplete = allNodesScanned && lastNode.isEnd;
-    const remainingNodes = allNodes.filter((n) => !scannedNodeIds.has(n.id));
-
-    const message = this.constructSuccessMessage(isGameComplete, allNodesScanned, lastNode.isEnd, remainingNodes.length);
-
-    return { isGameComplete, allNodesScanned, remainingNodes, message };
-  }
-
-  /** Constructs the appropriate success message based on game state */
   private constructSuccessMessage(
     isGameComplete: boolean,
     allNodesScanned: boolean,
@@ -186,75 +175,13 @@ export class ScanService {
     return `QR scanned! ${remainingCount} more to find.`;
   }
 
-  private validateScan(teamId: string, node: Node): { valid: boolean; message: string } {
-    const team = teamRepository.findById(teamId);
-    if (!team) {
-      return { valid: false, message: "Team not found" };
-    }
-
-    const scans = scanRepository.findByTeamId(teamId);
-
-    // First scan - must match team's start node or any start node
-    if (scans.length === 0) {
-      if (team.startNodeId) {
-        if (node.id !== team.startNodeId) {
-          return { valid: false, message: "This is not your starting QR code" };
-        }
-      } else if (!node.isStart) {
-        return { valid: false, message: "You must start with a starting QR code" };
-      }
-      return { valid: true, message: "" };
-    }
-
-    // Check if all activated nodes have been scanned
-    const allNodes = nodeRepository.findActivatedByGameId(team.gameId);
-    const scannedNodeIds = new Set(scans.map((s) => s.nodeId));
-    const allNodesScanned = allNodes.every((n) => scannedNodeIds.has(n.id));
-
-    // If all activated nodes scanned, only allow end nodes to finish the game
-    if (allNodesScanned) {
-      if (!node.isEnd) {
-        return { valid: false, message: "You've found all QR codes! Find an end point to finish." };
-      }
-    }
-
-    // Any node can be scanned in any order (after starting)
-    return { valid: true, message: "" };
-  }
-
-  private calculatePoints(teamId: string, node: Node): number {
-    const team = teamRepository.findById(teamId);
-    if (!team) return 0;
-
-    const game = gameRepository.findById(team.gameId);
-    if (!game) return node.points;
-
-    let points = node.points;
-
-    if (game.settings.timeBonusEnabled) {
-      const lastScan = scanRepository.findLastScanByTeam(teamId);
-      if (lastScan) {
-        const timeDiff =
-          Date.now() - new Date(lastScan.timestamp).getTime();
-        const minutesTaken = timeDiff / (1000 * 60);
-
-        // Bonus for fast completion
-        if (minutesTaken < GAME.TIME_BONUS_THRESHOLD_MINUTES) {
-          points = Math.round(points * game.settings.timeBonusMultiplier);
-        }
-      }
-    }
-
-    return points;
-  }
-
   private getNextNodes(nodeId: string): Node[] {
     const edges = edgeRepository.findOutgoingEdges(nodeId);
     const nodes: Node[] = [];
 
     for (const edge of edges) {
       const node = nodeRepository.findById(edge.toNodeId);
-      if (node) {
+      if (node && node.activated) {
         nodes.push(node);
       }
     }
@@ -269,79 +196,53 @@ export class ScanService {
   }
 
   private sanitizeNode(node: Node): Node {
-    // Remove password hash from node data sent to client
-    return {
-      ...node,
-      passwordHash: null,
-    };
+    return { ...node, passwordHash: null };
   }
 
   getTeamProgress(teamId: string): TeamProgress | null {
-    const team = teamRepository.findById(teamId);
-    if (!team) return null;
+    const validation = gameProgressValidator.validateTeamAndGame(teamId);
+    if (!validation.valid || !validation.data) return null;
+    const { team, game } = validation.data;
 
-    const game = gameRepository.findById(team.gameId);
-    if (!game) return null;
-
-    const scans = scanRepository.findByTeamId(teamId);
-    const totalPoints = scanRepository.getTotalPointsByTeam(teamId);
-    const nodesFound = scans.length;
+    const { scans, scannedNodeIds, lastScan } = nodeStatusCalculator.getTeamScanStatus(teamId);
+    const { activatedNodes } = nodeStatusCalculator.getNodeSets(team.gameId);
+    const totalPoints = pointsCalculator.getRawPoints(teamId);
+    const isRandomMode = game.settings.randomMode ?? false;
 
     let currentNode: Node | null = null;
     let nextClue: Node | null = null;
     let nextNodes: Node[] = [];
     let isFinished = false;
 
-    // Get activated nodes only (for clues and completion)
-    const allNodes = nodeRepository.findActivatedByGameId(team.gameId);
-    const scannedNodeIds = new Set(scans.map((s) => s.nodeId));
-    const allNodesScanned = allNodes.every((n) => scannedNodeIds.has(n.id));
-
-    // Check if random mode is enabled
-    const isRandomMode = game.settings.randomMode ?? false;
+    const allNodesScanned = activatedNodes.every((n) => scannedNodeIds.has(n.id));
 
     if (scans.length > 0) {
-      const lastScan = scans[scans.length - 1];
-      currentNode = nodeRepository.findById(lastScan.nodeId);
+      currentNode = lastScan ? nodeRepository.findById(lastScan.nodeId) : null;
 
-      // Finished = all nodes scanned AND last scan is an end node
       if (allNodesScanned && currentNode?.isEnd) {
         isFinished = true;
-        // Clear current clue when finished
         if (team.currentClueId) {
           teamRepository.update(teamId, { currentClueId: null });
         }
       } else {
-        // Show remaining nodes to find
-        nextNodes = allNodes.filter((n) => !scannedNodeIds.has(n.id));
+        nextNodes = activatedNodes.filter((n) => !scannedNodeIds.has(n.id));
 
         if (isRandomMode) {
-          // Random mode: use persisted clue or assign a new one
           nextClue = this.getOrAssignRandomClue(team, nextNodes);
         } else {
-          // Standard mode: get next clue from edges (first unscanned node connected via edge)
           if (currentNode) {
             const connectedNodes = this.getNextNodes(currentNode.id);
             nextClue = connectedNodes.find((n) => !scannedNodeIds.has(n.id)) || null;
-
-            // If no connected unscanned nodes, pick first remaining node
             if (!nextClue && nextNodes.length > 0) {
               nextClue = nextNodes[0];
             }
           }
         }
       }
-    } else if (team.startNodeId) {
-      // Team hasn't scanned yet, show start node as the clue to find
-      nextClue = nodeRepository.findById(team.startNodeId);
-      nextNodes = allNodes.filter((n) => n.id !== team.startNodeId);
-    } else if (isRandomMode) {
-      // Random mode with no start node: use persisted clue or pick a random start node
-      const startNodes = allNodes.filter((n) => n.isStart);
-      if (startNodes.length > 0) {
-        nextClue = this.getOrAssignRandomClue(team, startNodes);
-        nextNodes = allNodes.filter((n) => n.id !== nextClue?.id);
-      }
+    } else {
+      // No scans yet - determine starting clue
+      nextClue = this.getStartingClue(team, activatedNodes, isRandomMode);
+      nextNodes = activatedNodes.filter((n) => n.id !== nextClue?.id);
     }
 
     return {
@@ -351,22 +252,45 @@ export class ScanService {
       nextClue,
       nextNodes,
       totalPoints,
-      nodesFound,
+      nodesFound: scans.length,
       isFinished,
     };
   }
 
-  // Get the persisted random clue or assign a new one
-  private getOrAssignRandomClue(team: { id: string; currentClueId: string | null }, availableNodes: Node[]): Node | null {
+  private getStartingClue(
+    team: { id: string; startNodeId: string | null; currentClueId: string | null },
+    activatedNodes: Node[],
+    isRandomMode: boolean
+  ): Node | null {
+    const startNodes = activatedNodes.filter((n) => n.isStart);
+
+    // Team has assigned start node
+    if (team.startNodeId) {
+      const startNode = nodeRepository.findById(team.startNodeId);
+      if (startNode?.activated) {
+        return startNode;
+      }
+    }
+
+    // Random mode: get or assign random start node
+    if (isRandomMode && startNodes.length > 0) {
+      return this.getOrAssignRandomClue(team, startNodes);
+    }
+
+    // Standard mode: first start node
+    return startNodes[0] || null;
+  }
+
+  private getOrAssignRandomClue(
+    team: { id: string; currentClueId: string | null },
+    availableNodes: Node[]
+  ): Node | null {
     if (availableNodes.length === 0) return null;
 
-    // Check if there's a persisted clue that's still valid (not scanned yet)
+    // Check if there's a persisted clue that's still valid
     if (team.currentClueId) {
       const persistedClue = availableNodes.find((n) => n.id === team.currentClueId);
-      if (persistedClue) {
-        return persistedClue;
-      }
-      // Persisted clue was scanned or deleted, need a new one
+      if (persistedClue) return persistedClue;
     }
 
     // Assign a new random clue
@@ -376,36 +300,25 @@ export class ScanService {
     return newClue;
   }
 
-  // Shuffle to a new random clue (for "Try another" button)
   shuffleRandomClue(teamId: string): { success: boolean; newClue?: Node; message?: string } {
-    const team = teamRepository.findById(teamId);
-    if (!team) {
-      return { success: false, message: "Team not found" };
+    const validation = gameProgressValidator.validateTeamAndGameActive(teamId);
+    if (!validation.valid || !validation.data) {
+      return { success: false, message: validation.message };
     }
-
-    const game = gameRepository.findById(team.gameId);
-    if (!game) {
-      return { success: false, message: "Game not found" };
-    }
+    const { team, game } = validation.data;
 
     if (!game.settings.randomMode) {
       return { success: false, message: "Random mode is not enabled for this game" };
     }
 
-    const scans = scanRepository.findByTeamId(teamId);
-    const scannedNodeIds = new Set(scans.map((s) => s.nodeId));
-    const allNodes = nodeRepository.findActivatedByGameId(team.gameId);
+    const { scans, scannedNodeIds } = nodeStatusCalculator.getTeamScanStatus(teamId);
+    const { activatedNodes } = nodeStatusCalculator.getNodeSets(team.gameId);
 
-    let availableNodes: Node[];
-    if (scans.length === 0) {
-      // No scans yet, pick from activated start nodes
-      availableNodes = allNodes.filter((n) => n.isStart);
-    } else {
-      // Pick from unscanned activated nodes
-      availableNodes = allNodes.filter((n) => !scannedNodeIds.has(n.id));
-    }
+    let availableNodes = scans.length === 0
+      ? activatedNodes.filter((n) => n.isStart)
+      : activatedNodes.filter((n) => !scannedNodeIds.has(n.id));
 
-    // Filter out current clue to ensure we get a different one
+    // Filter out current clue to get a different one
     if (team.currentClueId && availableNodes.length > 1) {
       availableNodes = availableNodes.filter((n) => n.id !== team.currentClueId);
     }
@@ -414,7 +327,6 @@ export class ScanService {
       return { success: false, message: "No other clues available" };
     }
 
-    // Pick a random new clue
     const randomIndex = Math.floor(Math.random() * availableNodes.length);
     const newClue = availableNodes[randomIndex];
     teamRepository.update(teamId, { currentClueId: newClue.id });
@@ -422,21 +334,12 @@ export class ScanService {
     return { success: true, newClue: this.sanitizeNode(newClue) };
   }
 
-  // Request a hint for a specific node
   requestHint(teamId: string, nodeId: string): HintResult {
-    const team = teamRepository.findById(teamId);
-    if (!team) {
-      return { success: false, message: "Team not found" };
+    const validation = gameProgressValidator.validateTeamAndGameActive(teamId);
+    if (!validation.valid || !validation.data) {
+      return { success: false, message: validation.message };
     }
-
-    const game = gameRepository.findById(team.gameId);
-    if (!game) {
-      return { success: false, message: "Game not found" };
-    }
-
-    if (game.status !== "active") {
-      return { success: false, message: "Game is not active" };
-    }
+    const { team } = validation.data;
 
     const node = nodeRepository.findById(nodeId);
     if (!node) {
@@ -451,8 +354,8 @@ export class ScanService {
       return { success: false, message: "No hint available for this clue" };
     }
 
-    // Check if team has already used this hint
-    const existingUsage = hintUsageRepository.findByTeamAndNode(teamId, nodeId);
+    // Check if already used
+    const existingUsage = pointsCalculator.getHintUsage(teamId, nodeId);
     if (existingUsage) {
       return {
         success: true,
@@ -463,10 +366,8 @@ export class ScanService {
       };
     }
 
-    // Calculate points deduction (half of node points)
-    const pointsDeducted = Math.floor(node.points / 2);
-
-    // Record hint usage
+    // Calculate and record hint usage
+    const pointsDeducted = pointsCalculator.calculateHintDeduction(node);
     hintUsageRepository.create({
       gameId: team.gameId,
       teamId,
@@ -483,38 +384,29 @@ export class ScanService {
     };
   }
 
-  // Get hint usage for a specific team and node
   getHintUsage(teamId: string, nodeId: string): HintUsage | null {
-    return hintUsageRepository.findByTeamAndNode(teamId, nodeId);
+    return pointsCalculator.getHintUsage(teamId, nodeId);
   }
 
-  // Get total points deducted for hints for a team
   getTotalHintPointsDeducted(teamId: string): number {
-    return hintUsageRepository.getTotalPointsDeductedForTeam(teamId);
+    return pointsCalculator.getHintDeduction(teamId);
   }
 
-  checkIfWinner(teamId: string): { isWinner: boolean; winnerTeamId?: string } {
-    const team = teamRepository.findById(teamId);
-    if (!team) return { isWinner: false };
+  checkIfWinner(teamId: string): { isWinner: boolean; winnerTeamId?: string; hasWinner: boolean } {
+    const validation = gameProgressValidator.validateTeamAndGame(teamId);
+    if (!validation.valid || !validation.data) {
+      return { isWinner: false, hasWinner: false };
+    }
+    const { team } = validation.data;
 
-    const game = gameRepository.findById(team.gameId);
-    if (!game) return { isWinner: false };
-
-    const allNodes = nodeRepository.findActivatedByGameId(team.gameId);
-    const endNodeIds = new Set(allNodes.filter((n) => n.isEnd).map((n) => n.id));
-    const totalNodesCount = allNodes.length;
-
-    // Find all teams that have finished (scanned all activated nodes + ended on an end node)
+    const { activatedNodes, endNodeIds } = nodeStatusCalculator.getNodeSets(team.gameId);
     const teams = teamRepository.findByGameId(team.gameId);
+
     let firstFinisher: { teamId: string; finishTime: Date } | null = null;
 
     for (const t of teams) {
-      const scans = scanRepository.findByTeamId(t.id);
-      const scannedNodeIds = new Set(scans.map((s) => s.nodeId));
-      const lastScan = scans[scans.length - 1];
-
-      // Team finished if: scanned all nodes AND last scan is an end node
-      const allNodesScanned = scannedNodeIds.size === totalNodesCount;
+      const { scannedNodeIds, lastScan } = nodeStatusCalculator.getTeamScanStatus(t.id);
+      const allNodesScanned = activatedNodes.every((n) => scannedNodeIds.has(n.id));
       const endedOnEndNode = lastScan && endNodeIds.has(lastScan.nodeId);
 
       if (allNodesScanned && endedOnEndNode) {
@@ -525,11 +417,12 @@ export class ScanService {
       }
     }
 
-    if (!firstFinisher) return { isWinner: false };
+    if (!firstFinisher) return { isWinner: false, hasWinner: false };
 
     return {
       isWinner: teamId === firstFinisher.teamId,
       winnerTeamId: firstFinisher.teamId,
+      hasWinner: true,
     };
   }
 }

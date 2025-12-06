@@ -9,7 +9,9 @@
       "Bash(find:*)",
       "Bash(npm run lint)",
       "Bash(npm run lint:*)",
-      "Bash(node scripts/generate-icons.js:*)"
+      "Bash(node scripts/generate-icons.js:*)",
+      "Bash(npx playwright test)",
+      "Bash(npx playwright test --grep*)"
     ],
     "deny": [],
     "ask": []

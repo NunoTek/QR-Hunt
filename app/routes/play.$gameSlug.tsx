@@ -111,6 +111,7 @@ interface GameData {
   hintPointsDeducted: number;
   isFinished: boolean;
   isWinner: boolean;
+  hasWinner: boolean;
   isRandomMode: boolean;
 }
 
@@ -189,24 +190,41 @@ function PlayGameContent() {
       try {
         const headers = { Authorization: `Bearer ${storedToken}` };
 
-        // Parallel fetch: me, game, progress
-        const [meRes, gameRes, progressRes] = await Promise.all([
-          fetch("/api/v1/auth/me", { headers }),
-          fetch(`/api/v1/game/${loaderData.gameSlug}`),
-          fetch("/api/v1/scan/progress", { headers }),
-        ]);
-
-        if (!meRes.ok) {
-          // Invalid token - clear and redirect
+        // Fetch auth first to validate token - handle network errors gracefully
+        let meRes;
+        try {
+          meRes = await fetch("/api/v1/auth/me", { headers });
+        } catch {
+          // Network error - check for cached data
+          const cached = getCachedGameData();
+          if (cached && cached.gameSlug === loaderData.gameSlug) {
+            toast.info(t("pages.play.offline.cached"));
+            setIsLoading(false);
+            return;
+          }
+          // No cached data, redirect to join (silently)
           clearAuth();
           navigate(`/join?game=${loaderData.gameSlug}`, { replace: true });
           return;
         }
 
+        if (!meRes.ok) {
+          // Invalid token - clear and redirect silently
+          clearAuth();
+          navigate(`/join?game=${loaderData.gameSlug}`, { replace: true });
+          return;
+        }
+
+        // Parallel fetch: game, progress - handle individual failures gracefully
+        const [gameRes, progressRes] = await Promise.all([
+          fetch(`/api/v1/game/${loaderData.gameSlug}`).catch(() => null),
+          fetch("/api/v1/scan/progress", { headers }).catch(() => null),
+        ]);
+
         const [meData, gameData, progressData] = await Promise.all([
           meRes.json(),
-          gameRes.ok ? gameRes.json() : null,
-          progressRes.ok ? progressRes.json() : {
+          gameRes?.ok ? gameRes.json() : null,
+          progressRes?.ok ? progressRes.json() : {
             currentNode: null,
             nextClue: null,
             startingClue: null,
@@ -216,12 +234,13 @@ function PlayGameContent() {
             totalPoints: 0,
             isFinished: false,
             isWinner: false,
+            hasWinner: false,
             isRandomMode: false,
           },
         ]);
 
         if (!gameData) {
-          toast.error("Game not found");
+          toast.error(t("pages.play.gameNotFound"));
           navigate("/", { replace: true });
           return;
         }
@@ -245,6 +264,7 @@ function PlayGameContent() {
           hintPointsDeducted: progressData.hintPointsDeducted || 0,
           isFinished: progressData.isFinished,
           isWinner: progressData.isWinner,
+          hasWinner: progressData.hasWinner || false,
           isRandomMode: progressData.isRandomMode || false,
         };
 
@@ -289,11 +309,12 @@ function PlayGameContent() {
         // Check for cached data when offline
         const cached = getCachedGameData();
         if (cached && cached.gameSlug === loaderData.gameSlug) {
-          toast.info("You're offline. Showing cached data.");
+          toast.info(t("pages.play.offline.cached"));
           setIsLoading(false);
           return;
         }
-        toast.error("Failed to load game data");
+        // Only show error toast for unexpected failures
+        toast.error(t("pages.play.failedToLoad"));
         clearAuth();
         navigate(`/join?game=${loaderData.gameSlug}`, { replace: true });
       }
@@ -608,8 +629,8 @@ function PlayGameContent() {
     );
   }
 
-  // Show defeat screen
-  if (data.isFinished && !data.isWinner) {
+  // Show defeat screen only when someone else has won
+  if (data.isFinished && !data.isWinner && data.hasWinner) {
     return (
       <>
         <DefeatScreen

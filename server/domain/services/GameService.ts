@@ -2,9 +2,11 @@ import { gameRepository } from "../repositories/GameRepository.js";
 import { nodeRepository } from "../repositories/NodeRepository.js";
 import { scanRepository } from "../repositories/ScanRepository.js";
 import { teamRepository } from "../repositories/TeamRepository.js";
-import { hintUsageRepository } from "../repositories/HintUsageRepository.js";
 import { gameEvents } from "../../lib/eventEmitter.js";
 import type { Game, GameSettings, GameStatus, LeaderboardEntry, Node, Team } from "../types.js";
+import { gameProgressValidator } from "./GameProgressValidator.js";
+import { nodeStatusCalculator } from "./NodeStatusCalculator.js";
+import { pointsCalculator } from "./PointsCalculator.js";
 
 /** Data from scan repository for leaderboard calculation */
 interface LeaderboardTeamData {
@@ -68,30 +70,19 @@ export class GameService {
 
   /**
    * Opens a game for team registration (sets status to pending).
-   * Teams can join and wait in the waiting room.
    */
   openGame(id: string): Game | null {
     const game = gameRepository.findById(id);
     if (!game) return null;
 
-    const nodes = nodeRepository.findByGameId(id);
-    if (nodes.length === 0) {
-      throw new Error("Cannot open game without any nodes");
-    }
-
-    const startNodes = nodes.filter((n) => n.isStart);
-    if (startNodes.length === 0) {
-      throw new Error("Cannot open game without at least one start node");
-    }
-
-    const endNodes = nodes.filter((n) => n.isEnd);
-    if (endNodes.length === 0) {
-      throw new Error("Cannot open game without at least one end node");
+    // Use shared validator for game requirements
+    const validation = gameProgressValidator.validateGameCanActivate(id);
+    if (!validation.valid) {
+      throw new Error(validation.message);
     }
 
     const updatedGame = gameRepository.update(id, { status: "pending" });
     if (updatedGame) {
-      // Emit game status change event for SSE listeners
       gameEvents.emitGameStatus(game.publicSlug, "pending");
     }
     return updatedGame;
@@ -99,40 +90,23 @@ export class GameService {
 
   /**
    * Activates a game (sets status to active).
-   * This starts the game - teams in the waiting room will see the countdown.
    */
   activateGame(id: string): Game | null {
     const game = gameRepository.findById(id);
     if (!game) return null;
 
-    // Allow activation from either draft or pending status
     if (game.status !== "draft" && game.status !== "pending") {
       throw new Error("Can only activate games that are in draft or pending status");
     }
 
-    const nodes = nodeRepository.findByGameId(id);
-    if (nodes.length === 0) {
-      throw new Error("Cannot activate game without any nodes");
-    }
-
-    const startNodes = nodes.filter((n) => n.isStart);
-    if (startNodes.length === 0) {
-      throw new Error("Cannot activate game without at least one start node");
-    }
-
-    const endNodes = nodes.filter((n) => n.isEnd);
-    if (endNodes.length === 0) {
-      throw new Error("Cannot activate game without at least one end node");
-    }
-
-    const activatedNodes = nodes.filter((n) => n.activated);
-    if (activatedNodes.length === 0) {
-      throw new Error("Cannot activate game without at least one activated node");
+    // Use shared validator for game requirements
+    const validation = gameProgressValidator.validateGameCanActivate(id);
+    if (!validation.valid) {
+      throw new Error(validation.message);
     }
 
     const updatedGame = gameRepository.update(id, { status: "active" });
     if (updatedGame) {
-      // Emit game status change event for waiting rooms
       gameEvents.emitGameStatus(game.publicSlug, "active");
     }
     return updatedGame;
@@ -142,7 +116,6 @@ export class GameService {
     const game = gameRepository.findById(id);
     const updatedGame = gameRepository.update(id, { status: "completed" });
     if (updatedGame && game) {
-      // Emit game status change event
       gameEvents.emitGameStatus(game.publicSlug, "completed");
     }
     return updatedGame;
@@ -157,12 +130,12 @@ export class GameService {
     if (!game) return [];
 
     const teams = teamRepository.findByGameId(gameId);
-    const allNodes = nodeRepository.findByGameId(gameId);
+    const { activatedNodes, endNodeIds } = nodeStatusCalculator.getNodeSets(gameId);
     const leaderboardData = scanRepository.getLeaderboardData(gameId);
     const dataMap = new Map(leaderboardData.map((d) => [d.teamId, d]));
 
     const entries = teams.map((team) =>
-      this.createLeaderboardEntry(team, dataMap.get(team.id), allNodes)
+      this.createLeaderboardEntry(team, dataMap.get(team.id), activatedNodes, endNodeIds)
     );
 
     this.sortLeaderboardEntries(entries, game.settings.rankingMode);
@@ -171,18 +144,17 @@ export class GameService {
     return entries;
   }
 
-  /** Creates a single leaderboard entry for a team */
   private createLeaderboardEntry(
     team: Team,
     data: LeaderboardTeamData | undefined,
-    allNodes: Node[]
+    activatedNodes: Node[],
+    endNodeIds: Set<string>
   ): LeaderboardEntry {
-    const isFinished = this.isTeamFinished(data, allNodes);
-    const currentClue = this.getCurrentClue(team, data, allNodes);
+    const isFinished = this.isTeamFinished(data, activatedNodes.length, endNodeIds);
+    const currentClue = this.getCurrentClue(team, data, activatedNodes);
 
-    // Deduct hint points from total
-    const hintPointsDeducted = hintUsageRepository.getTotalPointsDeductedForTeam(team.id);
-    const adjustedPoints = (data?.totalPoints || 0) - hintPointsDeducted;
+    // Use shared points calculator
+    const { adjustedPoints } = pointsCalculator.getPointsSummary(team.id);
 
     return {
       teamId: team.id,
@@ -197,15 +169,12 @@ export class GameService {
     };
   }
 
-  /** Determines if a team has finished the game */
   private isTeamFinished(
     data: LeaderboardTeamData | undefined,
-    allNodes: Node[]
+    totalNodesCount: number,
+    endNodeIds: Set<string>
   ): boolean {
     if (!data) return false;
-
-    const totalNodesCount = allNodes.length;
-    const endNodeIds = new Set(allNodes.filter((n) => n.isEnd).map((n) => n.id));
 
     const allNodesScanned = data.nodesFound >= totalNodesCount;
     const endedOnEndNode = data.lastNodeId ? endNodeIds.has(data.lastNodeId) : false;
@@ -213,31 +182,24 @@ export class GameService {
     return allNodesScanned && endedOnEndNode;
   }
 
-  /** Gets the current clue for a team */
   private getCurrentClue(
     team: Team,
     data: LeaderboardTeamData | undefined,
-    allNodes: Node[]
+    activatedNodes: Node[]
   ): string | null {
-    // Priority: currentClueTitle (random mode) -> nextNodeTitle (edge-based) -> start node title
     if (data) {
       return data.currentClueTitle || data.nextNodeTitle || null;
     }
 
-    // Team hasn't scanned anything yet, show their start node clue
     if (team.startNodeId) {
-      const startNode = allNodes.find((n) => n.id === team.startNodeId);
+      const startNode = activatedNodes.find((n) => n.id === team.startNodeId);
       return startNode?.title || null;
     }
 
     return null;
   }
 
-  /** Sorts leaderboard entries based on ranking mode */
-  private sortLeaderboardEntries(
-    entries: LeaderboardEntry[],
-    rankingMode: string
-  ): void {
+  private sortLeaderboardEntries(entries: LeaderboardEntry[], rankingMode: string): void {
     entries.sort((a, b) => {
       // Finished teams always rank first
       if (a.isFinished && !b.isFinished) return -1;
@@ -245,38 +207,24 @@ export class GameService {
 
       switch (rankingMode) {
         case "points":
-          // Primary: more points wins
-          if (b.totalPoints !== a.totalPoints) {
-            return b.totalPoints - a.totalPoints;
-          }
-          // Tiebreaker: faster team wins (earlier last scan time)
+          if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
           return this.compareByTime(a, b);
         case "nodes":
-          if (b.nodesFound !== a.nodesFound) {
-            return b.nodesFound - a.nodesFound;
-          }
+          if (b.nodesFound !== a.nodesFound) return b.nodesFound - a.nodesFound;
           return this.compareByTime(a, b);
         case "time":
           return this.compareByTime(a, b);
         default:
-          // Same as points mode
-          if (b.totalPoints !== a.totalPoints) {
-            return b.totalPoints - a.totalPoints;
-          }
+          if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
           return this.compareByTime(a, b);
       }
     });
   }
 
-  /** Compares two entries by their last scan time */
   private compareByTime(a: LeaderboardEntry, b: LeaderboardEntry): number {
-    return (
-      new Date(a.lastScanTime || 0).getTime() -
-      new Date(b.lastScanTime || 0).getTime()
-    );
+    return new Date(a.lastScanTime || 0).getTime() - new Date(b.lastScanTime || 0).getTime();
   }
 
-  /** Assigns ranks to sorted entries */
   private assignRanks(entries: LeaderboardEntry[]): void {
     entries.forEach((entry, index) => {
       entry.rank = index + 1;
@@ -294,18 +242,12 @@ export class GameService {
 
     const teams = teamRepository.findByGameId(gameId);
     const scans = scanRepository.findByGameId(gameId);
-    const allNodes = nodeRepository.findByGameId(gameId);
-    const totalNodesCount = allNodes.length;
-    const endNodeIds = new Set(allNodes.filter((n) => n.isEnd).map((n) => n.id));
+    const { activatedNodes, endNodeIds } = nodeStatusCalculator.getNodeSets(gameId);
 
     let finishedTeams = 0;
     for (const team of teams) {
-      const teamScans = scans.filter((s) => s.teamId === team.id);
-      const scannedNodeIds = new Set(teamScans.map((s) => s.nodeId));
-      const lastScan = teamScans[teamScans.length - 1];
-
-      // Finished = all nodes scanned AND last scan is an end node
-      const allNodesScanned = scannedNodeIds.size >= totalNodesCount;
+      const { scannedNodeIds, lastScan } = nodeStatusCalculator.getTeamScanStatus(team.id);
+      const allNodesScanned = activatedNodes.every((n) => scannedNodeIds.has(n.id));
       const endedOnEndNode = lastScan && endNodeIds.has(lastScan.nodeId);
 
       if (allNodesScanned && endedOnEndNode) {
@@ -321,31 +263,18 @@ export class GameService {
     };
   }
 
-  /**
-   * Checks if a game should auto-start based on connected teams.
-   * Called when a team connects via heartbeat.
-   */
   checkAutoStart(gameSlug: string): boolean {
     const game = gameRepository.findBySlug(gameSlug);
-    if (!game) return false;
-
-    // Only auto-start games in pending status
-    if (game.status !== "pending") return false;
-
-    // Check if auto-start is enabled
-    if (!game.settings.autoStartEnabled) return false;
+    if (!game || game.status !== "pending" || !game.settings.autoStartEnabled) return false;
 
     const expectedCount = game.settings.expectedTeamCount;
     if (expectedCount <= 0) return false;
 
-    // Get total teams in the game
     const teams = teamRepository.findByGameId(game.id);
     if (teams.length < expectedCount) return false;
 
-    // Get connected team count
     const connectedCount = gameEvents.getConnectedTeamCount(gameSlug);
 
-    // If all expected teams are connected, auto-start the game
     if (connectedCount >= expectedCount) {
       try {
         this.activateGame(game.id);
@@ -360,10 +289,6 @@ export class GameService {
     return false;
   }
 
-  /**
-   * Gets detailed analytics for a game.
-   * Returns time spent per node per team, bottleneck analysis, etc.
-   */
   getGameAnalytics(gameId: string): {
     teams: Array<{
       teamId: string;
@@ -398,42 +323,31 @@ export class GameService {
 
     const teams = teamRepository.findByGameId(gameId);
     const allNodes = nodeRepository.findByGameId(gameId);
+    const { activatedNodes } = nodeStatusCalculator.getNodeSets(gameId);
     const nodesMap = new Map(allNodes.map((n) => [n.id, n]));
     const leaderboard = this.getLeaderboard(gameId);
     const rankMap = new Map(leaderboard.map((e) => [e.teamId, e.rank]));
 
-    // Build team analytics with timings
     const teamsAnalytics = teams.map((team) => {
-      const scans = scanRepository.findByTeamId(team.id);
+      const { scans } = nodeStatusCalculator.getTeamScanStatus(team.id);
       const sortedScans = [...scans].sort(
         (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       );
 
-      const nodeTimings: Array<{
-        nodeId: string;
-        nodeTitle: string;
-        timeSpentMs: number;
-        timestamp: string;
-      }> = [];
-
-      // Calculate time between consecutive scans
-      for (let i = 0; i < sortedScans.length; i++) {
-        const scan = sortedScans[i];
+      const nodeTimings = sortedScans.map((scan, i) => {
         const prevScan = sortedScans[i - 1];
         const node = nodesMap.get(scan.nodeId);
-
-        // Time spent = time from previous scan (or game start for first scan)
         const timeSpentMs = prevScan
           ? new Date(scan.timestamp).getTime() - new Date(prevScan.timestamp).getTime()
           : 0;
 
-        nodeTimings.push({
+        return {
           nodeId: scan.nodeId,
           nodeTitle: node?.title || "Unknown",
           timeSpentMs,
           timestamp: scan.timestamp,
-        });
-      }
+        };
+      });
 
       const totalTime = nodeTimings.reduce((sum, t) => sum + t.timeSpentMs, 0);
       const entry = leaderboard.find((e) => e.teamId === team.id);
@@ -462,41 +376,32 @@ export class GameService {
       }
     }
 
-    const nodeStats = allNodes.map((node) => {
+    const nodeStats = activatedNodes.map((node) => {
       const times = nodeTimeMap.get(node.id) || [];
       const sum = times.reduce((a, b) => a + b, 0);
       const avg = times.length > 0 ? sum / times.length : 0;
-      const min = times.length > 0 ? Math.min(...times) : 0;
-      const max = times.length > 0 ? Math.max(...times) : 0;
 
       return {
         nodeId: node.id,
         nodeTitle: node.title,
         averageTimeMs: Math.round(avg),
-        minTimeMs: min,
-        maxTimeMs: max,
+        minTimeMs: times.length > 0 ? Math.min(...times) : 0,
+        maxTimeMs: times.length > 0 ? Math.max(...times) : 0,
         completionCount: times.length,
       };
     });
 
-    // Find bottlenecks (nodes with highest average time)
     const bottlenecks = [...nodeStats]
       .filter((n) => n.completionCount > 0)
       .sort((a, b) => b.averageTimeMs - a.averageTimeMs)
       .slice(0, 5);
 
-    return {
-      teams: teamsAnalytics,
-      nodeStats,
-      bottlenecks,
-    };
+    return { teams: teamsAnalytics, nodeStats, bottlenecks };
   }
 }
 
-// Create the service instance
 export const gameService = new GameService();
 
-// Register auto-start callback with event emitter
 gameEvents.setAutoStartCallback((gameSlug: string) => {
   gameService.checkAutoStart(gameSlug);
 });
