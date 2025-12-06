@@ -18,7 +18,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: 1, // Single worker for sequential test execution
-  reporter: process.env.CI ? [["junit", { outputFile: "test-results/e2e-results.xml" }], ["list"]] : [["html"], ["list"]],
+  reporter: process.env.CI
+    ? [["junit", { outputFile: "test-results/e2e-results.xml" }], ["html"], ["list"]]
+    : [["html"], ["list"]],
   timeout: process.env.CI ? 90000 : 60000, // Longer timeout for CI
   use: {
     // Use Remix dev server (Vite proxies /api to port 3002)
