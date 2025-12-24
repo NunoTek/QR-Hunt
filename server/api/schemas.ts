@@ -68,6 +68,7 @@ export const createNodeSchema = z.object({
   hint: z.string().max(1000).optional(),
   adminComment: z.string().max(1000).optional(),
   metadata: z.record(z.unknown()).optional(),
+  activated: z.boolean().optional(),
 });
 
 export const updateNodeSchema = z.object({

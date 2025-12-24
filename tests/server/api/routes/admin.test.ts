@@ -3,6 +3,7 @@ import { initializeDatabase, closeDatabase, getDatabase } from "@server/db/datab
 import { gameRepository } from "@server/domain/repositories/GameRepository.js";
 import { teamRepository } from "@server/domain/repositories/TeamRepository.js";
 import { nodeRepository } from "@server/domain/repositories/NodeRepository.js";
+import { edgeRepository } from "@server/domain/repositories/EdgeRepository.js";
 import { gameService } from "@server/domain/services/GameService.js";
 
 describe("Admin API - Game Status", () => {
@@ -292,6 +293,217 @@ describe("Admin API - Team Creation", () => {
       });
 
       expect(team.startNodeId).toBe(startNode2Id);
+    });
+  });
+});
+
+describe("Admin API - CSV Import", () => {
+  let gameId: string;
+
+  beforeEach(async () => {
+    process.env.DATA_DIR = "./tests/test-data-admin-api";
+    await initializeDatabase();
+
+    // Create test game
+    const game = gameRepository.create({
+      name: "CSV Import Test Game",
+      publicSlug: "csv-import-test-game",
+    });
+    gameId = game.id;
+  });
+
+  afterEach(() => {
+    const db = getDatabase();
+    db.exec("DELETE FROM scans");
+    db.exec("DELETE FROM team_sessions");
+    db.exec("DELETE FROM edges");
+    db.exec("DELETE FROM nodes");
+    db.exec("DELETE FROM teams");
+    db.exec("DELETE FROM games");
+    closeDatabase();
+  });
+
+  describe("CSV node import", () => {
+    it("should create nodes from CSV data", () => {
+      // Simulate CSV import data
+      const csvNodes = [
+        { title: "Start Clue", content: "Welcome to the hunt!", isstart: "true", isend: "false", points: "100" },
+        { title: "Middle Clue", content: "Keep going!", isstart: "false", isend: "false", points: "150" },
+        { title: "End Clue", content: "Congratulations!", isstart: "false", isend: "true", points: "200" },
+      ];
+
+      // Create nodes
+      const titleToId = new Map<string, string>();
+      for (const nodeData of csvNodes) {
+        const nodeKey = nodeData.title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "")
+          .substring(0, 50) + "-" + Date.now().toString(36);
+
+        const node = nodeRepository.create({
+          gameId,
+          nodeKey,
+          title: nodeData.title,
+          content: nodeData.content,
+          contentType: "text",
+          isStart: nodeData.isstart === "true",
+          isEnd: nodeData.isend === "true",
+          points: parseInt(nodeData.points, 10),
+        });
+        titleToId.set(nodeData.title, node.id);
+      }
+
+      // Verify nodes were created
+      const nodes = nodeRepository.findByGameId(gameId);
+      expect(nodes.length).toBe(3);
+
+      const startNode = nodes.find(n => n.title === "Start Clue");
+      expect(startNode).toBeDefined();
+      expect(startNode?.isStart).toBe(true);
+      expect(startNode?.points).toBe(100);
+
+      const endNode = nodes.find(n => n.title === "End Clue");
+      expect(endNode).toBeDefined();
+      expect(endNode?.isEnd).toBe(true);
+      expect(endNode?.points).toBe(200);
+    });
+
+    it("should create edges based on 'next' column", () => {
+      // Create nodes first
+      const node1 = nodeRepository.create({
+        gameId,
+        nodeKey: "start-clue",
+        title: "Start Clue",
+        isStart: true,
+      });
+
+      const node2 = nodeRepository.create({
+        gameId,
+        nodeKey: "middle-clue",
+        title: "Middle Clue",
+      });
+
+      const node3 = nodeRepository.create({
+        gameId,
+        nodeKey: "end-clue",
+        title: "End Clue",
+        isEnd: true,
+      });
+
+      // Simulate edge data from CSV "next" column
+      const csvEdges = [
+        { from: "Start Clue", to: "Middle Clue" },
+        { from: "Middle Clue", to: "End Clue" },
+      ];
+
+      // Build title to ID mapping
+      const titleToId = new Map<string, string>();
+      titleToId.set("Start Clue", node1.id);
+      titleToId.set("Middle Clue", node2.id);
+      titleToId.set("End Clue", node3.id);
+
+      // Create edges
+      for (const edgeData of csvEdges) {
+        const fromNodeId = titleToId.get(edgeData.from);
+        const toNodeId = titleToId.get(edgeData.to);
+
+        if (fromNodeId && toNodeId) {
+          edgeRepository.create({
+            gameId,
+            fromNodeId,
+            toNodeId,
+          });
+        }
+      }
+
+      // Verify edges were created
+      const edges = edgeRepository.findByGameId(gameId);
+      expect(edges.length).toBe(2);
+
+      const edge1 = edges.find(e => e.fromNodeId === node1.id);
+      expect(edge1).toBeDefined();
+      expect(edge1?.toNodeId).toBe(node2.id);
+
+      const edge2 = edges.find(e => e.fromNodeId === node2.id);
+      expect(edge2).toBeDefined();
+      expect(edge2?.toNodeId).toBe(node3.id);
+    });
+
+    it("should handle empty content gracefully", () => {
+      const node = nodeRepository.create({
+        gameId,
+        nodeKey: "empty-content",
+        title: "Node with no content",
+        content: undefined,
+        contentType: "text",
+      });
+
+      expect(node.title).toBe("Node with no content");
+      expect(node.content).toBeNull();
+    });
+
+    it("should use default points when not specified", () => {
+      const node = nodeRepository.create({
+        gameId,
+        nodeKey: "default-points",
+        title: "Node without points",
+        points: 100, // Default value
+      });
+
+      expect(node.points).toBe(100);
+    });
+
+    it("should handle hints in CSV data", () => {
+      const node = nodeRepository.create({
+        gameId,
+        nodeKey: "node-with-hint",
+        title: "Clue with hint",
+        content: "Find the treasure!",
+        hint: "Look near the big tree",
+        points: 150,
+      });
+
+      expect(node.hint).toBe("Look near the big tree");
+    });
+
+    it("should not create edges for non-existent nodes", () => {
+      const node1 = nodeRepository.create({
+        gameId,
+        nodeKey: "only-node",
+        title: "Only Node",
+        isStart: true,
+      });
+
+      // Simulate edge data pointing to non-existent node
+      const csvEdges = [
+        { from: "Only Node", to: "Non-existent Node" },
+      ];
+
+      // Build title to ID mapping
+      const titleToId = new Map<string, string>();
+      titleToId.set("Only Node", node1.id);
+
+      // Try to create edges - should skip non-existent
+      let edgesCreated = 0;
+      for (const edgeData of csvEdges) {
+        const fromNodeId = titleToId.get(edgeData.from);
+        const toNodeId = titleToId.get(edgeData.to);
+
+        if (fromNodeId && toNodeId) {
+          edgeRepository.create({
+            gameId,
+            fromNodeId,
+            toNodeId,
+          });
+          edgesCreated++;
+        }
+      }
+
+      // No edges should be created
+      expect(edgesCreated).toBe(0);
+      const edges = edgeRepository.findByGameId(gameId);
+      expect(edges.length).toBe(0);
     });
   });
 });

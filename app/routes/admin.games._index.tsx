@@ -2,6 +2,7 @@ import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import { useState } from "react";
+import { DeleteGameConfirmModal } from "~/components/admin/DeleteGameConfirmModal";
 import { Button } from "~/components/Button";
 import { StatusBadge } from "~/components/admin/game-editor/StatusBadge";
 import { Plus, Trash, Upload } from "~/components/icons";
@@ -51,7 +52,8 @@ export default function AdminGames() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [isImporting, setIsImporting] = useState(false);
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [gameToDelete, setGameToDelete] = useState<Game | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -109,13 +111,15 @@ export default function AdminGames() {
     setIsImporting(false);
   };
 
-  const handleDelete = async (game: Game) => {
-    if (!confirm(t("pages.admin.gamesList.confirm.delete", { name: game.name }))) {
-      return;
-    }
-    setIsDeleting(game.id);
+  const handleDeleteClick = (game: Game) => {
+    setGameToDelete(game);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!gameToDelete) return;
+    setIsDeleting(true);
     try {
-      const response = await fetch(`${data.baseUrl}/api/v1/admin/games/${game.id}`, {
+      const response = await fetch(`${data.baseUrl}/api/v1/admin/games/${gameToDelete.id}`, {
         method: "DELETE",
         headers: { "x-admin-code": data.adminCode },
       });
@@ -128,7 +132,8 @@ export default function AdminGames() {
     } catch {
       alert(t("pages.admin.gamesList.errors.deleteFailed", { error: "Unknown error" }));
     }
-    setIsDeleting(null);
+    setIsDeleting(false);
+    setGameToDelete(null);
   };
 
   return (
@@ -242,8 +247,8 @@ export default function AdminGames() {
                           <Button
                             variant="danger"
                             size="small"
-                            onClick={() => handleDelete(game)}
-                            disabled={isDeleting === game.id}
+                            onClick={() => handleDeleteClick(game)}
+                            disabled={isDeleting}
                             title={t("pages.admin.gamesList.actions.delete")}
                           >
                             <Trash size={16} />
@@ -258,6 +263,16 @@ export default function AdminGames() {
           </div>
         </div>
       )}
+
+      {/* Delete Game Modal */}
+      <DeleteGameConfirmModal
+        gameName={gameToDelete?.name || ""}
+        isOpen={!!gameToDelete}
+        onClose={() => setGameToDelete(null)}
+        onConfirm={handleDeleteConfirm}
+        isDeleting={isDeleting}
+        t={t}
+      />
     </div>
   );
 }

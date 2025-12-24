@@ -70,9 +70,44 @@ export interface GameEditorData {
   adminCode: string;
 }
 
-export type TabType = "nodes" | "qrcodes" | "edges" | "teams" | "feedback" | "settings";
+export type TabType = "nodes" | "qrcodes" | "edges" | "teams" | "feedback" | "analytics" | "settings";
+
+export interface AnalyticsData {
+  teams: Array<{
+    teamId: string;
+    teamName: string;
+    teamLogoUrl: string | null;
+    totalTime: number;
+    nodeTimings: Array<{
+      nodeId: string;
+      nodeTitle: string;
+      timeSpentMs: number;
+      timestamp: string;
+    }>;
+    isFinished: boolean;
+    rank: number;
+  }>;
+  nodeStats: Array<{
+    nodeId: string;
+    nodeTitle: string;
+    averageTimeMs: number;
+    minTimeMs: number;
+    maxTimeMs: number;
+    completionCount: number;
+  }>;
+  bottlenecks: Array<{
+    nodeId: string;
+    nodeTitle: string;
+    averageTimeMs: number;
+  }>;
+}
 
 export interface NodeFilter {
+  title: string;
+  activated: "all" | "activated" | "not-activated";
+}
+
+export interface QRFilter {
   title: string;
   activated: "all" | "activated" | "not-activated";
 }

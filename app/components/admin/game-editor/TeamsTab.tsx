@@ -12,6 +12,7 @@ interface TeamsTabProps {
   isSubmitting: boolean;
   onDelete: (type: "node" | "edge" | "team", id: string, name: string) => void;
   onCopyShareInfo: (team: Team) => void;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }
 
 export function TeamsTab({
@@ -24,6 +25,7 @@ export function TeamsTab({
   isSubmitting,
   onDelete,
   onCopyShareInfo,
+  t,
 }: TeamsTabProps) {
   const startNodes = nodes.filter((n) => n.isStart);
 
@@ -34,9 +36,9 @@ export function TeamsTab({
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">Team</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">Code</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">Start Node</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">{t("pages.admin.gameEditor.teams.tableHeaders.team")}</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">{t("pages.admin.gameEditor.teams.tableHeaders.code")}</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase">{t("pages.admin.gameEditor.teams.tableHeaders.startNode")}</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
@@ -54,19 +56,19 @@ export function TeamsTab({
                     <td className="px-4 py-3">
                       <code className="bg-secondary px-2 py-1 rounded text-[var(--color-primary)] text-sm">{team.code}</code>
                     </td>
-                    <td className="px-4 py-3 text-secondary">{startNode?.title || "Default"}</td>
+                    <td className="px-4 py-3 text-secondary">{startNode?.title || t("pages.admin.gameEditor.teams.default")}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1 justify-end">
-                        <Button variant="secondary" size="small" onClick={() => onCopyShareInfo(team)}>Share</Button>
-                        <Button variant="secondary" size="small" onClick={() => setEditingTeam(team)}>Edit</Button>
-                        <Button variant="danger" size="small" onClick={() => onDelete("team", team.id, team.name)}>Delete</Button>
+                        <Button variant="secondary" size="small" onClick={() => onCopyShareInfo(team)}>{t("pages.admin.gameEditor.teams.buttons.share")}</Button>
+                        <Button variant="secondary" size="small" onClick={() => setEditingTeam(team)}>{t("pages.admin.gameEditor.teams.buttons.edit")}</Button>
+                        <Button variant="danger" size="small" onClick={() => onDelete("team", team.id, team.name)}>{t("pages.admin.gameEditor.teams.buttons.delete")}</Button>
                       </div>
                     </td>
                   </tr>
                 );
               })}
               {teams.length === 0 && (
-                <tr><td colSpan={4} className="px-4 py-8 text-center text-muted">No teams yet. Create team codes.</td></tr>
+                <tr><td colSpan={4} className="px-4 py-8 text-center text-muted">{t("pages.admin.gameEditor.teams.noTeams")}</td></tr>
               )}
             </tbody>
           </table>
@@ -74,26 +76,26 @@ export function TeamsTab({
       </div>
 
       <div className="bg-elevated rounded-xl border p-5 shadow-sm">
-        <h3 className="text-lg font-semibold text-primary mb-4">{editingTeam ? "Edit Team" : "Add Team"}</h3>
+        <h3 className="text-lg font-semibold text-primary mb-4">{editingTeam ? t("pages.admin.gameEditor.teams.editTeam") : t("pages.admin.gameEditor.teams.addTeam")}</h3>
         <Form method="post" onSubmit={() => { setEditingTeam(null); setTeamLogoUrl(""); }} className="space-y-4">
           <input type="hidden" name="_action" value={editingTeam ? "updateTeam" : "createTeam"} />
           {editingTeam && <input type="hidden" name="teamId" value={editingTeam.id} />}
 
           <div>
-            <label className="block text-sm font-medium text-secondary mb-1">Team Name</label>
+            <label className="block text-sm font-medium text-secondary mb-1">{t("pages.admin.gameEditor.teams.form.teamName")}</label>
             <input type="text" name="teamName" className={inputClasses} required defaultValue={editingTeam?.name || ""} key={`name-${editingTeam?.id || "new"}`} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary mb-1">Start Node</label>
+            <label className="block text-sm font-medium text-secondary mb-1">{t("pages.admin.gameEditor.teams.form.startNode")}</label>
             <select name="startNodeId" className={inputClasses} defaultValue={editingTeam?.startNodeId || ""} key={`start-${editingTeam?.id || "new"}`}>
-              <option value="">Default (any start node)</option>
+              <option value="">{t("pages.admin.gameEditor.teams.defaultOption")}</option>
               {startNodes.map((node) => <option key={node.id} value={node.id}>{node.title}</option>)}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary mb-1">Logo URL</label>
+            <label className="block text-sm font-medium text-secondary mb-1">{t("pages.admin.gameEditor.teams.form.logoUrl")}</label>
             <input
               type="url"
               name="logoUrl"
@@ -116,8 +118,8 @@ export function TeamsTab({
           )}
 
           <div className="flex gap-2 pt-2">
-            <Button type="submit" variant="primary" disabled={isSubmitting}>{editingTeam ? "Update Team" : "Add Team"}</Button>
-            {editingTeam && <Button variant="secondary" onClick={() => { setEditingTeam(null); setTeamLogoUrl(""); }}>Cancel</Button>}
+            <Button type="submit" variant="primary" disabled={isSubmitting}>{editingTeam ? t("pages.admin.gameEditor.teams.buttons.updateTeam") : t("pages.admin.gameEditor.teams.buttons.addTeam")}</Button>
+            {editingTeam && <Button variant="secondary" onClick={() => { setEditingTeam(null); setTeamLogoUrl(""); }}>{t("pages.admin.gameEditor.teams.buttons.cancel")}</Button>}
           </div>
         </Form>
       </div>

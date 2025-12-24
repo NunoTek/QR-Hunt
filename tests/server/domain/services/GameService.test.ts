@@ -66,7 +66,7 @@ describe("GameService", () => {
 
       expect(() => {
         gameService.openGame(game.id);
-      }).toThrow("Cannot open game without any nodes");
+      }).toThrow("Cannot activate game without any nodes");
     });
 
     it("should not open game without start node", () => {
@@ -84,7 +84,7 @@ describe("GameService", () => {
 
       expect(() => {
         gameService.openGame(game.id);
-      }).toThrow("Cannot open game without at least one start node");
+      }).toThrow("Cannot activate game without at least one start node");
     });
 
     it("should not open game without end node", () => {
@@ -102,7 +102,7 @@ describe("GameService", () => {
 
       expect(() => {
         gameService.openGame(game.id);
-      }).toThrow("Cannot open game without at least one end node");
+      }).toThrow("Cannot activate game without at least one end node");
     });
 
     it("should open valid game and set status to pending", () => {
@@ -115,12 +115,14 @@ describe("GameService", () => {
         gameId: game.id,
         title: "Start",
         isStart: true,
+        activated: true,
       });
 
       nodeRepository.create({
         gameId: game.id,
         title: "End",
         isEnd: true,
+        activated: true,
       });
 
       const opened = gameService.openGame(game.id);

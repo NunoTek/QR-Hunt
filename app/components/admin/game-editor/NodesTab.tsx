@@ -17,7 +17,7 @@ interface NodesTabProps {
   setPreviewNode: (node: Node | null) => void;
   isSubmitting: boolean;
   onDelete: (type: "node" | "edge" | "team", id: string, name: string) => void;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }
 
 export function NodesTab({
@@ -108,7 +108,7 @@ export function NodesTab({
                             ? "bg-success/20 text-success hover:bg-success/30"
                             : "bg-muted/20 text-muted hover:bg-muted/30"
                         }`}
-                        title={node.activated ? "Click to deactivate" : "Click to activate"}
+                        title={node.activated ? t("pages.admin.gameEditor.nodes.activation.clickToDeactivate") : t("pages.admin.gameEditor.nodes.activation.clickToActivate")}
                       >
                         {node.activated ? (
                           <Check size={16} />
@@ -145,73 +145,73 @@ export function NodesTab({
           {editingNode && <input type="hidden" name="nodeId" value={editingNode.id} />}
 
           <div>
-            <label className="block text-sm font-medium text-secondary mb-1">Title</label>
+            <label className="block text-sm font-medium text-secondary mb-1">{t("pages.admin.gameEditor.nodes.form.title")}</label>
             <input type="text" name="title" className={inputClasses} required defaultValue={editingNode?.title || ""} key={editingNode?.id || "new"} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary mb-1">Content</label>
+            <label className="block text-sm font-medium text-secondary mb-1">{t("pages.admin.gameEditor.nodes.form.content")}</label>
             <textarea name="content" className={inputClasses} rows={6} defaultValue={editingNode?.content || ""} key={`content-${editingNode?.id || "new"}`} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary mb-1">Content Type</label>
+            <label className="block text-sm font-medium text-secondary mb-1">{t("pages.admin.gameEditor.nodes.form.contentType")}</label>
             <select name="contentType" className={inputClasses} defaultValue={editingNode?.contentType || "text"} key={`type-${editingNode?.id || "new"}`}>
-              <option value="text">Text</option>
-              <option value="image">Image</option>
-              <option value="video">Video</option>
-              <option value="audio">Audio</option>
-              <option value="link">Link</option>
+              <option value="text">{t("pages.admin.gameEditor.nodes.form.contentTypes.text")}</option>
+              <option value="image">{t("pages.admin.gameEditor.nodes.form.contentTypes.image")}</option>
+              <option value="video">{t("pages.admin.gameEditor.nodes.form.contentTypes.video")}</option>
+              <option value="audio">{t("pages.admin.gameEditor.nodes.form.contentTypes.audio")}</option>
+              <option value="link">{t("pages.admin.gameEditor.nodes.form.contentTypes.link")}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-secondary mb-1">
-              Media URL
-              <span className="ml-2 text-xs text-muted font-normal">(optional)</span>
+              {t("pages.admin.gameEditor.nodes.form.mediaUrl")}
+              <span className="ml-2 text-xs text-muted font-normal">{t("pages.admin.gameEditor.nodes.form.mediaUrlOptional")}</span>
             </label>
             <input type="url" name="mediaUrl" className={inputClasses} defaultValue={editingNode?.mediaUrl || ""} key={`media-${editingNode?.id || "new"}`} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary mb-1">Points</label>
+            <label className="block text-sm font-medium text-secondary mb-1">{t("pages.admin.gameEditor.nodes.form.points")}</label>
             <input type="number" name="points" className={inputClasses} defaultValue={editingNode?.points || 100} key={`points-${editingNode?.id || "new"}`} />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-secondary mb-1">
-              Hint
-              <span className="ml-2 text-xs text-muted font-normal">(optional, costs half points)</span>
+              {t("pages.admin.gameEditor.nodes.form.hint")}
+              <span className="ml-2 text-xs text-muted font-normal">{t("pages.admin.gameEditor.nodes.form.hintHelp")}</span>
             </label>
-            <textarea name="hint" className={inputClasses} rows={2} placeholder="A hint players can request for half the points..." defaultValue={editingNode?.hint || ""} key={`hint-${editingNode?.id || "new"}`} />
+            <textarea name="hint" className={inputClasses} rows={2} placeholder={t("pages.admin.gameEditor.nodes.form.hintPlaceholder")} defaultValue={editingNode?.hint || ""} key={`hint-${editingNode?.id || "new"}`} />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-secondary mb-1">
-              Admin Comment
-              <span className="ml-2 text-xs text-muted font-normal">(only visible to admins)</span>
+              {t("pages.admin.gameEditor.nodes.form.adminComment")}
+              <span className="ml-2 text-xs text-muted font-normal">{t("pages.admin.gameEditor.nodes.form.adminCommentHelp")}</span>
             </label>
-            <textarea name="adminComment" className={inputClasses} rows={2} placeholder="Internal notes about this node..." defaultValue={editingNode?.adminComment || ""} key={`comment-${editingNode?.id || "new"}`} />
+            <textarea name="adminComment" className={inputClasses} rows={2} placeholder={t("pages.admin.gameEditor.nodes.form.adminCommentPlaceholder")} defaultValue={editingNode?.adminComment || ""} key={`comment-${editingNode?.id || "new"}`} />
           </div>
 
           <div className="flex items-center gap-2">
             <input type="checkbox" name="passwordRequired" id="pwReq" defaultChecked={editingNode?.passwordRequired || false} key={`pwreq-${editingNode?.id || "new"}`} className="rounded bg-secondary border-border" />
-            <label htmlFor="pwReq" className="text-sm text-secondary">Password Required</label>
+            <label htmlFor="pwReq" className="text-sm text-secondary">{t("pages.admin.gameEditor.nodes.form.passwordRequired")}</label>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-secondary mb-1">Password</label>
-            <input type="text" name="password" className={inputClasses} placeholder={editingNode ? "(leave empty to keep current)" : ""} />
+            <label className="block text-sm font-medium text-secondary mb-1">{t("pages.admin.gameEditor.nodes.form.password")}</label>
+            <input type="text" name="password" className={inputClasses} placeholder={editingNode ? t("pages.admin.gameEditor.nodes.form.passwordPlaceholder") : ""} />
           </div>
 
           <div className="flex gap-4">
             <label className="flex items-center gap-2 text-sm text-secondary">
               <input type="checkbox" name="isStart" defaultChecked={editingNode?.isStart || false} key={`start-${editingNode?.id || "new"}`} className="rounded bg-secondary border-border" />
-              Start Node
+              {t("pages.admin.gameEditor.nodes.form.startNode")}
             </label>
             <label className="flex items-center gap-2 text-sm text-secondary">
               <input type="checkbox" name="isEnd" defaultChecked={editingNode?.isEnd || false} key={`end-${editingNode?.id || "new"}`} className="rounded bg-secondary border-border" />
-              End Node
+              {t("pages.admin.gameEditor.nodes.form.endNode")}
             </label>
           </div>
 
@@ -232,7 +232,7 @@ export function NodesTab({
       <Modal
         isOpen={!!previewNode}
         onClose={() => setPreviewNode(null)}
-        title={previewNode?.title || "Preview"}
+        title={previewNode?.title || t("pages.admin.gameEditor.nodes.buttons.preview")}
         maxWidth="max-w-2xl"
       >
         {previewNode && (

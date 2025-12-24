@@ -762,4 +762,189 @@ export async function adminRoutes(fastify: FastifyInstance) {
       });
     }
   );
+
+  // Import nodes and edges from CSV
+  fastify.post(
+    "/games/:gameId/import-csv",
+    async (
+      request: FastifyRequest<{
+        Params: { gameId: string };
+        Body: {
+          nodes: Array<{
+            title: string;
+            content?: string;
+            contenttype?: string;
+            points?: string;
+            isstart?: string;
+            isend?: string;
+            hint?: string;
+            next?: string;
+            mediaurl?: string;
+            admincomment?: string;
+          }>;
+          edges: Array<{
+            from: string;
+            to: string;
+          }>;
+        };
+      }>,
+      reply: FastifyReply
+    ) => {
+      const { gameId } = request.params;
+      const { nodes, edges } = request.body;
+
+      const game = gameRepository.findById(gameId);
+      if (!game) {
+        return reply.status(404).send({ error: "Game not found" });
+      }
+
+      if (!nodes || nodes.length === 0) {
+        return reply.status(400).send({ error: "No nodes provided" });
+      }
+
+      // Create nodes and build title to ID mapping
+      const titleToId = new Map<string, string>();
+      let nodesCreated = 0;
+
+      for (const nodeData of nodes) {
+        // Generate a unique node key from the title
+        const nodeKey = nodeData.title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "")
+          .substring(0, 50) + "-" + Date.now().toString(36);
+
+        const node = nodeRepository.create({
+          gameId,
+          nodeKey,
+          title: nodeData.title,
+          content: nodeData.content || undefined,
+          contentType: (nodeData.contenttype as ContentType) || "text",
+          mediaUrl: nodeData.mediaurl || undefined,
+          passwordRequired: false,
+          isStart: nodeData.isstart === "true" || nodeData.isstart === "TRUE",
+          isEnd: nodeData.isend === "true" || nodeData.isend === "TRUE",
+          points: parseInt(nodeData.points || "100", 10) || 100,
+          hint: nodeData.hint || undefined,
+          adminComment: nodeData.admincomment || undefined,
+          metadata: {},
+        });
+
+        titleToId.set(nodeData.title, node.id);
+        nodesCreated++;
+      }
+
+      // Create edges based on "next" column and explicit edge definitions
+      let edgesCreated = 0;
+
+      for (const edgeData of edges || []) {
+        const fromNodeId = titleToId.get(edgeData.from);
+        const toNodeId = titleToId.get(edgeData.to);
+
+        if (fromNodeId && toNodeId) {
+          edgeRepository.create({
+            gameId,
+            fromNodeId,
+            toNodeId,
+            condition: undefined,
+            sortOrder: 0,
+          });
+          edgesCreated++;
+        }
+      }
+
+      return reply.status(201).send({
+        success: true,
+        message: `CSV imported successfully`,
+        nodesCreated,
+        edgesCreated,
+      });
+    }
+  );
+
+  // ==================== ANALYTICS ====================
+
+  // Get game analytics
+  fastify.get(
+    "/games/:gameId/analytics",
+    async (
+      request: FastifyRequest<{ Params: { gameId: string } }>,
+      reply: FastifyReply
+    ) => {
+      const analytics = gameService.getGameAnalytics(request.params.gameId);
+      if (!analytics) {
+        return reply.status(404).send({ error: "Game not found" });
+      }
+
+      return reply.send({ analytics });
+    }
+  );
+
+  // Get game analytics summary (for CSV export)
+  fastify.get(
+    "/games/:gameId/analytics/export",
+    async (
+      request: FastifyRequest<{ Params: { gameId: string } }>,
+      reply: FastifyReply
+    ) => {
+      const analytics = gameService.getGameAnalytics(request.params.gameId);
+      if (!analytics) {
+        return reply.status(404).send({ error: "Game not found" });
+      }
+
+      const game = gameRepository.findById(request.params.gameId);
+      if (!game) {
+        return reply.status(404).send({ error: "Game not found" });
+      }
+
+      // Format time helper
+      const formatTime = (ms: number): string => {
+        if (ms === 0) return "0s";
+        const seconds = Math.floor(ms / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        if (hours > 0) {
+          return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+        }
+        if (minutes > 0) {
+          return `${minutes}m ${seconds % 60}s`;
+        }
+        return `${seconds}s`;
+      };
+
+      // Build CSV for team performance
+      const teamCsvRows = ["Rank,Team Name,Total Time,Nodes Found,Finished"];
+      for (const team of analytics.teams.sort((a, b) => a.rank - b.rank)) {
+        const nodeCount = team.nodeTimings.length;
+        teamCsvRows.push(
+          `${team.rank},"${team.teamName}",${formatTime(team.totalTime)},${nodeCount},${team.isFinished ? "Yes" : "No"}`
+        );
+      }
+      const teamsCsv = teamCsvRows.join("\n");
+
+      // Build CSV for node statistics
+      const nodeCsvRows = ["Node Title,Avg Time,Min Time,Max Time,Completions"];
+      for (const node of analytics.nodeStats) {
+        nodeCsvRows.push(
+          `"${node.nodeTitle}",${formatTime(node.averageTimeMs)},${formatTime(node.minTimeMs)},${formatTime(node.maxTimeMs)},${node.completionCount}`
+        );
+      }
+      const nodesCsv = nodeCsvRows.join("\n");
+
+      // Build CSV for bottlenecks
+      const bottleneckCsvRows = ["Node Title,Average Time"];
+      for (const node of analytics.bottlenecks) {
+        bottleneckCsvRows.push(`"${node.nodeTitle}",${formatTime(node.averageTimeMs)}`);
+      }
+      const bottlenecksCsv = bottleneckCsvRows.join("\n");
+
+      return reply.send({
+        gameName: game.name,
+        exportedAt: new Date().toISOString(),
+        teamPerformance: teamsCsv,
+        nodeStatistics: nodesCsv,
+        bottlenecks: bottlenecksCsv,
+      });
+    }
+  );
 }
