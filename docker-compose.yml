@@ -29,6 +29,10 @@ services:
         max-file: "3"
 
   qr-hunt:
+    # Option 1: Use pre-built image from GitHub Container Registry
+    image: ghcr.io/nunotek/qr-hunt:latest
+    
+    # Option 2: Build from local source (default)
     build:
       context: .
       args:
