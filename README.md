@@ -152,10 +152,12 @@ QR Hunt is an interactive treasure hunt game where teams race to find hidden QR 
 # Pull the latest image
 docker pull ghcr.io/nunotek/qr-hunt:latest
 
-# Run with Docker Compose using the pre-built image
+# Download docker-compose.yml and .env.example (from main branch, or replace 'main' with a specific version tag)
 wget https://raw.githubusercontent.com/NunoTek/QR-Hunt/main/docker-compose.yml
 wget https://raw.githubusercontent.com/NunoTek/QR-Hunt/main/.env.example -O .env
+
 # Edit .env: set ADMIN_CODE and DOMAIN
+# Edit docker-compose.yml: uncomment the 'image:' line and comment out the 'build:' section
 docker compose up -d
 ```
 
