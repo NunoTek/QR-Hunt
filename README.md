@@ -161,6 +161,8 @@ wget https://raw.githubusercontent.com/NunoTek/QR-Hunt/main/.env.example -O .env
 docker compose up -d
 ```
 
+> **Note:** For production deployments, consider cloning the repository at a specific version tag (e.g., `v1.0.0`) instead of downloading files from the main branch to ensure version stability and security.
+
 **Option 2: Build from Source**
 
 ```bash
