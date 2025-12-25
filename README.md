@@ -6,6 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Built with Claude](https://img.shields.io/badge/Built%20with-Claude%20Opus%204.5-blueviolet)](https://claude.ai)
+[![Docker Image](https://img.shields.io/badge/Docker-ghcr.io-2496ED?logo=docker&logoColor=white)](https://github.com/NunoTek/QR-Hunt/pkgs/container/qr-hunt)
 
 ## What is QR Hunt?
 
@@ -145,8 +146,23 @@ QR Hunt is an interactive treasure hunt game where teams race to find hidden QR 
 
 ### Docker (Recommended)
 
+**Option 1: Use Pre-built Image from GitHub Container Registry**
+
 ```bash
-git clone https://github.com/yourusername/qr-hunt.git
+# Pull the latest image
+docker pull ghcr.io/nunotek/qr-hunt:latest
+
+# Run with Docker Compose using the pre-built image
+wget https://raw.githubusercontent.com/NunoTek/QR-Hunt/main/docker-compose.yml
+wget https://raw.githubusercontent.com/NunoTek/QR-Hunt/main/.env.example -O .env
+# Edit .env: set ADMIN_CODE and DOMAIN
+docker compose up -d
+```
+
+**Option 2: Build from Source**
+
+```bash
+git clone https://github.com/NunoTek/qr-hunt.git
 cd qr-hunt
 cp .env.example .env
 # Edit .env: set ADMIN_CODE and DOMAIN
